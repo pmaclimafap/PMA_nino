@@ -1,0 +1,35 @@
+name: 00 - Explorar carpetas de GloH2O
+
+# Diagnóstico. No descarga ni procesa datos.
+#
+# Verifica que la cuenta de servicio pueda leer las carpetas de MSWEP y MSWX
+# (compartidas públicamente por enlace) y mapea su estructura interna,
+# devolviendo el ID de cada subcarpeta.
+#
+# Su salida alimenta pipeline/config/fuentes.yml. Después queda como
+# herramienta de diagnóstico para cuando algo falle.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  explorar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --quiet --upgrade pip
+          pip install --quiet google-api-python-client google-auth
+
+      - name: Explorar
+        env:
+          GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+        run: python scripts/explorar_drive.py
