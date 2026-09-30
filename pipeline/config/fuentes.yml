@@ -1,0 +1,164 @@
+# Fuentes de datos del pipeline
+#
+# IDs descubiertos por scripts/explorar_drive.py el 30-09-2026.
+# Si GloH2O reorganiza sus carpetas, volver a correr ese workflow.
+#
+# Las carpetas de GloH2O están compartidas como "cualquiera con el enlace",
+# así que la cuenta de servicio puede leerlas sin permiso explícito.
+# Se accede SIEMPRE por ID, nunca navegando por nombres de ruta.
+
+meta:
+  descubierto: 2026-09-30
+  script: scripts/explorar_drive.py
+  licencia: CC BY-NC 4.0 (MSWEP y MSWX, GloH2O)
+  convencion_nombres: "AAAADDD.nc — año + día juliano (2026271.nc = 28-sep-2026)"
+
+# ---------------------------------------------------------------------------
+# Ventana de revisión del tiempo casi real
+# ---------------------------------------------------------------------------
+# GloH2O: los archivos MSWEP-NRT con menos de 10 días se actualizan
+# progresivamente. El pipeline debe recomprobar la fecha de modificación en
+# origen dentro de esta ventana, no dar por bueno un archivo solo porque ya
+# existe.
+nrt:
+  dias_reverificacion: 10
+  madurez:
+    preliminar: [0, 1]     # GSMaP NRT, IMERG Early, GDAS
+    intermedio: [2, 5]     # GSMaP Standard, IMERG Late
+    consolidado: [6, null] # ERA5 reemplaza a GDAS
+
+# ---------------------------------------------------------------------------
+# Variables en uso
+# ---------------------------------------------------------------------------
+variables:
+
+  precipitacion:
+    unidad: mm/d
+    # Nombres internos posibles de la variable dentro del .nc.
+    # Se prueban en orden; cada producto la nombra distinto.
+    candidatos: [precipitation, precip, P, pr]
+    fuente: mswep_nrt_daily
+    respaldo: [mswx_nrt_p_daily, chirps]
+
+  temperatura:
+    unidad: °C
+    candidatos: [air_temperature, temperature, Temp, tas, T]
+    fuente: mswx_nrt_temp_daily
+    respaldo: [open_meteo]
+
+  tmax:
+    unidad: °C
+    candidatos: [air_temperature, temperature, Tmax, tasmax]
+    fuente: mswx_nrt_tmax_daily
+    respaldo: [open_meteo]
+
+  tmin:
+    unidad: °C
+    candidatos: [air_temperature, temperature, Tmin, tasmin]
+    fuente: mswx_nrt_tmin_daily
+    respaldo: [open_meteo]
+
+  humedad_relativa:
+    unidad: "%"
+    candidatos: [relative_humidity, RelHum, rh, hurs]
+    fuente: mswx_nrt_relhum_daily
+    respaldo: [open_meteo]
+
+# ---------------------------------------------------------------------------
+# Carpetas de Drive en uso
+# ---------------------------------------------------------------------------
+carpetas:
+
+  # --- Tiempo casi real: alimenta la ventana de monitoreo ---
+  mswep_nrt_daily:
+    ruta: MSWEP_V280/NRT/Daily
+    id: 1aehP6YDNOO73ab3tvTZet2Sh5uPdG9I_
+  mswx_nrt_temp_daily:
+    ruta: MSWX_V100/NRT/Temp/Daily
+    id: 1cVIEwv9U4nwCxJxbU99Qx0izidKyDgKi
+  mswx_nrt_tmax_daily:
+    ruta: MSWX_V100/NRT/Tmax/Daily
+    id: 189X3z8IRGABcXYhMFYXaJPd4ftwKE7qm
+  mswx_nrt_tmin_daily:
+    ruta: MSWX_V100/NRT/Tmin/Daily
+    id: 1ZQreWvmT1yF19e6Yl4pHWqKifRUiDk6E
+  mswx_nrt_relhum_daily:
+    ruta: MSWX_V100/NRT/RelHum/Daily
+    id: 1XTvdDjtFOrJbG69ExtdBP1-7lPs4EyCL
+
+  # --- Histórico: carga inicial y control cruzado ---
+  # MSWEP/Past incorpora la corrección por pluviómetros; NRT todavía no la
+  # tiene consolidada en sus primeros días.
+  mswep_past_daily:
+    ruta: MSWEP_V280/Past/Daily
+    id: 1gWoZ2bK2u5osJ8Iw-dvguZ56Kmz2QWrL
+  mswx_past_tmax_daily:
+    ruta: MSWX_V100/Past/Tmax/Daily
+    id: 1BKvHhO1JsBKKzMPCbzl5UpvqpRXHTj9c
+  mswx_past_tmin_daily:
+    ruta: MSWX_V100/Past/Tmin/Daily
+    id: 1_h0hgJThJLXhVOk905IJ7EFpkFV5KDSC
+  mswx_past_relhum_daily:
+    ruta: MSWX_V100/Past/RelHum/Daily
+    id: 1EcBx7pdD23P7G2V8-HDrk0Sr7uJm9uvc
+
+  # --- Control cruzado de precipitación ---
+  # MSWX trae su propia estimación de lluvia, independiente de MSWEP.
+  # Dos estimaciones para el mismo punto y día, sin costo adicional.
+  mswx_nrt_p_daily:
+    ruta: MSWX_V100/NRT/P/Daily
+    id: 1ylMZaQDjAkn9WHubiVQFAYp9t0SbAavx
+
+  # --- Sin corrección por pluviómetros: para evaluar el aporte de la
+  #     corrección en los municipios del proyecto ---
+  mswep_past_nogauge_daily:
+    ruta: MSWEP_V280/Past_nogauge/Daily
+    id: 1EDmRUu5rZyo-0eQ0dDild1A8i6GkcBFu
+
+# ---------------------------------------------------------------------------
+# Carpetas mapeadas pero NO usadas
+# ---------------------------------------------------------------------------
+# Se documentan para no volver a explorar si se necesitan.
+carpetas_disponibles:
+
+  # Otras resoluciones temporales de las variables en uso
+  mswep_nrt_3hourly:   1XBonFS0_t3aSM_C4CYobwsN-spmj29vo
+  mswep_nrt_monthly:   1TOjayWKXBftMd6mTfE2sQ3Hj0YNK7Qa_
+  mswx_nrt_temp_3hourly:   1av2FfKHw7Oe31kLjGyUNygIlir0WeSqK
+  mswx_nrt_relhum_3hourly: 1mu44PkeCfqw-yG5CtYv-Sh_XXBtvbzYr
+  # OJO: Tmax y Tmin NO tienen carpeta 3hourly, solo Daily y Monthly.
+
+  # Variables meteorológicas no priorizadas
+  mswx_nrt_wind_daily:    16ADLvshrOH_S3sia0MPoPqbASiLoOjIR
+  mswx_nrt_pres_daily:    1AWL-F8AIsEgAavTYuSJmkh7JYgGNFugL
+  mswx_nrt_spechum_daily: 1a6cchPa9Ig9Oam_RHxVUdi0ZjS6iCKEk
+  mswx_nrt_swd_daily:     1yMVGkm513XV9-YtuPIUUhEPZaHndwCcn
+  mswx_nrt_lwd_daily:     1Nwbk7FHrNNUwYAlqcNsjcL7R6K_u-ZF9
+
+  # Histórico de las demás variables
+  mswx_past_temp_daily:    10l3ThTEkabK0yfk7DvpEcNgXkhbF9NNt
+  mswx_past_p_daily:       1Gf0q7udPffCAYzCYYSjTtg01lFMIv6ac
+
+# ---------------------------------------------------------------------------
+# Ramas de pronóstico de MSWX
+# ---------------------------------------------------------------------------
+# NO se recorren con el explorador: una carpeta por fecha de inicialización y
+# otra por miembro del ensamble suman decenas de miles.
+#
+# Estructura:
+#   Mid/<Variable>/<AAAAMMDD_HH>/<miembro 01-30>/{Daily,3hourly}
+#
+# Inicializaciones observadas: desde 20000101_00 hasta el día actual.
+# Los retropronósticos desde el año 2000 permiten evaluar habilidad predictiva
+# sin esperar años de operación. Relevante para el módulo de pronóstico.
+pronostico_mswx:
+  mid:
+    descripcion: Ensamble de mediano plazo, 30 miembros, hasta 10 días (GEFS)
+    patron_ruta: "MSWX_V100/Mid/{variable}/{AAAAMMDD}_00/{miembro}/Daily"
+    miembros: [1, 30]
+  long:
+    descripcion: Ensamble de largo plazo, 51 miembros, hasta 7 meses (SEAS5)
+    id: 1CYSEQS-M6687HBYVnb1Y9uLIO-PDoo7Q
+    nota: >
+      La exploración lo reportó sin subcarpetas, lo que no cuadra con la
+      documentación. Verificar manualmente antes de usarlo.

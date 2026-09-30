@@ -1,0 +1,137 @@
+# Municipios monitoreados
+#
+# Las geometrías viven en municipios.geojson (heredado del prototipo de
+# A. Amaya, validado contra áreas oficiales). Aquí va lo que el geojson no
+# puede llevar: asociaciones, sistemas productivos y el cultivo con el que
+# se evalúan los umbrales por defecto.
+#
+# El punto de referencia es representative_point() reproyectado desde
+# EPSG:6933 (área equivalente). Se usa representative_point y no centroid
+# porque garantiza caer dentro del polígono aunque sea cóncavo.
+# Se guarda precalculado para no depender de geopandas en cada corrida,
+# pero el pipeline puede recalcularlo desde el geojson.
+
+meta:
+  fuente_geometrias: municipios_monitoreados.json (aamaya03/PMA_Dashboard)
+  crs_geojson: EPSG:4326
+  crs_calculo_area: EPSG:6933
+  validado: 2026-09-30
+
+municipios:
+
+  - id: los_palmitos
+    nombre: Los Palmitos
+    departamento: Sucre
+    punto: {lat: 9.4191, lon: -75.1869}
+    area_km2: 205
+    asociaciones:
+      - nombre: COOMULPAZ
+        descripcion: Cooperativa Multiactiva Agropecuaria del Común y Formadores de Paz
+        sistemas: [porcicultura]
+    sistema_principal: porcicultura
+    nota: >
+      Alta dependencia de jagüeyes y del acuífero local. En la sequía de 2023
+      se secaron por completo y los cerdos consumieron agua no apta.
+
+  - id: san_jose_de_toluviejo
+    nombre: San José de Toluviejo
+    departamento: Sucre
+    punto: {lat: 9.5078, lon: -75.4452}
+    area_km2: 282
+    asociaciones:
+      - nombre: ASOPROYUS
+        descripcion: Asociación de Productores de Yuca de La Siria
+        sistemas: [yuca, porcicultura]
+      - nombre: ASOCOMAN
+        descripcion: Asociación Agropecuaria Comunidad El Mango
+        sistemas: [procesamiento_agroalimentario]
+    sistema_principal: yuca
+    nota: >
+      ASOCOMAN depende de infraestructura eléctrica (deshidratador, molinos,
+      refrigeración), sensible a cortes por altas temperaturas.
+
+  - id: icononzo
+    nombre: Icononzo
+    departamento: Tolima
+    punto: {lat: 4.1203, lon: -74.5447}
+    area_km2: 215
+    asociaciones:
+      - nombre: EPZ
+        descripcion: Asociación Agropecuaria Esperanza y Paz (Balconcitos)
+        sistemas: [cafe]
+    sistema_principal: cafe
+    nota: >
+      EPZ descartó el sombrío por necesitar al menos 8 horas de luz solar.
+      No generalizar esa medida desde otras organizaciones cafeteras.
+
+  - id: planadas
+    nombre: Planadas
+    departamento: Tolima
+    punto: {lat: 3.0965, lon: -75.8542}
+    area_km2: 1576
+    asociaciones:
+      - nombre: ASOVIUNION
+        descripcion: Asociación de Víctimas y Productores Agropecuarios de la Vereda La Unión
+        sistemas: [cafe]
+      - nombre: ASPROAGROPE
+        descripcion: Asociación de Productores Agrícolas y Pecuarios de Planadas (El Jardín)
+        sistemas: [aguacate]
+      - nombre: ASOCAFE Alta Calidad La Orquídea
+        sistemas: [cafe]
+      - nombre: COOPROCAFE
+        descripcion: Cooperativa Multiactiva de Productores de Café Especial Orquídea
+        sistemas: [cafe]
+    sistema_principal: cafe
+    nota: >
+      El municipio más extenso y con mayor gradiente altitudinal. ASPROAGROPE
+      reporta afectación por lluvias torrenciales, no por sequía.
+
+  - id: fonseca
+    nombre: Fonseca
+    departamento: La Guajira
+    punto: {lat: 10.8529, lon: -72.7932}
+    area_km2: 467
+    asociaciones:
+      - nombre: ASMUPERIJÁ
+        descripcion: Asociación de Mujeres Productoras de la Serranía del Perijá (Conejo)
+        sistemas: [cafe]
+      - nombre: COOMPAZCOL
+        descripcion: Cooperativa Multiactiva Para la Paz de Colombia (Conejo)
+        sistemas: [ganaderia, especies_menores, maiz]
+    sistema_principal: cafe
+    nota: >
+      Fincas en ladera; se descartaron jagüeyes grandes y pozos profundos.
+      Concentra el núcleo de riesgo muy alto de olas de calor del departamento.
+
+  - id: manaure
+    nombre: Manaure Balcón del Cesar
+    departamento: Cesar
+    punto: {lat: 10.3764, lon: -72.9963}
+    area_km2: 143
+    asociaciones:
+      - nombre: COOPERPAZCE
+        descripcion: Cooperativa Multiactiva de Paz del Cesar (Tierra Grata)
+        sistemas: [porcicultura]
+      - nombre: Asociación Mesa de Género Tierra Grata
+        sistemas: [cacao, frutales, maderables]
+    sistema_principal: porcicultura
+    nota: >
+      NO confundir con Manaure (La Guajira), que está en 11.77 / -72.44.
+      Verificado: el punto cae en la Serranía del Perijá, Cesar.
+      Concentra la categoría de riesgo muy alto de olas de calor del
+      departamento pese a tener umbrales térmicos moderados.
+
+  - id: el_paso
+    nombre: El Paso
+    departamento: Cesar
+    punto: {lat: 9.6984, lon: -73.7224}
+    area_km2: 844
+    asociaciones:
+      - nombre: ASOINREPA
+        descripcion: Asociación Integral Agropecuaria ASOINREPA (Repelón)
+        sistemas: [gallinas_ponedoras, ganaderia]
+    sistema_principal: gallinas_ponedoras
+    nota: >
+      Uno de los puntos térmicamente más extremos del Cesar, con riesgo alto
+      de sequía agrícola. En 2026 reportaron pérdida del 20 % de la producción
+      de huevos por altas temperaturas.

@@ -1,0 +1,229 @@
+# Umbrales e indicadores
+#
+# Este archivo es DATO, no código. Se congela para que cualquier indicador
+# publicado sea reproducible: si los umbrales cambian, debe verse en el
+# historial de este archivo y no enterrado en un script.
+#
+# Dos tipos de umbral conviven aquí:
+#
+#   1. CLIMATOLÓGICO (P80). Relativo a la historia de cada punto. Responde a
+#      "¿este día fue caluroso PARA ESTE LUGAR?". Lo calcula un script una
+#      sola vez y queda congelado.
+#
+#   2. AGRONÓMICO. Absoluto, depende del cultivo o del animal. Responde a
+#      "¿este día hizo daño A ESTE SISTEMA PRODUCTIVO?".
+#
+# No son intercambiables y el tablero debería mostrar ambos.
+
+meta:
+  version: 0
+  actualizado: 2026-09-30
+  estado: >
+    Los umbrales agronómicos son provisionales. Los heredados vienen del
+    prototipo, donde están marcados en el código como valores de ejemplo.
+    Los propuestos los agregamos aquí porque faltaban los sistemas
+    productivos reales de las asociaciones. Ninguno ha sido validado con
+    un agrónomo.
+
+# ---------------------------------------------------------------------------
+# 1. Umbral climatológico P80
+# ---------------------------------------------------------------------------
+# Definición (sección 1.2 del Reporte 1): valor del percentil 80 de la serie
+# histórica diaria en cada punto. Un día cálido es Tmax > P80 local. Una ola
+# de calor son 3 o más días consecutivos por encima.
+#
+# Es relativo a la climatología local: un municipio naturalmente fresco
+# requiere una desviación menor para superar su propio P80, por eso acumula
+# más eventos. No es una medida de temperatura absoluta.
+
+p80:
+  definicion:
+    percentil: 80
+    periodo_referencia: [1991, 2020]   # normal climatológica estándar OMM
+    fuente: agera5                     # ver nota_fuente
+    variables: [tmax, tmin, humedad_relativa]
+    dias_consecutivos_ola_calor: 3
+
+  nota_fuente: >
+    Se usa AgERA5 por consistencia con los mapas de riesgo de la sección 1.2
+    del Reporte 1, y porque el CDS de Copernicus permite recortar el área en
+    el servidor. La alternativa (MSWX/Past vía Drive) obligaría a descargar
+    ~11.000 archivos globales por variable, porque Drive solo entrega el globo
+    completo. Pendiente: medir el sesgo entre MSWX-NRT y AgERA5 sobre un
+    período común; si es apreciable, ajustar el umbral.
+
+  # Rellenado por scripts/calcular_p80.py. Valores en °C y %.
+  # PENDIENTE: ejecutar el script.
+  valores:
+    los_palmitos:          {tmax: null, tmin: null, humedad_relativa: null}
+    san_jose_de_toluviejo: {tmax: null, tmin: null, humedad_relativa: null}
+    icononzo:              {tmax: null, tmin: null, humedad_relativa: null}
+    planadas:              {tmax: null, tmin: null, humedad_relativa: null}
+    fonseca:               {tmax: null, tmin: null, humedad_relativa: null}
+    manaure:               {tmax: null, tmin: null, humedad_relativa: null}
+    el_paso:               {tmax: null, tmin: null, humedad_relativa: null}
+
+# ---------------------------------------------------------------------------
+# 2. Umbrales agronómicos por sistema productivo
+# ---------------------------------------------------------------------------
+# origen:
+#   heredado  = venía del prototipo, marcado allí como valor de ejemplo
+#   propuesto = lo agregamos nosotros; el sistema faltaba en el prototipo
+#
+# Ninguno está validado agronómicamente. Son el punto de partida para la
+# conversación con los técnicos en territorio.
+
+sistemas_productivos:
+
+  # --- Presentes en las asociaciones del proyecto ---
+
+  cafe:
+    tmax: 28
+    humedad_relativa: 75
+    origen: heredado
+    municipios: [icononzo, planadas, fonseca]
+    nota: HR alta se asocia a incidencia de roya.
+
+  yuca:
+    tmax: 34
+    humedad_relativa: 83
+    origen: heredado
+    municipios: [san_jose_de_toluviejo]
+
+  ganaderia:
+    tmax: 33
+    humedad_relativa: 80
+    origen: heredado
+    municipios: [fonseca, el_paso]
+    usar_ith: true
+
+  maiz:
+    tmax: 33
+    humedad_relativa: 80
+    origen: heredado
+    municipios: [fonseca]
+
+  porcicultura:
+    tmax: 30
+    humedad_relativa: 80
+    origen: propuesto
+    municipios: [los_palmitos, san_jose_de_toluviejo, manaure]
+    usar_ith: true
+    nota: >
+      Faltaba en el prototipo. Los cerdos no sudan y son especialmente
+      sensibles al estrés calórico. Los talleres reportaron enfermedades y
+      agresividad entre animales por altas temperaturas.
+
+  gallinas_ponedoras:
+    tmax: 30
+    humedad_relativa: 75
+    origen: propuesto
+    municipios: [el_paso]
+    usar_ith: true
+    nota: >
+      Faltaba en el prototipo. ASOINREPA reportó pérdida del 20 % de la
+      producción de huevos por altas temperaturas en 2026.
+
+  cacao:
+    tmax: 32
+    humedad_relativa: 80
+    origen: propuesto
+    municipios: [manaure]
+
+  aguacate:
+    tmax: 33
+    humedad_relativa: 80
+    origen: propuesto
+    municipios: [planadas]
+    nota: >
+      ASPROAGROPE reporta afectación por exceso de humedad y lluvias
+      torrenciales, no por sequía. Conviene un indicador de días de
+      encharcamiento además del de calor.
+
+  frutales:
+    tmax: 33
+    humedad_relativa: 80
+    origen: propuesto
+    municipios: [manaure]
+
+  maderables:
+    tmax: 34
+    humedad_relativa: 80
+    origen: propuesto
+    municipios: [manaure]
+
+  especies_menores:
+    tmax: 31
+    humedad_relativa: 80
+    origen: propuesto
+    municipios: [fonseca]
+    usar_ith: true
+
+  procesamiento_agroalimentario:
+    tmax: 33
+    humedad_relativa: 80
+    origen: propuesto
+    municipios: [san_jose_de_toluviejo]
+    nota: >
+      No es un cultivo. La sensibilidad de ASOCOMAN es a cortes de energía y
+      a fallas térmicas del deshidratador durante olas de calor.
+
+  # --- Del prototipo, sin asociación vinculada. Se conservan porque el
+  #     tablero permite escoger cultivo por departamento. ---
+  arroz:            {tmax: 35, humedad_relativa: 85, origen: heredado}
+  algodon:          {tmax: 36, humedad_relativa: 78, origen: heredado}
+  palma_de_aceite:  {tmax: 36, humedad_relativa: 88, origen: heredado}
+  ajonjoli:         {tmax: 33, humedad_relativa: 78, origen: heredado}
+  name:             {tmax: 32, humedad_relativa: 82, origen: heredado}
+  soya:             {tmax: 32, humedad_relativa: 80, origen: heredado}
+  cebolla_de_bulbo: {tmax: 30, humedad_relativa: 80, origen: heredado}
+  frijol:           {tmax: 30, humedad_relativa: 80, origen: heredado}
+  pancoger:         {tmax: 33, humedad_relativa: 82, origen: heredado}
+
+# ---------------------------------------------------------------------------
+# 3. Índice de temperatura y humedad (ITH)
+# ---------------------------------------------------------------------------
+# Para sistemas pecuarios, evaluar temperatura y humedad por separado es
+# engañoso: 33 °C con 60 % de HR y 33 °C con 85 % son situaciones muy
+# distintas para un animal, porque la humedad impide disipar calor.
+#
+# Se aplica a los sistemas marcados con usar_ith: true.
+# PENDIENTE: validar la formulación y los cortes con un zootecnista.
+
+ith:
+  formula: "(1.8 * T + 32) - (0.55 - 0.0055 * HR) * (1.8 * T - 26)"
+  variables: {T: tmax, HR: humedad_relativa}
+  estado: propuesto_sin_validar
+  categorias:
+    normal:    [null, 74]
+    alerta:    [75, 78]
+    peligro:   [79, 83]
+    emergencia: [84, null]
+
+# ---------------------------------------------------------------------------
+# 4. Indicadores de precipitación
+# ---------------------------------------------------------------------------
+
+precipitacion:
+  dia_con_lluvia_mm: 1.0   # >= 1 mm cuenta como día con lluvia
+
+  # Umbrales de lluvia ACUMULADA por duración del período. Un acumulado
+  # "fuerte" en un día es mucho menor que uno "fuerte" en un mes, así que
+  # cada ventana tiene su propia escala.
+  # origen: heredado del prototipo, referencia diaria IDEAM escalada.
+  acumulado_mm:
+    1:  {seco: 1,  moderada: 15,  fuerte: 40}
+    7:  {seco: 5,  moderada: 50,  fuerte: 100}
+    14: {seco: 10, moderada: 90,  fuerte: 180}
+    30: {seco: 15, moderada: 150, fuerte: 300}
+
+# ---------------------------------------------------------------------------
+# 5. Ventanas de agregación
+# ---------------------------------------------------------------------------
+# Corresponden a "qué sucedió ayer, -1 sem, -2 sem" del diseño original.
+
+ventanas:
+  ultima_fecha: 1
+  ultima_semana: 7
+  ultimas_2_semanas: 14
+  ultimo_mes: 30

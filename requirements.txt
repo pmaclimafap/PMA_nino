@@ -1,0 +1,27 @@
+# Dependencias del pipeline
+# Adaptado de aamaya03/PMA_Dashboard con tres cambios:
+#   - h5netcdf en vez de netCDF4: evita la librería C, que es una fuente
+#     clásica de fallos al instalar en CI.
+#   - sin gspread: los reportes de campo (Google Sheets) quedan fuera del
+#     alcance actual.
+#   - con pyyaml y pyarrow: configuración en YAML y salida en Parquet.
+
+# Datos climáticos
+xarray~=2026.1
+h5netcdf~=1.6
+rioxarray~=0.19
+numpy~=2.2
+pandas~=2.3
+
+# Geometrías
+geopandas~=1.1
+shapely~=2.1
+pyproj~=3.7
+
+# Acceso a Google Drive (cuenta de servicio)
+google-api-python-client~=2.180
+google-auth~=2.40
+
+# Configuración y salida
+pyyaml~=6.0
+pyarrow~=21.0
