@@ -46,7 +46,11 @@
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--color-bg); color: var(--color-ink); font-family: var(--font-body); line-height: 1.5; }
-  .wrap { max-width: 1040px; margin: 0 auto; padding: 32px 20px 60px; }
+  /* Ancho fluido: aprovecha la pantalla y solo pone tope en monitores muy
+     anchos. El texto no se estira porque header p ya está limitado a 85ch,
+     y el mapa y los gráficos sí se benefician del espacio. */
+  .wrap { max-width: min(1680px, 100% - 2.5rem); margin: 0 auto; padding: 32px 0 60px; }
+  @media (max-width: 40rem) { .wrap { max-width: 100%; padding: 24px 16px 48px; } }
   header h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(1.6rem, 3vw, 2.1rem); margin: 0 0 6px; }
   header p { color: var(--color-ink-soft); margin: 0; max-width: 85ch; font-size: 0.95rem; }
 
@@ -101,7 +105,9 @@
   .mapa-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 6px; }
   .mapa-header-texto { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; flex: 1; min-width: 200px; }
   .mapa-header h2 { font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; margin: 0; }
-  #mapa-leaflet { height: 460px; width: 100%; border-radius: var(--radius); overflow: hidden; }
+  /* Al ensanchar el contenedor, una altura fija deja el mapa apaisado en
+     exceso. clamp lo ata a la ventana con mínimo y máximo razonables. */
+  #mapa-leaflet { height: clamp(420px, 58vh, 640px); width: 100%; border-radius: var(--radius); overflow: hidden; }
   #campo-mapa-leaflet { height: 320px; width: 100%; border-radius: var(--radius); overflow: hidden; }
   #campo-mapa-leaflet .leaflet-interactive:focus { outline: none; }
   #mapa-leaflet .leaflet-interactive:focus { outline: none; }
