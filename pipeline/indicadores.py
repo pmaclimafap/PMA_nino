@@ -24,28 +24,64 @@ from pipeline import configuracion as config
 
 @dataclass
 class Banderas:
-    """Problemas detectados en los datos de un día.
+    """Problemas detectados en los datos de un municipio.
 
-    MSWX corrige el sesgo de cada variable por separado, así que la coherencia
-    entre ellas no está garantizada. Estos casos se MARCAN; no se corrigen ni
-    se descartan en silencio.
+    Se distinguen DOS niveles, porque mezclarlos vuelve la bandera inútil:
+
+    GRAVE — el dato es físicamente imposible o está fuera de rango. Es un
+      error del producto en ese día concreto y hay que mirarlo.
+
+    SESGO — la amplitud térmica es más baja de lo esperable. NO es un error
+      puntual: es una característica documentada de MSWX, que subestima Tmax
+      y sobrestima Tmin. Se reporta como proporción de la ventana, no como
+      incidencia por día, porque sobre 60 días ocurre casi siempre y marcar
+      al municipio no informaría nada.
     """
 
+    dias_evaluados: int = 0
     incoherencia_termica: list[str] = field(default_factory=list)
-    amplitud_baja: list[str] = field(default_factory=list)
     fuera_de_rango: list[str] = field(default_factory=list)
+    amplitud_baja: list[str] = field(default_factory=list)
+
+    MAX_EJEMPLOS = 10
+
+    @property
+    def graves(self) -> int:
+        return len(self.incoherencia_termica) + len(self.fuera_de_rango)
 
     @property
     def hay_problemas(self) -> bool:
-        return bool(
-            self.incoherencia_termica or self.amplitud_baja or self.fuera_de_rango
-        )
+        """Solo lo grave enciende la bandera del tablero."""
+        return self.graves > 0
+
+    @property
+    def fraccion_amplitud_baja(self) -> float:
+        if not self.dias_evaluados:
+            return 0.0
+        return len(self.amplitud_baja) / self.dias_evaluados
 
     def a_dict(self) -> dict:
+        recortar = lambda xs: xs[: self.MAX_EJEMPLOS]  # noqa: E731
         return {
-            "incoherencia_termica": self.incoherencia_termica,
-            "amplitud_baja": self.amplitud_baja,
-            "fuera_de_rango": self.fuera_de_rango,
+            "dias_evaluados": self.dias_evaluados,
+            "graves": self.graves,
+            "incoherencia_termica": {
+                "dias": len(self.incoherencia_termica),
+                "ejemplos": recortar(self.incoherencia_termica),
+            },
+            "fuera_de_rango": {
+                "dias": len(self.fuera_de_rango),
+                "ejemplos": recortar(self.fuera_de_rango),
+            },
+            # Informativo, no cuenta como problema.
+            "amplitud_baja": {
+                "dias": len(self.amplitud_baja),
+                "fraccion": round(self.fraccion_amplitud_baja, 2),
+                "nota": (
+                    "Sesgo conocido de MSWX (subestima Tmax, sobrestima Tmin), "
+                    "no un error puntual."
+                ),
+            },
         }
 
 
@@ -53,7 +89,7 @@ def revisar_calidad(pivote: pd.DataFrame) -> Banderas:
     """Revisa un DataFrame indexado por fecha con una columna por variable."""
     cfg = config.umbrales()
     qc = cfg["control_calidad"]
-    b = Banderas()
+    b = Banderas(dias_evaluados=len(pivote))
 
     for var, (minimo, maximo) in qc["rango_valido"].items():
         if var not in pivote.columns:
@@ -327,6 +363,8 @@ def calcular(df: pd.DataFrame) -> dict:
             "ultima_fecha_con_dato": str(ultima.date()),
             "dias_con_dato": int(len(pivote)),
             "calidad": banderas.a_dict(),
+            # Solo lo grave. El sesgo de amplitud se consulta en
+            # calidad.amplitud_baja.fraccion.
             "tiene_alertas_calidad": banderas.hay_problemas,
             "ventanas": por_ventana,
         }
