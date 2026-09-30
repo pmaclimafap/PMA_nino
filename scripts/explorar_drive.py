@@ -20,6 +20,7 @@ Uso:
 
 import json
 import os
+import re
 import sys
 
 from google.oauth2.service_account import Credentials
@@ -36,10 +37,19 @@ RAICES = {
     "MSWX": "1R1KRmldXmLj_09kzE2wKSrbXUzU3pQN9",
 }
 
-PROFUNDIDAD_MAX = 6      # MSWX/Mid/Temp/<fecha>/<miembro>/Daily
-MAX_HERMANOS = 4         # más que esto, se muestrea en vez de recorrer
+PROFUNDIDAD_MAX = 5
+MAX_HERMANOS = 15        # mas que esto, se muestrea en vez de recorrer
 ARCHIVOS_A_MOSTRAR = 8
 MAX_LLAMADAS = 400       # freno de seguridad
+
+# Ramas de pronostico: una carpeta por fecha de inicializacion y otra por
+# miembro del ensamble (decenas de miles). Se reporta que existen, no se
+# recorren. Su estructura ya se conoce:
+#   Mid/<Variable>/<AAAAMMDD_HH>/<miembro 01-30>/{Daily,3hourly}
+RAMAS_OMITIR = {"Mid", "Long"}
+
+# Nombres tipo 20260929_00 o 01: fechas de inicializacion y miembros
+PATRON_FECHA = re.compile(r"^\d{4,8}(_\d{2})?$")
 
 rutas_terminales: list[tuple[str, str]] = []
 lineas: list[str] = []
@@ -161,7 +171,8 @@ def recorrer(servicio, nombre: str, carpeta_id: str, ruta: str, nivel: int) -> N
 
     # Demasiados hermanos (fechas de inicializacion, miembros del ensamble):
     # se muestrea en vez de recorrer todo.
-    if len(subs) > MAX_HERMANOS:
+    parecen_fechas = sum(bool(PATRON_FECHA.match(s["name"])) for s in subs) > len(subs) / 2
+    if len(subs) > MAX_HERMANOS or parecen_fechas:
         log(f"{sangria}  [{len(subs)} subcarpetas - se exploran la primera y la ultima]")
         log(f"{sangria}  primera: {subs[0]['name']}   ultima: {subs[-1]['name']}")
         a_explorar = [subs[0], subs[-1]]
@@ -172,6 +183,10 @@ def recorrer(servicio, nombre: str, carpeta_id: str, ruta: str, nivel: int) -> N
         if presupuesto_agotado():
             log(f"{sangria}  [tope de llamadas alcanzado]")
             return
+        if sub["name"] in RAMAS_OMITIR:
+            log(f"{sangria}  {sub['name']}/  ->  {sub['id']}   "
+                f"[rama de pronostico, no se recorre]")
+            continue
         real_id, real_mime = resolver_atajo(servicio, sub)
         if real_mime and real_mime != MIME_CARPETA:
             continue
