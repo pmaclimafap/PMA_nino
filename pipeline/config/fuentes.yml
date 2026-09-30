@@ -14,6 +14,30 @@ meta:
   convencion_nombres: "AAAADDD.nc — año + día juliano (2026271.nc = 28-sep-2026)"
 
 # ---------------------------------------------------------------------------
+# Destino de los datos
+# ---------------------------------------------------------------------------
+# Tres comportamientos distintos, y la carpeta indica cual:
+#   observado/  reescribible. Si hay que recalcular, se regenera el mes.
+#   pronostico/ INMUTABLE. Un pronostico emitido no se puede volver a
+#               obtener de ninguna parte, asi que nunca se reescribe.
+#   derivado/   recalculable desde las dos anteriores; se puede borrar.
+#   estado/     que archivos ya se procesaron; evita redescargar todo.
+
+almacenamiento:
+  repo: pmaclimafap/monitoreo-nino-colombia
+  tipo: dataset
+
+  rutas:
+    observado: "observado/{anio}-{mes:02d}.parquet"
+    # Un archivo por FECHA DE EMISION, no por mes: si una escritura falla,
+    # se pierde un dia en lugar de un mes de historia irrecuperable.
+    pronostico_diario: "pronostico/diario/{anio}/{fecha}.parquet"
+    pronostico_estacional: "pronostico/estacional/{anio}/{anio}-{mes:02d}.parquet"
+    verificacion: "derivado/verificacion/{anio}.parquet"
+    ingesta: "estado/ingesta.parquet"
+    bitacora: "estado/bitacora.parquet"
+
+# ---------------------------------------------------------------------------
 # Ventana de revisión del tiempo casi real
 # ---------------------------------------------------------------------------
 # GloH2O: los archivos MSWEP-NRT con menos de 10 días se actualizan
