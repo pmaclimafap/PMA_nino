@@ -1,0 +1,60 @@
+name: 03 - Monitoreo diario
+
+# Los archivos de GloH2O se publican entre las 01:33 y las 01:38 UTC
+# (verificado el 30-09-2026, muy regular). Esta corrida a las 05:00 UTC deja
+# 3,5 horas de margen y equivale a medianoche en Colombia, así que el tablero
+# amanece actualizado.
+
+on:
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+    inputs:
+      dias:
+        description: "Días de ventana"
+        required: false
+        default: "60"
+      seco:
+        description: "Modo seco: no escribe en Hugging Face ni publica"
+        type: boolean
+        required: false
+        default: false
+
+# Una sola corrida a la vez: dos escrituras simultáneas en el dataset se
+# pisarían.
+concurrency:
+  group: datos
+  cancel-in-progress: false
+
+jobs:
+  monitoreo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install --quiet -r requirements.txt
+
+      - name: Ejecutar pipeline
+        env:
+          GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python scripts/diario.py \
+            --dias "${{ github.event.inputs.dias || '60' }}" \
+            ${{ github.event.inputs.seco == 'true' && '--seco' || '' }}
+
+      - name: Guardar lo publicado
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: publico
+          path: publico/
+          retention-days: 14
+          if-no-files-found: ignore
