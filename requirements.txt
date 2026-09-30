@@ -9,6 +9,7 @@
 # Datos climáticos
 xarray~=2026.1
 h5netcdf~=1.6
+h5py~=3.14        # backend de h5netcdf; no siempre se instala solo
 rioxarray~=0.19
 numpy~=2.2
 pandas~=2.3

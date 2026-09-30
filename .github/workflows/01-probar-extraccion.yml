@@ -1,0 +1,36 @@
+name: 01 - Probar extracción
+
+# Prueba del flujo completo (descarga, recorte, extracción) para unos pocos
+# días. No escribe resultados: valida que la cadena funciona antes de montar
+# el pipeline diario. Queda como herramienta de diagnóstico.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dias:
+        description: "Días hacia atrás a probar"
+        required: false
+        default: "5"
+
+jobs:
+  probar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --quiet --upgrade pip
+          pip install --quiet -r requirements.txt
+
+      - name: Probar
+        env:
+          GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+        run: python scripts/probar_extraccion.py "${{ github.event.inputs.dias || '5' }}"
