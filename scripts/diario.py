@@ -47,6 +47,18 @@ from pipeline.fuentes import gloh2o  # noqa: E402
 
 DIAS_VENTANA = 60          # lo que se publica
 DIAS_PUBLICADOS = 60
+
+# Versión del extractor. El registro de ingesta guarda con qué versión se
+# procesó cada archivo, y un archivo con versión menor se vuelve a procesar
+# aunque ya esté registrado.
+#
+# Sin esto, el registro solo sabe QUE procesó un archivo, no QUÉ extrajo de
+# él: al agregar la grilla, los 300 archivos ya estaban marcados como hechos
+# y la grilla nunca se habría extraído.
+#
+#   1  solo series puntuales
+#   2  series puntuales + grilla por pixel
+VERSION_EXTRACCION = 2
 DIR_PUBLICO = Path("publico/data")
 
 lineas: list[str] = []
@@ -68,8 +80,8 @@ def volcar_resumen() -> None:
 # 1 y 2. Qué hay que traer
 # ---------------------------------------------------------------------------
 
-def decidir_descargas(servicio, ingesta: pd.DataFrame, fechas: list[date]
-                      ) -> tuple[list[tuple], list[dict]]:
+def decidir_descargas(servicio, ingesta: pd.DataFrame, fechas: list[date],
+                      forzar: bool = False) -> tuple[list[tuple], list[dict]]:
     """Compara metadata de origen contra el registro propio.
 
     Un archivo se procesa si nunca se vio, o si su fecha de modificación en
@@ -80,22 +92,28 @@ def decidir_descargas(servicio, ingesta: pd.DataFrame, fechas: list[date]
     hoy = date.today()
     pendientes, faltantes = [], []
 
-    previos = {}
-    if not ingesta.empty:
-        previos = {
-            (r.carpeta, r.archivo): r.modificado_origen
-            for r in ingesta.itertuples()
-        }
+    previos: dict[tuple, tuple] = {}
+    if not ingesta.empty and not forzar:
+        tiene_version = "version" in ingesta.columns
+        for r in ingesta.itertuples():
+            version = getattr(r, "version", 1) if tiene_version else 1
+            previos[(r.carpeta, r.archivo)] = (
+                r.modificado_origen,
+                int(version) if pd.notna(version) else 1,
+            )
 
     for var, cfg in config.variables_activas().items():
         clave = cfg["clave_carpeta"]
         for fecha in fechas:
             antiguedad = (hoy - fecha).days
             nombre = gloh2o.nombre_archivo(fecha)
-            visto = previos.get((clave, nombre))
+            registro = previos.get((clave, nombre))
+            visto = registro[0] if registro else None
+            al_dia = bool(registro) and registro[1] >= VERSION_EXTRACCION
 
-            # Fuera de la ventana de revisión y ya procesado: no se mira.
-            if visto and antiguedad > ventana_revision:
+            # Ya procesado con el extractor actual y fuera de la ventana de
+            # revisión: no hay nada que mirar.
+            if al_dia and antiguedad > ventana_revision:
                 continue
 
             try:
@@ -112,7 +130,9 @@ def decidir_descargas(servicio, ingesta: pd.DataFrame, fechas: list[date]
                                   "motivo": "no publicado"})
                 continue
 
-            if remoto.cambio_respecto_a(visto):
+            # Se reprocesa si cambió en origen, o si se extrajo con una
+            # versión anterior del extractor.
+            if remoto.cambio_respecto_a(visto) or not al_dia:
                 pendientes.append((var, cfg, fecha, remoto))
 
     return pendientes, faltantes
@@ -170,6 +190,7 @@ def procesar(servicio, pendientes: list[tuple], tmp: Path
                 "modificado_origen": remoto.modificado,
                 "procesado": datetime.now(timezone.utc).isoformat(),
                 "estado": "ok",
+                "version": VERSION_EXTRACCION,
             })
 
         except Exception as e:
@@ -181,6 +202,7 @@ def procesar(servicio, pendientes: list[tuple], tmp: Path
                 "modificado_origen": remoto.modificado,
                 "procesado": datetime.now(timezone.utc).isoformat(),
                 "estado": f"error: {e}"[:200],
+                "version": VERSION_EXTRACCION,
             })
         finally:
             destino.unlink(missing_ok=True)
@@ -264,6 +286,8 @@ def main() -> int:
     ap.add_argument("--dias", type=int, default=DIAS_VENTANA)
     ap.add_argument("--seco", action="store_true",
                     help="No escribe en Hugging Face ni publica")
+    ap.add_argument("--forzar", action="store_true",
+                    help="Ignora el registro de ingesta y reprocesa todo")
     args = ap.parse_args()
 
     inicio = datetime.now(timezone.utc)
@@ -274,14 +298,18 @@ def main() -> int:
     log()
     log(f"Corrida {inicio.isoformat(timespec='seconds')} · "
         f"ventana {fechas[-1]} a {fechas[0]}"
-        + (" · MODO SECO" if args.seco else ""))
+        + (" · MODO SECO" if args.seco else "")
+        + (" · FORZADO" if args.forzar else ""))
     log()
 
     servicio = gloh2o.autenticar()
     ingesta = alm.leer_ingesta()
-    log(f"Registro de ingesta: {len(ingesta)} archivo(s) ya procesado(s).")
+    log(f"Registro de ingesta: {len(ingesta)} archivo(s) ya procesado(s)."
+        f" Extractor v{VERSION_EXTRACCION}.")
 
-    pendientes, faltantes = decidir_descargas(servicio, ingesta, fechas)
+    pendientes, faltantes = decidir_descargas(
+        servicio, ingesta, fechas, forzar=args.forzar
+    )
     log(f"Por descargar: **{len(pendientes)}** archivo(s) "
         f"de {len(fechas) * len(config.variables_activas())} posibles.")
     if faltantes:
@@ -347,7 +375,9 @@ def main() -> int:
     legado = exportar.construir(ventana, grilla)
     ruta_legado = exportar.escribir(legado, Path("publico/data.json"))
     log(f"Exportado: data.json ({ruta_legado.stat().st_size / 1024:.0f} KB)"
-        + ("" if not grilla.empty else " — SIN GRILLA, el mapa no tendrá datos reales"))
+        + ("" if not grilla.empty else
+           " — **SIN GRILLA**: el mapa no tendrá datos reales. "
+           "Correr con --forzar para extraerla."))
 
     con_alertas = [m for m, v in calc.items() if v.get("tiene_alertas_calidad")]
     if con_alertas:
