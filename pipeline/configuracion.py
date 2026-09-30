@@ -109,3 +109,4 @@ def madurez(dias_desde_la_fecha: int) -> str:
         if dias_desde_la_fecha >= desde and (hasta is None or dias_desde_la_fecha <= hasta):
             return estado
     return "consolidado"
+

@@ -1,86 +1,43 @@
 # Umbrales e indicadores
 #
-# Este archivo es DATO, no código. Se congela para que cualquier indicador
-# publicado sea reproducible: si los umbrales cambian, debe verse en el
-# historial de este archivo y no enterrado en un script.
+# Este archivo es DATO, no código. Se edita a mano y se congela: cualquier
+# indicador publicado debe ser reproducible, y si un umbral cambia tiene que
+# verse en el historial de este archivo, no enterrado en un script.
 #
-# Dos tipos de umbral conviven aquí:
-#
-#   1. CLIMATOLÓGICO (P80). Relativo a la historia de cada punto. Responde a
-#      "¿este día fue caluroso PARA ESTE LUGAR?". Lo calcula un script una
-#      sola vez y queda congelado.
-#
-#   2. AGRONÓMICO. Absoluto, depende del cultivo o del animal. Responde a
-#      "¿este día hizo daño A ESTE SISTEMA PRODUCTIVO?".
-#
-# No son intercambiables y el tablero debería mostrar ambos.
+# LOS UMBRALES SE DEFINEN CON CONOCIMIENTO LOCAL, no estadísticamente.
+# Un percentil dice si un día fue inusual para el lugar; un umbral agronómico
+# dice si ese día le hizo daño al cultivo o al animal. Para activar medidas
+# anticipatorias sirve lo segundo.
 
 meta:
   version: 0
   actualizado: 2026-09-30
   estado: >
-    Los umbrales agronómicos son provisionales. Los heredados vienen del
-    prototipo, donde están marcados en el código como valores de ejemplo.
-    Los propuestos los agregamos aquí porque faltaban los sistemas
-    productivos reales de las asociaciones. Ninguno ha sido validado con
-    un agrónomo.
+    Valores de partida, pendientes de definición con los técnicos en
+    territorio. El campo `origen` indica de dónde salió cada uno:
+      heredado  - venía del tablero prototipo, marcado allí como ejemplo
+      propuesto - lo agregamos porque el sistema productivo faltaba
+      local     - definido con los técnicos o las asociaciones  <-- objetivo
+    Al validar un valor, cambiar `origen` a `local` y llenar `fuente`.
 
 # ---------------------------------------------------------------------------
-# 1. Umbral climatológico P80
+# Umbrales por sistema productivo
 # ---------------------------------------------------------------------------
-# Definición (sección 1.2 del Reporte 1): valor del percentil 80 de la serie
-# histórica diaria en cada punto. Un día cálido es Tmax > P80 local. Una ola
-# de calor son 3 o más días consecutivos por encima.
-#
-# Es relativo a la climatología local: un municipio naturalmente fresco
-# requiere una desviación menor para superar su propio P80, por eso acumula
-# más eventos. No es una medida de temperatura absoluta.
-
-p80:
-  definicion:
-    percentil: 80
-    periodo_referencia: [1991, 2020]   # normal climatológica estándar OMM
-    fuente: agera5                     # ver nota_fuente
-    variables: [tmax, tmin, humedad_relativa]
-    dias_consecutivos_ola_calor: 3
-
-  nota_fuente: >
-    Se usa AgERA5 por consistencia con los mapas de riesgo de la sección 1.2
-    del Reporte 1, y porque el CDS de Copernicus permite recortar el área en
-    el servidor. La alternativa (MSWX/Past vía Drive) obligaría a descargar
-    ~11.000 archivos globales por variable, porque Drive solo entrega el globo
-    completo. Pendiente: medir el sesgo entre MSWX-NRT y AgERA5 sobre un
-    período común; si es apreciable, ajustar el umbral.
-
-  # Rellenado por scripts/calcular_p80.py. Valores en °C y %.
-  # PENDIENTE: ejecutar el script.
-  valores:
-    los_palmitos:          {tmax: null, tmin: null, humedad_relativa: null}
-    san_jose_de_toluviejo: {tmax: null, tmin: null, humedad_relativa: null}
-    icononzo:              {tmax: null, tmin: null, humedad_relativa: null}
-    planadas:              {tmax: null, tmin: null, humedad_relativa: null}
-    fonseca:               {tmax: null, tmin: null, humedad_relativa: null}
-    manaure:               {tmax: null, tmin: null, humedad_relativa: null}
-    el_paso:               {tmax: null, tmin: null, humedad_relativa: null}
-
-# ---------------------------------------------------------------------------
-# 2. Umbrales agronómicos por sistema productivo
-# ---------------------------------------------------------------------------
-# origen:
-#   heredado  = venía del prototipo, marcado allí como valor de ejemplo
-#   propuesto = lo agregamos nosotros; el sistema faltaba en el prototipo
-#
-# Ninguno está validado agronómicamente. Son el punto de partida para la
-# conversación con los técnicos en territorio.
+# tmax             °C. Por encima de este valor el día cuenta como de calor.
+# humedad_relativa %. Por encima, día de humedad alta.
+# usar_ith         Sistemas pecuarios: además se evalúa el índice combinado.
+# municipios       Dónde aplica, según las asociaciones del proyecto.
+# fuente           Quién validó el valor y con qué criterio. Llenar.
 
 sistemas_productivos:
 
-  # --- Presentes en las asociaciones del proyecto ---
+  # === Sistemas presentes en las asociaciones del proyecto ===
 
   cafe:
     tmax: 28
     humedad_relativa: 75
     origen: heredado
+    fuente: null
     municipios: [icononzo, planadas, fonseca]
     nota: HR alta se asocia a incidencia de roya.
 
@@ -88,120 +45,172 @@ sistemas_productivos:
     tmax: 34
     humedad_relativa: 83
     origen: heredado
+    fuente: null
     municipios: [san_jose_de_toluviejo]
 
   ganaderia:
     tmax: 33
     humedad_relativa: 80
     origen: heredado
-    municipios: [fonseca, el_paso]
+    fuente: null
     usar_ith: true
+    municipios: [fonseca, el_paso]
 
   maiz:
     tmax: 33
     humedad_relativa: 80
     origen: heredado
+    fuente: null
     municipios: [fonseca]
 
   porcicultura:
     tmax: 30
     humedad_relativa: 80
     origen: propuesto
-    municipios: [los_palmitos, san_jose_de_toluviejo, manaure]
+    fuente: null
     usar_ith: true
+    municipios: [los_palmitos, san_jose_de_toluviejo, manaure]
     nota: >
-      Faltaba en el prototipo. Los cerdos no sudan y son especialmente
-      sensibles al estrés calórico. Los talleres reportaron enfermedades y
-      agresividad entre animales por altas temperaturas.
+      Los cerdos no sudan y son muy sensibles al estrés calórico. Los talleres
+      reportaron enfermedades y agresividad entre animales por altas
+      temperaturas. Valor a validar con zootecnista.
 
   gallinas_ponedoras:
     tmax: 30
     humedad_relativa: 75
     origen: propuesto
-    municipios: [el_paso]
+    fuente: null
     usar_ith: true
+    municipios: [el_paso]
     nota: >
-      Faltaba en el prototipo. ASOINREPA reportó pérdida del 20 % de la
-      producción de huevos por altas temperaturas en 2026.
+      ASOINREPA reportó pérdida del 20 % de la producción de huevos por altas
+      temperaturas en 2026. Ese dato permite calibrar el umbral contra un
+      efecto observado.
 
   cacao:
     tmax: 32
     humedad_relativa: 80
     origen: propuesto
+    fuente: null
     municipios: [manaure]
 
   aguacate:
     tmax: 33
     humedad_relativa: 80
     origen: propuesto
+    fuente: null
     municipios: [planadas]
     nota: >
       ASPROAGROPE reporta afectación por exceso de humedad y lluvias
-      torrenciales, no por sequía. Conviene un indicador de días de
-      encharcamiento además del de calor.
+      torrenciales, no por sequía. Conviene un indicador de encharcamiento
+      además del de calor.
 
   frutales:
     tmax: 33
     humedad_relativa: 80
     origen: propuesto
+    fuente: null
     municipios: [manaure]
 
   maderables:
     tmax: 34
     humedad_relativa: 80
     origen: propuesto
+    fuente: null
     municipios: [manaure]
 
   especies_menores:
     tmax: 31
     humedad_relativa: 80
     origen: propuesto
-    municipios: [fonseca]
+    fuente: null
     usar_ith: true
+    municipios: [fonseca]
 
   procesamiento_agroalimentario:
     tmax: 33
     humedad_relativa: 80
     origen: propuesto
+    fuente: null
     municipios: [san_jose_de_toluviejo]
     nota: >
-      No es un cultivo. La sensibilidad de ASOCOMAN es a cortes de energía y
-      a fallas térmicas del deshidratador durante olas de calor.
+      No es un cultivo. La sensibilidad de ASOCOMAN es a cortes de energía y a
+      fallas térmicas del deshidratador durante olas de calor.
 
-  # --- Del prototipo, sin asociación vinculada. Se conservan porque el
-  #     tablero permite escoger cultivo por departamento. ---
-  arroz:            {tmax: 35, humedad_relativa: 85, origen: heredado}
-  algodon:          {tmax: 36, humedad_relativa: 78, origen: heredado}
-  palma_de_aceite:  {tmax: 36, humedad_relativa: 88, origen: heredado}
-  ajonjoli:         {tmax: 33, humedad_relativa: 78, origen: heredado}
-  name:             {tmax: 32, humedad_relativa: 82, origen: heredado}
-  soya:             {tmax: 32, humedad_relativa: 80, origen: heredado}
-  cebolla_de_bulbo: {tmax: 30, humedad_relativa: 80, origen: heredado}
-  frijol:           {tmax: 30, humedad_relativa: 80, origen: heredado}
-  pancoger:         {tmax: 33, humedad_relativa: 82, origen: heredado}
+  # === Del prototipo, sin asociación vinculada ===
+  # Se conservan porque el tablero deja escoger cultivo por departamento.
+  arroz:            {tmax: 35, humedad_relativa: 85, origen: heredado, fuente: null}
+  algodon:          {tmax: 36, humedad_relativa: 78, origen: heredado, fuente: null}
+  palma_de_aceite:  {tmax: 36, humedad_relativa: 88, origen: heredado, fuente: null}
+  ajonjoli:         {tmax: 33, humedad_relativa: 78, origen: heredado, fuente: null}
+  name:             {tmax: 32, humedad_relativa: 82, origen: heredado, fuente: null}
+  soya:             {tmax: 32, humedad_relativa: 80, origen: heredado, fuente: null}
+  cebolla_de_bulbo: {tmax: 30, humedad_relativa: 80, origen: heredado, fuente: null}
+  frijol:           {tmax: 30, humedad_relativa: 80, origen: heredado, fuente: null}
+  pancoger:         {tmax: 33, humedad_relativa: 82, origen: heredado, fuente: null}
 
 # ---------------------------------------------------------------------------
-# 3. Índice de temperatura y humedad (ITH)
+# Indicadores de temperatura
+# ---------------------------------------------------------------------------
+
+temperatura:
+  # Tres o más días consecutivos por encima del umbral del sistema productivo.
+  #
+  # NOTA: el Reporte 1 (sección 1.2) define la ola de calor contra el P80
+  # climatológico local. Aquí se define contra el umbral absoluto del cultivo.
+  # Son dos definiciones distintas y NO son comparables:
+  #   P80      -> "¿fue un día inusual PARA ESTE LUGAR?"
+  #   absoluto -> "¿le hizo daño A ESTE SISTEMA PRODUCTIVO?"
+  # Para activar medidas anticipatorias sirve la segunda. No mezclarlas en una
+  # misma figura ni en un mismo texto.
+  dias_consecutivos_ola_calor: 3
+
+  # Amplitud térmica diaria (Tmax - Tmin) por debajo de la cual se marca el
+  # dato como sospechoso. MSWX subestima Tmax y sobrestima Tmin, así que
+  # comprime la amplitud; en la prueba del 30-09-2026 se observaron valores
+  # de 0,3 a 8 °C en zonas donde se esperarían 8 a 12 °C.
+  amplitud_minima_esperada: 2.0
+
+# ---------------------------------------------------------------------------
+# Control de calidad
+# ---------------------------------------------------------------------------
+# MSWX corrige el sesgo de cada variable por separado, así que la coherencia
+# entre ellas no está garantizada. En la prueba del 30-09-2026 se detectó
+# Tmax < Temp en Manaure (26-sep). Estos casos se MARCAN, no se descartan en
+# silencio ni se corrigen.
+
+control_calidad:
+  exigir_tmin_menor_igual_temp_menor_igual_tmax: true
+  marcar_amplitud_baja: true
+  rango_valido:
+    tmax: [-10, 55]
+    tmin: [-20, 40]
+    temperatura: [-15, 50]
+    humedad_relativa: [0, 100]
+    precipitacion: [0, 500]
+
+# ---------------------------------------------------------------------------
+# Índice de temperatura y humedad (ITH)
 # ---------------------------------------------------------------------------
 # Para sistemas pecuarios, evaluar temperatura y humedad por separado es
 # engañoso: 33 °C con 60 % de HR y 33 °C con 85 % son situaciones muy
 # distintas para un animal, porque la humedad impide disipar calor.
 #
 # Se aplica a los sistemas marcados con usar_ith: true.
-# PENDIENTE: validar la formulación y los cortes con un zootecnista.
+# PENDIENTE: validar formulación y cortes con un zootecnista.
 
 ith:
   formula: "(1.8 * T + 32) - (0.55 - 0.0055 * HR) * (1.8 * T - 26)"
   variables: {T: tmax, HR: humedad_relativa}
   estado: propuesto_sin_validar
   categorias:
-    normal:    [null, 74]
-    alerta:    [75, 78]
-    peligro:   [79, 83]
+    normal:     [null, 74]
+    alerta:     [75, 78]
+    peligro:    [79, 83]
     emergencia: [84, null]
 
 # ---------------------------------------------------------------------------
-# 4. Indicadores de precipitación
+# Indicadores de precipitación
 # ---------------------------------------------------------------------------
 
 precipitacion:
@@ -218,7 +227,7 @@ precipitacion:
     30: {seco: 15, moderada: 150, fuerte: 300}
 
 # ---------------------------------------------------------------------------
-# 5. Ventanas de agregación
+# Ventanas de agregación
 # ---------------------------------------------------------------------------
 # Corresponden a "qué sucedió ayer, -1 sem, -2 sem" del diseño original.
 
