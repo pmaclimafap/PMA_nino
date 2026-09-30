@@ -1,0 +1,142 @@
+name: Verificar acceso a GloH2O
+
+# Workflow de diagnóstico. No procesa datos: solo confirma que rclone puede
+# leer las carpetas compartidas desde Actions y mapea su estructura real.
+# Su salida define las rutas que usará el pipeline, para no adivinarlas.
+#
+# Se ejecuta a mano. Cuando el pipeline real esté andando, este queda como
+# herramienta de diagnóstico para cuando algo falle.
+
+on:
+  workflow_dispatch:
+    inputs:
+      profundidad:
+        description: "Niveles de carpetas a explorar"
+        required: false
+        default: "3"
+      listar_archivos:
+        description: "Listar también archivos recientes de las carpetas Daily"
+        type: boolean
+        required: false
+        default: true
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Instalar rclone
+        run: |
+          curl -fsSL https://rclone.org/install.sh | sudo bash
+          rclone version
+
+      - name: Restaurar configuración de rclone
+        env:
+          RCLONE_CONFIG_B64: ${{ secrets.RCLONE_CONFIG_B64 }}
+        run: |
+          if [ -z "$RCLONE_CONFIG_B64" ]; then
+            echo "::error::Falta el secreto RCLONE_CONFIG_B64. Ver docs/CONFIGURAR_RCLONE.md"
+            exit 1
+          fi
+          mkdir -p ~/.config/rclone
+          echo "$RCLONE_CONFIG_B64" | base64 -d > ~/.config/rclone/rclone.conf
+          chmod 600 ~/.config/rclone/rclone.conf
+          # Confirma que el remoto se llama 'gloh2o' sin exponer el token
+          if ! rclone listremotes | grep -q '^gloh2o:'; then
+            echo "::error::La configuración no define un remoto llamado 'gloh2o'."
+            echo "Remotos encontrados: $(rclone listremotes | tr '\n' ' ')"
+            exit 1
+          fi
+          echo "Configuración restaurada."
+
+      - name: Carpetas compartidas por GloH2O
+        run: |
+          echo "## Carpetas compartidas" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          rclone lsd gloh2o: --drive-shared-with-me 2>&1 | tee carpetas.txt
+          cat carpetas.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+          if [ ! -s carpetas.txt ]; then
+            echo "::error::No se ven carpetas compartidas. Revisa que autenticaste con la cuenta que recibió el acceso."
+            exit 1
+          fi
+
+      - name: Estructura interna de cada producto
+        run: |
+          PROF="${{ github.event.inputs.profundidad || '3' }}"
+          echo "## Estructura de carpetas (profundidad $PROF)" >> $GITHUB_STEP_SUMMARY
+
+          # Nombres de las carpetas de primer nivel, tal como los reporta Drive
+          rclone lsf gloh2o: --drive-shared-with-me --dirs-only | sed 's:/$::' > raices.txt
+
+          while IFS= read -r raiz; do
+            [ -z "$raiz" ] && continue
+            echo ""
+            echo "=== $raiz ==="
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### $raiz" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            rclone lsf "gloh2o:$raiz" \
+              --drive-shared-with-me \
+              --dirs-only --recursive --max-depth "$PROF" 2>&1 \
+              | head -200 | tee -a $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          done < raices.txt
+
+      - name: Archivos recientes y fechas de modificación
+        if: ${{ github.event.inputs.listar_archivos != 'false' }}
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Archivos recientes en carpetas Daily" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "La columna ModTime es la que el pipeline compara para detectar" >> $GITHUB_STEP_SUMMARY
+          echo "las revisiones del NRT dentro de la ventana de 10 dias." >> $GITHUB_STEP_SUMMARY
+
+          # Busca cualquier ruta que termine en Daily dentro de las ramas NRT
+          while IFS= read -r raiz; do
+            [ -z "$raiz" ] && continue
+            rclone lsf "gloh2o:$raiz" \
+              --drive-shared-with-me \
+              --dirs-only --recursive --max-depth 4 2>/dev/null \
+              | grep -iE 'NRT/.*Daily/$' \
+              | sed "s|^|$raiz/|" >> rutas_daily.txt || true
+          done < raices.txt
+
+          if [ ! -s rutas_daily.txt ]; then
+            echo "::warning::No se encontraron carpetas NRT/*/Daily. Revisa la estructura del paso anterior."
+            exit 0
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          while IFS= read -r ruta; do
+            ruta="${ruta%/}"
+            echo ""
+            echo "--- $ruta ---"
+            echo "### \`$ruta\`" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            # Los 10 mas recientes por nombre; el nombre es YYYYDDD.nc, asi que
+            # ordenar alfabeticamente equivale a ordenar cronologicamente.
+            rclone lsjson "gloh2o:$ruta" --drive-shared-with-me 2>/dev/null \
+              | python3 -c "
+import json, sys
+try:
+    f = json.load(sys.stdin)
+except Exception as e:
+    print('no se pudo leer:', e); sys.exit()
+f = [x for x in f if not x.get('IsDir')]
+f.sort(key=lambda x: x['Name'], reverse=True)
+print(f'{len(f)} archivos en total')
+print(f'{\"archivo\":<16}{\"tamano\":>12}  modificado')
+for x in f[:10]:
+    print(f'{x[\"Name\"]:<16}{x[\"Size\"]:>12,}  {x[\"ModTime\"]}')
+" | tee -a $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          done < rutas_daily.txt
+
+      - name: Resultado
+        run: |
+          echo ""
+          echo "Verificacion terminada. Revisa el resumen del job."
+          echo "Las rutas listadas son las que se configuran en pipeline/config/fuentes.yml"
