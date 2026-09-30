@@ -29,6 +29,10 @@ almacenamiento:
 
   rutas:
     observado: "observado/{anio}-{mes:02d}.parquet"
+    # Grilla por pixel dentro de cada municipio: alimenta el mapa del
+    # tablero. Sin esto el frontend cae en una grilla simulada y mostraria
+    # variacion espacial inventada.
+    observado_grilla: "observado_grilla/{anio}-{mes:02d}.parquet"
     # Un archivo por FECHA DE EMISION, no por mes: si una escritura falla,
     # se pierde un dia en lugar de un mes de historia irrecuperable.
     pronostico_diario: "pronostico/diario/{anio}/{fecha}.parquet"

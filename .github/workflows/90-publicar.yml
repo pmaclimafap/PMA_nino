@@ -1,0 +1,82 @@
+name: 90 - Publicar sitio
+
+# Despliega el tablero a GitHub Pages desde un artefacto de build: sin hacer
+# commit y sin rama de datos. Nada entra a git, así que el historial no crece
+# con una corrida diaria.
+#
+# El sitio se arma juntando dos cosas:
+#   web/          el tablero (heredado del prototipo, migrado)
+#   publico/      los datos que produjo el pipeline diario
+#
+# Todo queda en el mismo origen, que es lo que necesita un Service Worker
+# para funcionar sin conexión en territorio.
+#
+# REQUISITO DE UNA SOLA VEZ: en Settings -> Pages, poner Source = GitHub Actions.
+
+on:
+  workflow_run:
+    workflows: ["03 - Monitoreo diario"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    # No publicar si el pipeline falló: mejor dejar el sitio anterior en pie
+    # que reemplazarlo por uno sin datos.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.desplegar.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Traer los datos de la corrida diaria
+        if: github.event_name == 'workflow_run'
+        uses: actions/download-artifact@v4
+        with:
+          name: publico
+          path: publico
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Armar el sitio
+        run: |
+          mkdir -p sitio
+          cp -r web/. sitio/ 2>/dev/null || {
+            echo "::error::Falta la carpeta web/ con el tablero."
+            exit 1
+          }
+          if [ -d publico ]; then
+            cp -r publico/. sitio/
+            echo "Datos incluidos:"
+            find sitio -name "*.json" -exec ls -lh {} \;
+          else
+            echo "::warning::Sin datos. El tablero debe mostrar el estado vacío."
+          fi
+          # .nojekyll evita que Pages ignore archivos que empiezan con _
+          touch sitio/.nojekyll
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: sitio
+      - id: desplegar
+        uses: actions/deploy-pages@v4
+
+      - name: Dónde quedó
+        run: |
+          echo "## Sitio publicado" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.desplegar.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY

@@ -34,9 +34,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pandas as pd  # noqa: E402
 
+import geopandas as gpd  # noqa: E402
+
 from pipeline import (  # noqa: E402
     almacenamiento as alm,
     configuracion as config,
+    exportar,
     extraccion,
     indicadores,
 )
@@ -120,10 +123,13 @@ def decidir_descargas(servicio, ingesta: pd.DataFrame, fechas: list[date]
 # ---------------------------------------------------------------------------
 
 def procesar(servicio, pendientes: list[tuple], tmp: Path
-             ) -> tuple[pd.DataFrame, pd.DataFrame, list[dict]]:
+             ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, list[dict]]:
     municipios = config.municipios()
     hoy = date.today()
-    filas, registros, errores = [], [], []
+    # Geometrias para el recorte por poligono. Solo tres variables tienen
+    # mapa en el tablero; extraer la grilla de las cinco seria desperdicio.
+    geo = gpd.read_file(config.ruta_geojson()).set_index("id")
+    filas, celdas, registros, errores = [], [], [], []
 
     for var, cfg, fecha, remoto in pendientes:
         destino = tmp / f"{var}_{remoto.nombre}"
@@ -136,6 +142,17 @@ def procesar(servicio, pendientes: list[tuple], tmp: Path
 
             madurez = config.madurez((hoy - fecha).days)
             ahora = datetime.now(timezone.utc)
+
+            if var in exportar.GRILLAS:
+                plano = sub.isel(time=0) if "time" in sub.dims else sub
+                for m in municipios:
+                    for c in extraccion.extraer_grilla(
+                        plano, geo.loc[m.id, "geometry"]
+                    ):
+                        celdas.append({
+                            "fecha": fecha, "municipio": m.id, "variable": var,
+                            "lat": c["lat"], "lon": c["lon"], "valor": c["valor"],
+                        })
             for r in df.itertuples():
                 filas.append({
                     "fecha": fecha,
@@ -168,7 +185,8 @@ def procesar(servicio, pendientes: list[tuple], tmp: Path
         finally:
             destino.unlink(missing_ok=True)
 
-    return pd.DataFrame(filas), pd.DataFrame(registros), errores
+    return (pd.DataFrame(filas), pd.DataFrame(celdas),
+            pd.DataFrame(registros), errores)
 
 
 # ---------------------------------------------------------------------------
@@ -270,11 +288,14 @@ def main() -> int:
         log(f"Sin publicar o con fallo de consulta: {len(faltantes)}.")
     log()
 
-    nuevos, registros, errores = pd.DataFrame(), pd.DataFrame(), []
+    nuevos = celdas = registros = pd.DataFrame()
+    errores: list[dict] = []
     if pendientes:
         with tempfile.TemporaryDirectory() as tmp:
-            nuevos, registros, errores = procesar(servicio, pendientes, Path(tmp))
-        log(f"Extraídas {len(nuevos)} fila(s)."
+            nuevos, celdas, registros, errores = procesar(
+                servicio, pendientes, Path(tmp)
+            )
+        log(f"Extraídas {len(nuevos)} fila(s) y {len(celdas)} celda(s) de grilla."
             + (f" {len(errores)} error(es)." if errores else ""))
     else:
         log("Nada nuevo en origen.")
@@ -290,6 +311,8 @@ def main() -> int:
 
     if not nuevos.empty:
         rutas = alm.guardar_observado(nuevos)
+        if not celdas.empty:
+            rutas += alm.guardar_grilla(celdas)
         alm.guardar_ingesta(ingesta, registros)
         log(f"Guardado en: {', '.join(rutas)}")
 
@@ -307,8 +330,24 @@ def main() -> int:
     ventana["fecha"] = pd.to_datetime(ventana["fecha"])
     ventana = ventana[ventana.fecha >= pd.Timestamp(fechas[-1])]
 
+    # Grilla del mismo rango, para el mapa del tablero
+    g_partes = [alm.leer(alm.ruta("observado_grilla", anio=a, mes=m))
+                for a, m in meses]
+    g_partes = [p for p in g_partes if not p.empty]
+    grilla = pd.concat(g_partes, ignore_index=True) if g_partes else pd.DataFrame()
+    if not grilla.empty:
+        grilla["fecha"] = pd.to_datetime(grilla["fecha"])
+        grilla = grilla[grilla.fecha >= pd.Timestamp(fechas[-1])]
+
     calc = indicadores.calcular(ventana)
     publicar(ventana, calc, faltantes, errores)
+
+    # data.json en el esquema del tablero existente. Sin la grilla el
+    # frontend genera una simulada y muestra variacion espacial inventada.
+    legado = exportar.construir(ventana, grilla)
+    ruta_legado = exportar.escribir(legado, Path("publico/data.json"))
+    log(f"Exportado: data.json ({ruta_legado.stat().st_size / 1024:.0f} KB)"
+        + ("" if not grilla.empty else " — SIN GRILLA, el mapa no tendrá datos reales"))
 
     con_alertas = [m for m, v in calc.items() if v.get("tiene_alertas_calidad")]
     if con_alertas:

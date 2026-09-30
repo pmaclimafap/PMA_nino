@@ -156,6 +156,41 @@ def guardar_observado(df: pd.DataFrame) -> list[str]:
     return escritas
 
 
+CLAVE_GRILLA = ["fecha", "municipio", "variable", "lat", "lon"]
+
+
+def guardar_grilla(df: pd.DataFrame) -> list[str]:
+    """Guarda la grilla por pixel, agrupada por mes.
+
+    Va en su propia tabla y no junto a los puntos porque tiene otra
+    granularidad: una fila por celda, no por municipio. Mezclarlas obligaría
+    a filtrar por lat/lon nulos en cada consulta.
+    """
+    if df.empty:
+        return []
+
+    df = df.copy()
+    df["fecha"] = pd.to_datetime(df["fecha"])
+    escritas = []
+
+    for (anio, mes), grupo in df.groupby([df.fecha.dt.year, df.fecha.dt.month]):
+        destino = ruta("observado_grilla", anio=anio, mes=mes)
+        existente = leer(destino)
+        if existente.empty:
+            fusionado = grupo
+        else:
+            fusionado = pd.concat([existente, grupo], ignore_index=True)
+            fusionado = fusionado.drop_duplicates(subset=CLAVE_GRILLA, keep="last")
+        escribir(
+            fusionado.sort_values(CLAVE_GRILLA),
+            destino,
+            f"grilla {anio}-{mes:02d}: {len(grupo)} celda(s)",
+        )
+        escritas.append(destino)
+
+    return escritas
+
+
 # ---------------------------------------------------------------------------
 # Pronóstico: inmutable
 # ---------------------------------------------------------------------------

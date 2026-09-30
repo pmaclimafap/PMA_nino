@@ -21,6 +21,7 @@ municipios:
 
   - id: los_palmitos
     nombre: Los Palmitos
+    nombre_tablero: "Los Palmitos (Sucre)"
     departamento: Sucre
     punto: {lat: 9.4191, lon: -75.1869}
     area_km2: 205
@@ -35,6 +36,7 @@ municipios:
 
   - id: san_jose_de_toluviejo
     nombre: San José de Toluviejo
+    nombre_tablero: "San José de Toluviejo (Sucre)"
     departamento: Sucre
     punto: {lat: 9.5078, lon: -75.4452}
     area_km2: 282
@@ -52,6 +54,7 @@ municipios:
 
   - id: icononzo
     nombre: Icononzo
+    nombre_tablero: "Icononzo (Tolima)"
     departamento: Tolima
     punto: {lat: 4.1203, lon: -74.5447}
     area_km2: 215
@@ -66,6 +69,7 @@ municipios:
 
   - id: planadas
     nombre: Planadas
+    nombre_tablero: "Planadas (Tolima)"
     departamento: Tolima
     punto: {lat: 3.0965, lon: -75.8542}
     area_km2: 1576
@@ -88,6 +92,7 @@ municipios:
 
   - id: fonseca
     nombre: Fonseca
+    nombre_tablero: "Fonseca (La Guajira)"
     departamento: La Guajira
     punto: {lat: 10.8529, lon: -72.7932}
     area_km2: 467
@@ -105,6 +110,7 @@ municipios:
 
   - id: manaure
     nombre: Manaure Balcón del Cesar
+    nombre_tablero: "Manaure (Cesar)"
     departamento: Cesar
     punto: {lat: 10.3764, lon: -72.9963}
     area_km2: 143
@@ -123,6 +129,7 @@ municipios:
 
   - id: el_paso
     nombre: El Paso
+    nombre_tablero: "El Paso (Cesar)"
     departamento: Cesar
     punto: {lat: 9.6984, lon: -73.7224}
     area_km2: 844
