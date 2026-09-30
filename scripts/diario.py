@@ -39,6 +39,7 @@ import geopandas as gpd  # noqa: E402
 from pipeline import (  # noqa: E402
     almacenamiento as alm,
     configuracion as config,
+    enso,
     exportar,
     extraccion,
     indicadores,
@@ -372,7 +373,18 @@ def main() -> int:
 
     # data.json en el esquema del tablero existente. Sin la grilla el
     # frontend genera una simulada y muestra variacion espacial inventada.
-    legado = exportar.construir(ventana, grilla)
+    # El índice ONI se consulta en cada corrida. Si la NOAA no responde,
+    # obtener() devuelve valor nulo y el tablero muestra "sin dato": un
+    # índice equivocado es peor que ninguno cuando se comunica si viene o
+    # no una sequía.
+    estado_enso = enso.obtener()
+    if estado_enso.get("valor") is None:
+        log(f"ENSO: sin dato — {estado_enso.get('categoria')}")
+    else:
+        log(f"ENSO: {estado_enso['valor']:+.2f} ({estado_enso['categoria']}) "
+            f"· {estado_enso['trimestre']} · {estado_enso['historico']['texto']}")
+
+    legado = exportar.construir(ventana, grilla, enso=estado_enso)
     ruta_legado = exportar.escribir(legado, Path("publico/data.json"))
     log(f"Exportado: data.json ({ruta_legado.stat().st_size / 1024:.0f} KB)"
         + ("" if not grilla.empty else

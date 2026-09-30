@@ -677,9 +677,16 @@ function pintarEnso() {
   document.getElementById("enso-gauge").innerHTML = svg;
   const fase = e.valor >= 0.5 ? "El Niño" : e.valor <= -0.5 ? "La Niña" : "Normal";
   document.getElementById("enso-fase-texto").textContent = `Fase ENSO: ${fase}`;
+  // Contexto histórico y provisionalidad: el valor del trimestre más
+  // reciente puede cambiar hasta dos meses después de publicarse.
+  const ranking = e.historico && e.historico.texto ? ` · ${e.historico.texto}` : "";
+  const provisional = e.provisional
+    ? ' <span title="La NOAA puede ajustar este valor hasta dos meses después de publicarlo">(provisional)</span>'
+    : "";
   document.getElementById("enso-detalle").innerHTML =
-    `<div class="valor">Índice de referencia: ${e.valor.toFixed(1)} — ${e.categoria}</div>` +
-    `<div class="detalle">Actualizado ${e.actualizado} · <a href="${e.fuente_url}" target="_blank" rel="noopener">NOAA CPC</a></div>`;
+    `<div class="valor">${e.indice || "Índice"}: ${e.valor.toFixed(1)} — ${e.categoria}${provisional}</div>` +
+    `<div class="detalle">${e.trimestre_largo || e.actualizado}${ranking} · ` +
+    `<a href="${e.fuente_url}" target="_blank" rel="noopener">NOAA CPC</a></div>`;
 }
 
 function tarjeta(label, value, detail, accentVar, icono = "") {
