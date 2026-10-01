@@ -66,3 +66,16 @@ jobs:
             ${{ github.event.inputs.seco == 'true' && '--seco' || '' }} \
             ${{ github.event.inputs.forzar == 'true' && '--forzar' || '' }} \
             ${{ github.event.inputs.fecha != '' && format('--fecha {0}', github.event.inputs.fecha) || '' }}
+
+      # Sin este paso el pronostico.json se queda en el runner y muere con
+      # el job: el sitio nunca lo vería. El nombre es distinto del
+      # artefacto del monitoreo para que 90-publicar pueda traer los dos y
+      # armarlos juntos.
+      - name: Publicar el artefacto
+        if: github.event.inputs.seco != 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: publico-pronostico
+          path: publico/
+          retention-days: 14
+          if-no-files-found: warn

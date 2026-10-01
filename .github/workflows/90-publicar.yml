@@ -15,7 +15,7 @@ name: 90 - Publicar sitio
 
 on:
   workflow_run:
-    workflows: ["03 - Monitoreo diario"]
+    workflows: ["03 - Monitoreo diario", "04 - Pronóstico de tiempo"]
     types: [completed]
   workflow_dispatch:
 
@@ -49,38 +49,60 @@ jobs:
       # mano (p. ej. tras un cambio de CSS), se busca la ultima corrida
       # exitosa del diario. Sin esto, publicar un ajuste visual dejaba el
       # sitio sin datos y obligaba a correr el pipeline completo.
-      - name: Ubicar la corrida con los datos
+      # El sitio se arma con DOS artefactos de dos workflows distintos:
+      # el monitoreo (03) y el pronóstico (04). Cada uno corre a su hora, así
+      # que no se puede depender de que el que disparó esta publicación traiga
+      # todo. Se busca la última corrida exitosa de cada uno; si esta
+      # publicación la disparó una de ellas, se usa esa corrida directamente
+      # para evitar la carrera con el índice de GitHub.
+      - name: Ubicar las corridas con los datos
         id: origen
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISPARADOR: ${{ github.event.workflow_run.name }}
+          DISPARADOR_ID: ${{ github.event.workflow_run.id }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_run" ]; then
-            echo "run_id=${{ github.event.workflow_run.id }}" >> $GITHUB_OUTPUT
-            echo "Datos de la corrida que disparo esta publicacion."
-          else
-            ultima=$(gh run list \
-              --workflow "03-diario.yml" \
-              --status success \
-              --limit 1 \
-              --json databaseId \
-              --jq '.[0].databaseId // empty')
-            if [ -z "$ultima" ]; then
-              echo "::warning::No hay corridas exitosas del diario. El sitio se publicara sin datos."
-              echo "run_id=" >> $GITHUB_OUTPUT
-            else
-              echo "run_id=$ultima" >> $GITHUB_OUTPUT
-              echo "Datos de la ultima corrida exitosa del diario: $ultima"
-            fi
+          ultima() {
+            gh run list --workflow "$1" --status success --limit 1 \
+              --json databaseId --jq '.[0].databaseId // empty'
+          }
+
+          case "$DISPARADOR" in
+            *"Monitoreo diario"*) MON="$DISPARADOR_ID" ;;
+            *) MON=$(ultima "03-diario.yml") ;;
+          esac
+          case "$DISPARADOR" in
+            *"Pronóstico"*) PRO="$DISPARADOR_ID" ;;
+            *) PRO=$(ultima "04-pronostico.yml") ;;
+          esac
+
+          echo "run_monitoreo=$MON" >> $GITHUB_OUTPUT
+          echo "run_pronostico=$PRO" >> $GITHUB_OUTPUT
+          echo "Monitoreo: ${MON:-ninguno} · Pronóstico: ${PRO:-ninguno}"
+          if [ -z "$MON" ] && [ -z "$PRO" ]; then
+            echo "::warning::Ningún módulo tiene corridas exitosas. El sitio se publicará sin datos."
           fi
 
-      - name: Traer los datos
-        if: steps.origen.outputs.run_id != ''
+      - name: Traer los datos del monitoreo
+        if: steps.origen.outputs.run_monitoreo != ''
         continue-on-error: true
         uses: actions/download-artifact@v8
         with:
           name: publico
           path: publico
-          run-id: ${{ steps.origen.outputs.run_id }}
+          run-id: ${{ steps.origen.outputs.run_monitoreo }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Van a la MISMA carpeta a propósito: el sitio los sirve juntos, y
+      # cada página pide el JSON que le toca.
+      - name: Traer los datos del pronóstico
+        if: steps.origen.outputs.run_pronostico != ''
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: publico-pronostico
+          path: publico
+          run-id: ${{ steps.origen.outputs.run_pronostico }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Armar el sitio
