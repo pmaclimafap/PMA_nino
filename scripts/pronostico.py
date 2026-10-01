@@ -127,9 +127,15 @@ def desde_open_meteo(municipios) -> tuple[pd.DataFrame, list[str]]:
         if v["adaptador"] == "open_meteo_ensamble"
     }
     for nombre, mcfg in ensambles.items():
+        # Un ensamble puede no publicar todas las variables. WeatherNext no
+        # entrega humedad relativa a 2 m, y pedirla devuelve un 400 que
+        # tumbaría el modelo entero por una variable que no usa.
+        permitidas = mcfg.get("solo_variables")
+        suyas = (diarias if permitidas is None
+                 else {k: v for k, v in diarias.items() if k in permitidas})
         try:
             df, emision = open_meteo.ensamble(
-                puntos, mcfg["id_api"], nombre, diarias,
+                puntos, mcfg["id_api"], nombre, suyas,
                 dias=captura["horizonte_dias"],
                 zona_horaria=captura["zona_horaria"],
             )

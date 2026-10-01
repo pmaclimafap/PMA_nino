@@ -79,14 +79,22 @@ modelos:
     origen: Google DeepMind
     tipo: ia_ensamble
     adaptador: open_meteo_ensamble
-    id_api: google_weathernext2
+    # Verificado contra la documentación de Open-Meteo. El endpoint es
+    # ensemble-api, no el de pronóstico: usar el id sin el sufijo
+    # "_ensemble" produce un 400 con "Cannot initialize MultiDomains".
+    id_api: google_weathernext2_ensemble
     resolucion_km: 25
     horizonte_max: 15
     peso: 1.0
     nota: >
-      Es un ENSAMBLE. Su media no es comparable sin más con un determinista:
-      es más suave y subestima los extremos, justo lo que importa en una
-      alerta. Se guarda la media y la dispersión, y el tablero lo marca.
+      Es un ENSAMBLE de 64 miembros. Su media no es comparable sin más con
+      un determinista: es más suave y subestima los extremos, justo lo que
+      importa en una alerta. Se guarda la media y la dispersión, y el
+      tablero lo marca.
+      NO aporta humedad relativa a 2 m: el modelo nativo predice humedad
+      específica solo en niveles de presión, así que esa variable queda
+      fuera para este modelo. Corre dos veces al día (00 y 12 UTC), de modo
+      que la corrida de las 12:00 UTC del pipeline toma la de 00 UTC.
 
   wrf_ideam:
     nombre: WRF-IDEAM
