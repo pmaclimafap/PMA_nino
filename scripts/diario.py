@@ -60,6 +60,10 @@ DIAS_PUBLICADOS = 60
 #   1  solo series puntuales
 #   2  series puntuales + grilla por pixel
 VERSION_EXTRACCION = 2
+
+# La cuota de descarga de Drive se restablece en unas 24 horas. No vale la
+# pena reintentar antes: solo consume tiempo y vuelve a fallar.
+HORAS_ESPERA_TRAS_CUOTA = 20
 DIR_PUBLICO = Path("publico/data")
 
 lineas: list[str] = []
@@ -99,11 +103,31 @@ def decidir_descargas(servicio, ingesta: pd.DataFrame, fechas: list[date],
     pendientes, faltantes = [], []
 
     previos: dict[tuple, tuple] = {}
+    en_espera: dict[tuple, str] = {}
+    ahora = datetime.now(timezone.utc)
+
     if not ingesta.empty and not forzar:
         tiene_version = "version" in ingesta.columns
         for r in ingesta.itertuples():
             version = getattr(r, "version", 1) if tiene_version else 1
-            previos[(r.carpeta, r.archivo)] = (
+            clave_r = (r.carpeta, r.archivo)
+            estado = str(getattr(r, "estado", "") or "")
+
+            # Un archivo que fallo por cuota hace poco se deja en paz: la
+            # cuota de Drive se libera en unas 24 horas.
+            if "cuota" in estado.lower():
+                try:
+                    intento = pd.Timestamp(r.procesado)
+                    if intento.tz is None:
+                        intento = intento.tz_localize("UTC")
+                    horas = (ahora - intento.to_pydatetime()).total_seconds() / 3600
+                    if horas < HORAS_ESPERA_TRAS_CUOTA:
+                        en_espera[clave_r] = f"{horas:.1f} h desde el fallo de cuota"
+                        continue
+                except (ValueError, TypeError):
+                    pass
+
+            previos[clave_r] = (
                 r.modificado_origen,
                 int(version) if pd.notna(version) else 1,
             )
@@ -113,6 +137,8 @@ def decidir_descargas(servicio, ingesta: pd.DataFrame, fechas: list[date],
         for fecha in fechas:
             antiguedad = (hoy - fecha).days
             nombre = gloh2o.nombre_archivo(fecha)
+            if (clave, nombre) in en_espera:
+                continue  # fallo por cuota hace poco; se reintenta mañana
             registro = previos.get((clave, nombre))
             visto = registro[0] if registro else None
             al_dia = bool(registro) and registro[1] >= VERSION_EXTRACCION
@@ -141,6 +167,11 @@ def decidir_descargas(servicio, ingesta: pd.DataFrame, fechas: list[date],
             if remoto.cambio_respecto_a(visto) or not al_dia:
                 pendientes.append((var, cfg, fecha, remoto))
 
+    if en_espera:
+        faltantes.append({
+            "variable": "varios", "fecha": "",
+            "motivo": f"{len(en_espera)} archivo(s) en espera por cuota de Drive",
+        })
     return pendientes, faltantes
 
 
@@ -199,6 +230,22 @@ def procesar(servicio, pendientes: list[tuple], tmp: Path
                 "version": VERSION_EXTRACCION,
             })
 
+        except gloh2o.CuotaAgotada as e:
+            errores.append({"variable": var, "fecha": str(fecha),
+                            "archivo": remoto.nombre, "motivo": str(e),
+                            "tipo": "cuota"})
+            log(f"- CUOTA `{remoto.nombre}` ({var}, {fecha}): se reintentará mañana.")
+            registros.append({
+                "carpeta": cfg["clave_carpeta"],
+                "archivo": remoto.nombre,
+                "modificado_origen": remoto.modificado,
+                "procesado": datetime.now(timezone.utc).isoformat(),
+                # 'cuota' en el estado es lo que hace que la proxima corrida
+                # lo deje en paz durante unas horas.
+                "estado": "error: cuota de descarga agotada",
+                "version": 1,   # version 1 => se reintentara
+            })
+            continue
         except Exception as e:
             detalle = {"variable": var, "fecha": str(fecha),
                        "archivo": remoto.nombre, "motivo": str(e)}
@@ -353,8 +400,14 @@ def main() -> int:
         rutas = alm.guardar_observado(nuevos)
         if not celdas.empty:
             rutas += alm.guardar_grilla(celdas)
-        alm.guardar_ingesta(ingesta, registros)
         log(f"Guardado en: {', '.join(rutas)}")
+
+    # El registro se guarda SIEMPRE que haya intentos, incluidos los
+    # fallidos. Antes esto estaba dentro del bloque anterior: si el unico
+    # archivo del dia fallaba, el fallo no quedaba registrado y se
+    # reintentaba en cada corrida, golpeando la cuota de Drive sin pausa.
+    if not registros.empty:
+        alm.guardar_ingesta(ingesta, registros)
 
     # La ventana se reconstruye desde el almacenamiento, no desde lo que se
     # descargó hoy: así el resultado es el mismo se haya fallado o no antes.

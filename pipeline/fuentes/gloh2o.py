@@ -38,6 +38,23 @@ REINTENTOS = 3
 ESPERA_BASE_S = 4
 
 
+def es_cuota_agotada(e: BaseException) -> bool:
+    """¿Es la cuota de descarga del archivo compartido?
+
+    Google limita las descargas POR ARCHIVO en carpetas compartidas, y la de
+    GloH2O la usan miles de personas. La cuota se restablece en unas 24
+    horas, así que reintentar dentro de la misma corrida no sirve de nada:
+    solo gasta tiempo. Se distingue para no reintentar en vano y para que el
+    pipeline pueda esperar al día siguiente.
+    """
+    texto = str(e)
+    return "downloadQuotaExceeded" in texto or "download quota" in texto.lower()
+
+
+class CuotaAgotada(IOError):
+    """La cuota de descarga del archivo se agotó. Reintentable al día siguiente."""
+
+
 @dataclass(frozen=True)
 class ArchivoRemoto:
     """Metadata de un archivo en Drive, sin descargarlo."""
@@ -131,6 +148,13 @@ def descargar(servicio, archivo: ArchivoRemoto, destino: Path) -> Path:
             return _descargar_una_vez(servicio, archivo, destino)
         except Exception as e:
             ultimo_error = e
+            # La cuota no se libera en segundos: reintentar es inútil.
+            if es_cuota_agotada(e):
+                raise CuotaAgotada(
+                    f"'{archivo.nombre}': cuota de descarga del archivo agotada "
+                    "en la carpeta compartida de GloH2O. Se restablece en unas "
+                    "24 horas; el pipeline lo reintentará mañana."
+                ) from e
             if intento < REINTENTOS:
                 time.sleep(ESPERA_BASE_S * intento)
     raise IOError(
