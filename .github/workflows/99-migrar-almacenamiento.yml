@@ -1,0 +1,62 @@
+name: 99 - Migrar almacenamiento
+
+# Operación de UNA SOLA VEZ: mueve los datos de las rutas planas originales
+# a la jerarquía por módulo.
+#
+#   observado/           -> monitoreo/satelital/puntos/
+#   observado_grilla/     -> monitoreo/satelital/grilla/
+#   estado/oni.parquet    -> indices/oni.parquet
+#
+# COPIA, no mueve: las rutas viejas quedan intactas para revisarlas y
+# borrarlas a mano desde la pestaña Files del dataset. Así, si algo falla a
+# mitad de camino, el dataset no queda sin datos.
+#
+# No toca GloH2O: reprocesar los 300 archivos de la ventana agotaría la cuota
+# de descarga de la carpeta compartida.
+
+on:
+  workflow_dispatch:
+    inputs:
+      aplicar:
+        description: "Aplicar los cambios (sin marcar, solo simula)"
+        type: boolean
+        required: false
+        default: false
+
+concurrency:
+  group: datos        # no correr a la vez que el pipeline diario
+  cancel-in-progress: false
+
+jobs:
+  migrar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install --quiet -r requirements.txt
+
+      - name: Migrar
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python scripts/migrar_almacenamiento.py \
+            ${{ github.event.inputs.aplicar == 'true' && '--aplicar' || '' }} \
+            | tee salida.txt
+
+      - name: Resumen
+        if: always()
+        run: |
+          echo '## Migración del almacenamiento' >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event.inputs.aplicar }}" != "true" ]; then
+            echo '> Modo simulación. Repetir marcando **Aplicar** para ejecutar.' >> $GITHUB_STEP_SUMMARY
+          fi
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat salida.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

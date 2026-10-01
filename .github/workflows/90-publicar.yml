@@ -23,6 +23,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read     # para localizar la ultima corrida exitosa del diario
 
 concurrency:
   group: pages
@@ -43,13 +44,43 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Traer los datos de la corrida diaria
-        if: github.event_name == 'workflow_run'
+      # Los datos vienen del artefacto de la corrida diaria. Cuando este
+      # workflow lo disparo el diario, se usa esa corrida; cuando se lanza a
+      # mano (p. ej. tras un cambio de CSS), se busca la ultima corrida
+      # exitosa del diario. Sin esto, publicar un ajuste visual dejaba el
+      # sitio sin datos y obligaba a correr el pipeline completo.
+      - name: Ubicar la corrida con los datos
+        id: origen
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "run_id=${{ github.event.workflow_run.id }}" >> $GITHUB_OUTPUT
+            echo "Datos de la corrida que disparo esta publicacion."
+          else
+            ultima=$(gh run list \
+              --workflow "03-diario.yml" \
+              --status success \
+              --limit 1 \
+              --json databaseId \
+              --jq '.[0].databaseId // empty')
+            if [ -z "$ultima" ]; then
+              echo "::warning::No hay corridas exitosas del diario. El sitio se publicara sin datos."
+              echo "run_id=" >> $GITHUB_OUTPUT
+            else
+              echo "run_id=$ultima" >> $GITHUB_OUTPUT
+              echo "Datos de la ultima corrida exitosa del diario: $ultima"
+            fi
+          fi
+
+      - name: Traer los datos
+        if: steps.origen.outputs.run_id != ''
+        continue-on-error: true
         uses: actions/download-artifact@v8
         with:
           name: publico
           path: publico
-          run-id: ${{ github.event.workflow_run.id }}
+          run-id: ${{ steps.origen.outputs.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Armar el sitio
@@ -64,7 +95,7 @@ jobs:
             echo "Datos incluidos:"
             find sitio -name "*.json" -exec ls -lh {} \;
           else
-            echo "::warning::Sin datos. El tablero debe mostrar el estado vacío."
+            echo "::warning::Sin datos: el tablero mostrara el estado vacio. Revisar si el artefacto de la corrida diaria expiro (14 dias de retencion)."
           fi
           # .nojekyll evita que Pages ignore archivos que empiezan con _
           touch sitio/.nojekyll
