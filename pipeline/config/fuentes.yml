@@ -39,6 +39,10 @@ almacenamiento:
     pronostico_estacional: "pronostico/estacional/{anio}/{anio}-{mes:02d}.parquet"
     verificacion: "derivado/verificacion/{anio}.parquet"
     ingesta: "estado/ingesta.parquet"
+    # Serie del indice ONI. Se guarda por dos razones: servir de respaldo
+    # cuando la NOAA no responde, y archivar las revisiones, que la NOAA
+    # sobrescribe y nadie conserva.
+    oni: "estado/oni.parquet"
     bitacora: "estado/bitacora.parquet"
 
 # ---------------------------------------------------------------------------

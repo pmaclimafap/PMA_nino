@@ -377,12 +377,30 @@ def main() -> int:
     # obtener() devuelve valor nulo y el tablero muestra "sin dato": un
     # índice equivocado es peor que ninguno cuando se comunica si viene o
     # no una sequía.
-    estado_enso = enso.obtener()
+    # Se pasa la serie archivada como respaldo: si la NOAA no responde, el
+    # tablero conserva el último valor conocido en lugar de quedar en blanco.
+    # El ONI es mensual, así que ese valor sigue siendo cierto.
+    archivado = alm.leer(alm.ruta("oni"))
+    estado_enso, serie_oni, revisiones = enso.obtener(archivado)
+
     if estado_enso.get("valor") is None:
         log(f"ENSO: sin dato — {estado_enso.get('categoria')}")
     else:
-        log(f"ENSO: {estado_enso['valor']:+.2f} ({estado_enso['categoria']}) "
-            f"· {estado_enso['trimestre']} · {estado_enso['historico']['texto']}")
+        origen = " (de caché)" if estado_enso.get("en_cache") else ""
+        log(f"ENSO: {estado_enso['valor']:+.2f} ({estado_enso['categoria']})"
+            f"{origen} · {estado_enso['trimestre']} · "
+            f"{estado_enso['historico']['texto']}")
+
+    # Las revisiones de la NOAA sobrescriben su tabla y nadie las archiva.
+    if revisiones:
+        log(f"ENSO: la NOAA revisó {len(revisiones)} trimestre(s): "
+            + ", ".join(f"{r['trimestre']} {r['antes']:+.2f}→{r['ahora']:+.2f}"
+                        for r in revisiones))
+
+    if serie_oni:
+        alm.escribir(enso.a_dataframe(serie_oni), alm.ruta("oni"),
+                     f"ONI: {len(serie_oni)} trimestres, último "
+                     f"{estado_enso.get('trimestre', '?')}")
 
     legado = exportar.construir(ventana, grilla, enso=estado_enso)
     ruta_legado = exportar.escribir(legado, Path("publico/data.json"))

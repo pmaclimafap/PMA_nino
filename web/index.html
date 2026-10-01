@@ -683,9 +683,14 @@ function pintarEnso() {
   const provisional = e.provisional
     ? ' <span title="La NOAA puede ajustar este valor hasta dos meses después de publicarlo">(provisional)</span>'
     : "";
+  // Un valor servido desde el archivo propio sigue siendo válido, porque el
+  // ONI es mensual. Pero se declara su procedencia.
+  const cache = e.en_cache
+    ? ` <span title="${e.nota_cache || ""}">· valor archivado</span>`
+    : "";
   document.getElementById("enso-detalle").innerHTML =
     `<div class="valor">${e.indice || "Índice"}: ${e.valor.toFixed(1)} — ${e.categoria}${provisional}</div>` +
-    `<div class="detalle">${e.trimestre_largo || e.actualizado}${ranking} · ` +
+    `<div class="detalle">${e.trimestre_largo || e.actualizado}${ranking}${cache} · ` +
     `<a href="${e.fuente_url}" target="_blank" rel="noopener">NOAA CPC</a></div>`;
 }
 

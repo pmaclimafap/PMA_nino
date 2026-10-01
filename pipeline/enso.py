@@ -148,38 +148,75 @@ def posicion_historica(serie: list[Trimestre], actual: Trimestre) -> dict:
     }
 
 
-def obtener(url: str = URL_ONI) -> dict:
-    """Estado actual del ENSO, en el esquema que consume el tablero.
+BASE_SIN_DATO = {
+    "valor": None,
+    "categoria": "Sin dato",
+    "actualizado": "",
+    "fuente_url": URL_DISCUSION,
+}
 
-    Nunca lanza excepción: si la fuente falla, devuelve valor nulo y el
-    tablero muestra "sin dato" en lugar de un número inventado. Un índice
-    equivocado es peor que ninguno cuando lo que se está comunicando es si
-    viene o no una sequía.
+
+def a_dataframe(serie: list[Trimestre]):
+    """La serie como tabla, para archivarla."""
+    import pandas as pd
+
+    return pd.DataFrame(
+        [
+            {
+                "codigo": t.codigo,
+                "anio": t.anio,
+                "orden": t.anio * 100 + MES_CENTRAL[t.codigo],
+                "sst": t.sst,
+                "anomalia": t.anomalia,
+            }
+            for t in serie
+        ]
+    )
+
+
+def desde_dataframe(df) -> list[Trimestre]:
+    """Reconstruye la serie desde la tabla archivada."""
+    if df is None or len(df) == 0:
+        return []
+    orden = df.sort_values("orden")
+    return [
+        Trimestre(r.codigo, int(r.anio), float(r.sst), float(r.anomalia))
+        for r in orden.itertuples()
+    ]
+
+
+def diferencias(previa: list[Trimestre], nueva: list[Trimestre]) -> list[dict]:
+    """Trimestres cuyo valor cambió respecto a lo archivado.
+
+    La NOAA revisa los valores recientes hasta dos meses después de
+    publicarlos y sobrescribe la tabla, así que estas revisiones no quedan
+    registradas en ninguna parte salvo que las capturemos.
     """
-    base = {
-        "valor": None,
-        "categoria": "Sin dato",
-        "actualizado": "",
-        "fuente_url": URL_DISCUSION,
-    }
+    antes = {t.etiqueta: t.anomalia for t in previa}
+    cambios = []
+    for t in nueva:
+        if t.etiqueta in antes and abs(antes[t.etiqueta] - t.anomalia) > 1e-9:
+            cambios.append({
+                "trimestre": t.etiqueta,
+                "antes": round(antes[t.etiqueta], 2),
+                "ahora": round(t.anomalia, 2),
+            })
+    return cambios
 
-    try:
-        serie = parsear(descargar(url))
-    except (urllib.error.URLError, OSError, TimeoutError) as e:
-        base["categoria"] = "Sin dato (fuente no disponible)"
-        base["error"] = str(e)[:200]
-        return base
 
+def estado(serie: list[Trimestre], en_cache: bool = False,
+           motivo_cache: str = "") -> dict:
+    """Arma el estado del ENSO a partir de una serie ya disponible."""
     if not serie:
-        base["categoria"] = "Sin dato (tabla vacía o formato cambiado)"
-        return base
+        return {**BASE_SIN_DATO,
+                "categoria": "Sin dato (serie vacía)"}
 
     actual = serie[-1]
     provisional = True  # el último trimestre siempre lo es
     previos = serie[-TRIMESTRES_PROVISIONALES:]
 
     return {
-        **base,
+        **BASE_SIN_DATO,
         "valor": round(actual.anomalia, 2),
         "categoria": categoria(actual.anomalia),
         "actualizado": f"{actual.etiqueta} (NOAA CPC)",
@@ -208,4 +245,42 @@ def obtener(url: str = URL_ONI) -> dict:
         ),
         "serie_desde": serie[0].anio,
         "trimestres": len(serie),
+        # Un valor servido desde el archivo propio sigue siendo válido: el
+        # ONI es mensual, no diario. Pero se declara su procedencia.
+        "en_cache": en_cache,
+        "nota_cache": motivo_cache if en_cache else "",
     }
+
+
+def obtener(df_archivado=None) -> tuple[dict, list[Trimestre], list[dict]]:
+    """Estado del ENSO, con respaldo en lo archivado.
+
+    Devuelve (estado, serie, revisiones).
+
+    Si la NOAA no responde, cae al último valor archivado en lugar de dejar
+    el panel en blanco: el ONI es un valor MENSUAL, así que el del trimestre
+    más reciente sigue siendo cierto aunque el servidor tenga un fallo de
+    treinta segundos. Eso sí, se marca de dónde salió.
+
+    Nunca lanza excepción.
+    """
+    previa = desde_dataframe(df_archivado)
+
+    try:
+        serie = parsear(descargar())
+    except (urllib.error.URLError, OSError, TimeoutError) as e:
+        motivo = f"La fuente no respondió ({str(e)[:80]})."
+        if previa:
+            return estado(previa, en_cache=True, motivo_cache=motivo), previa, []
+        return {**BASE_SIN_DATO,
+                "categoria": "Sin dato (fuente no disponible y sin archivo)",
+                "error": str(e)[:200]}, [], []
+
+    if not serie:
+        motivo = "La tabla llegó vacía o cambió de formato."
+        if previa:
+            return estado(previa, en_cache=True, motivo_cache=motivo), previa, []
+        return {**BASE_SIN_DATO,
+                "categoria": "Sin dato (tabla vacía o formato cambiado)"}, [], []
+
+    return estado(serie), serie, diferencias(previa, serie)
