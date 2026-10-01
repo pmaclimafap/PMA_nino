@@ -412,7 +412,7 @@ def main() -> int:
     # La ventana se reconstruye desde el almacenamiento, no desde lo que se
     # descargó hoy: así el resultado es el mismo se haya fallado o no antes.
     meses = sorted({(f.year, f.month) for f in fechas})
-    partes = [alm.leer(alm.ruta("observado", anio=a, mes=m)) for a, m in meses]
+    partes = [alm.leer(alm.ruta("monitoreo_puntos", anio=a, mes=m)) for a, m in meses]
     partes = [p for p in partes if not p.empty]
     ventana = pd.concat(partes, ignore_index=True) if partes else pd.DataFrame()
 
@@ -426,7 +426,7 @@ def main() -> int:
     ventana = ventana[ventana.fecha >= pd.Timestamp(fechas[-1])]
 
     # Grilla del mismo rango, para el mapa del tablero
-    g_partes = [alm.leer(alm.ruta("observado_grilla", anio=a, mes=m))
+    g_partes = [alm.leer(alm.ruta("monitoreo_grilla", anio=a, mes=m))
                 for a, m in meses]
     g_partes = [p for p in g_partes if not p.empty]
     grilla = pd.concat(g_partes, ignore_index=True) if g_partes else pd.DataFrame()

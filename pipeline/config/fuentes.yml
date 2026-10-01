@@ -16,33 +16,44 @@ meta:
 # ---------------------------------------------------------------------------
 # Destino de los datos
 # ---------------------------------------------------------------------------
-# Tres comportamientos distintos, y la carpeta indica cual:
-#   observado/  reescribible. Si hay que recalcular, se regenera el mes.
-#   pronostico/ INMUTABLE. Un pronostico emitido no se puede volver a
-#               obtener de ninguna parte, asi que nunca se reescribe.
-#   derivado/   recalculable desde las dos anteriores; se puede borrar.
-#   estado/     que archivos ya se procesaron; evita redescargar todo.
+# La jerarquia es POR MODULO en el primer nivel, para que al abrir el dataset
+# se entienda de un vistazo que hay en cada carpeta:
+#
+#   monitoreo/   lo que ya paso. Reescribible: si hay que recalcular, se
+#                regenera el mes, porque el dato se puede volver a descargar.
+#   pronostico/  lo que se anuncio. INMUTABLE: un pronostico emitido no se
+#                puede volver a obtener de ninguna parte.
+#   indices/     contexto global (ONI). No es de nuestros municipios ni es
+#                pronostico; es el marco en el que se leen los otros dos.
+#   derivado/    se recalcula desde los anteriores. Se puede borrar.
+#   estado/      interno del pipeline. Borrarlo no pierde datos, pero obliga
+#                a reprocesar.
 
 almacenamiento:
   repo: pmaclimafap/monitoreo-nino-colombia
   tipo: dataset
 
   rutas:
-    observado: "observado/{anio}-{mes:02d}.parquet"
-    # Grilla por pixel dentro de cada municipio: alimenta el mapa del
-    # tablero. Sin esto el frontend cae en una grilla simulada y mostraria
-    # variacion espacial inventada.
-    observado_grilla: "observado_grilla/{anio}-{mes:02d}.parquet"
+    # --- Modulo 1: monitoreo ---
+    monitoreo_puntos: "monitoreo/satelital/puntos/{anio}-{mes:02d}.parquet"
+    monitoreo_grilla: "monitoreo/satelital/grilla/{anio}-{mes:02d}.parquet"
+    # monitoreo/comunitario/ queda reservado para los pluviometros y
+    # termohigrometros de los grupos motores.
+
+    # --- Modulo 2: pronostico ---
     # Un archivo por FECHA DE EMISION, no por mes: si una escritura falla,
     # se pierde un dia en lugar de un mes de historia irrecuperable.
     pronostico_diario: "pronostico/diario/{anio}/{fecha}.parquet"
     pronostico_estacional: "pronostico/estacional/{anio}/{anio}-{mes:02d}.parquet"
+
+    # --- Contexto ---
+    oni: "indices/oni.parquet"
+
+    # --- Derivado: recalculable, se puede borrar ---
     verificacion: "derivado/verificacion/{anio}.parquet"
+
+    # --- Interno del pipeline ---
     ingesta: "estado/ingesta.parquet"
-    # Serie del indice ONI. Se guarda por dos razones: servir de respaldo
-    # cuando la NOAA no responde, y archivar las revisiones, que la NOAA
-    # sobrescribe y nadie conserva.
-    oni: "estado/oni.parquet"
     bitacora: "estado/bitacora.parquet"
 
 # ---------------------------------------------------------------------------

@@ -144,7 +144,7 @@ def guardar_observado(df: pd.DataFrame) -> list[str]:
     escritas = []
 
     for (anio, mes), grupo in df.groupby([df.fecha.dt.year, df.fecha.dt.month]):
-        destino = ruta("observado", anio=anio, mes=mes)
+        destino = ruta("monitoreo_puntos", anio=anio, mes=mes)
         fusionado = fusionar_observado(leer(destino), grupo)
         escribir(
             fusionado,
@@ -174,7 +174,7 @@ def guardar_grilla(df: pd.DataFrame) -> list[str]:
     escritas = []
 
     for (anio, mes), grupo in df.groupby([df.fecha.dt.year, df.fecha.dt.month]):
-        destino = ruta("observado_grilla", anio=anio, mes=mes)
+        destino = ruta("monitoreo_grilla", anio=anio, mes=mes)
         existente = leer(destino)
         if existente.empty:
             fusionado = grupo
