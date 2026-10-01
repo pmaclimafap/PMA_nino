@@ -1,0 +1,76 @@
+name: 05 - Referencia (climatología y desfases)
+
+# Dos cálculos con cadencias muy distintas, agrupados porque ambos escriben
+# en referencia/, la vara contra la que se mide la anomalía.
+#
+#   climatologia.parquet  UNA SOLA VEZ. 30 años de ERA5. Solo cambia si se
+#                         decide cambiar el período de referencia, y
+#                         entonces cambian TODAS las anomalías publicadas.
+#   sesgos.parquet        MENSUAL. El desfase crece con el horizonte y
+#                         cambia con la estación; además una actualización
+#                         de modelo lo desplaza sin aviso.
+
+on:
+  schedule:
+    # Día 1 a las 06:00 UTC: después del monitoreo (05:00) para que el mes
+    # recién cerrado ya esté en el almacenamiento, y antes del pronóstico
+    # (12:00) para que ese mismo día use los desfases nuevos.
+    - cron: "0 6 1 * *"
+  workflow_dispatch:
+    inputs:
+      que:
+        description: "Qué calcular"
+        type: choice
+        options: [desfases, climatologia, ambos]
+        required: false
+        default: desfases
+      seco:
+        description: "Modo seco: no escribe en Hugging Face"
+        type: boolean
+        required: false
+        default: false
+      meses:
+        description: "Ventana de archivo para los desfases"
+        required: false
+        default: "12"
+
+concurrency:
+  group: datos
+  cancel-in-progress: false
+
+jobs:
+  referencia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install --quiet -r requirements.txt
+
+      - name: Climatología ERA5
+        if: >
+          github.event.inputs.que == 'climatologia' ||
+          github.event.inputs.que == 'ambos'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python scripts/climatologia.py \
+            ${{ github.event.inputs.seco == 'true' && '--seco' || '' }}
+
+      - name: Desfases
+        if: >
+          github.event_name == 'schedule' ||
+          github.event.inputs.que == 'desfases' ||
+          github.event.inputs.que == 'ambos'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python scripts/desfases.py \
+            --meses "${{ github.event.inputs.meses || '12' }}" \
+            ${{ github.event.inputs.seco == 'true' && '--seco' || '' }}

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pronóstico — El Niño · Alianza Bioversity-CIAT / PMA</title>
+<title>Pronóstico del tiempo — El Niño · Alianza Bioversity-CIAT / PMA</title>
 <meta name="description" content="Sistema de monitoreo, pronóstico y medidas anticipatorias frente al Fenómeno de El Niño en La Guajira, Cesar, Sucre y Tolima.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -129,6 +129,69 @@
            font-size: 0.84rem; color: var(--color-ink-soft); }
   footer p { margin: 0 0 7px; max-width: 86ch; }
   footer a { color: var(--color-rain); }
+
+  /* ---- Pronóstico ---- */
+  .barra { display:flex; gap:12px; flex-wrap:wrap; align-items:center;
+           padding:12px 16px; background:var(--color-panel);
+           border:1px solid var(--color-line); border-radius:var(--radius);
+           margin-bottom:18px; }
+  .barra select { font-family:var(--font-body); font-size:0.95rem; padding:7px 10px;
+           border:1px solid var(--color-line); border-radius:var(--radius);
+           background:var(--color-bg); color:var(--color-ink); }
+  .barra .ctx { font-size:0.85rem; color:var(--color-ink-soft); line-height:1.5; }
+  .barra .meta { margin-left:auto; font-size:0.8rem; color:var(--color-ink-soft);
+           text-align:right; line-height:1.5; }
+
+  .tarjetas { display:grid; gap:6px; margin-bottom:22px;
+              grid-template-columns:repeat(auto-fit,minmax(7.5rem,1fr)); }
+  .tarjeta { background:var(--color-panel); border:1px solid var(--color-line);
+             border-top:3px solid var(--acento,var(--color-line));
+             border-radius:0 0 var(--radius) var(--radius);
+             padding:11px 6px; text-align:center; }
+  .tarjeta .fecha { font-size:0.78rem; color:var(--color-ink-soft); }
+  .tarjeta svg { width:42px; height:42px; margin:4px 0; }
+  .tarjeta .anom { font-family:var(--font-display); font-size:1.15rem;
+                   font-weight:600; line-height:1.2; }
+  .tarjeta .abs { font-size:0.72rem; color:var(--color-ink-soft); }
+  .tarjeta .lluvia { font-size:0.78rem; margin-top:5px; color:var(--color-rain); }
+  .tarjeta .hr { font-size:0.72rem; color:var(--color-ink-soft); }
+  .tarjeta .conf { display:inline-block; margin-top:7px; font-size:0.68rem;
+                   padding:2px 7px; border-radius:99px; border:1px solid var(--color-line); }
+  .conf--alta { color:var(--color-ok); border-color:var(--color-ok); }
+  .conf--media { color:var(--color-temp); border-color:var(--color-temp); }
+  .conf--baja { color:var(--color-ink-soft); }
+  .tarjeta--corta { background:transparent; border:1px dashed var(--color-line);
+                    border-radius:var(--radius); display:flex; flex-direction:column;
+                    justify-content:center; color:var(--color-ink-soft);
+                    font-size:0.72rem; line-height:1.5; }
+
+  .panel { background:var(--color-panel); border:1px solid var(--color-line);
+           border-radius:var(--radius); margin-bottom:18px; }
+  .panel__cab { display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+                padding:10px 14px 0; }
+  .pestanas { display:flex; gap:1px; }
+  .pestanas button, .horiz button { font-family:var(--font-body); font-size:0.85rem;
+           padding:6px 12px; border:0; background:transparent;
+           color:var(--color-ink-soft); cursor:pointer; border-radius:var(--radius); }
+  .pestanas button[aria-pressed="true"] { background:var(--color-bg);
+           color:var(--color-ink); font-weight:600; }
+  .horiz { margin-left:auto; display:flex; gap:3px; }
+  .horiz button { border:1px solid transparent; }
+  .horiz button[aria-pressed="true"] { border-color:var(--color-line);
+           color:var(--color-ink); }
+  .panel__cuerpo { padding:8px 14px 14px; }
+  .leyenda { display:flex; gap:16px; flex-wrap:wrap; align-items:center;
+             font-size:0.78rem; color:var(--color-ink-soft); margin-top:6px; }
+  .nota { font-size:0.82rem; color:var(--color-ink-soft); line-height:1.6;
+          border-top:1px solid var(--color-line); margin-top:12px; padding-top:10px; }
+
+  details.mapa summary { cursor:pointer; padding:11px 14px; font-size:0.95rem;
+          list-style:none; display:flex; gap:8px; align-items:center; }
+  details.mapa summary::-webkit-details-marker { display:none; }
+  details.mapa summary::before { content:"\25B8"; color:var(--color-ink-soft); }
+  details.mapa[open] summary::before { content:"\25BE"; }
+  details.mapa iframe { width:100%; height:clamp(320px,50vh,520px); border:0;
+          border-top:1px solid var(--color-line); display:block; }
 </style>
 </head>
 <body>
@@ -143,85 +206,93 @@
   </nav>
 
   <header>
-    <h1>Pronóstico</h1>
-    <p class="bajada">Qué viene. Dos escalas de predicción con fuentes de predictibilidad distintas: el día a día y la señal estacional de El Niño.</p>
+    <h1>Pronóstico del tiempo</h1>
+    <p class="bajada">
+      Qué viene en los próximos días según varios modelos. Se muestra la
+      anomalía respecto a lo normal para la época, porque es lo que no
+      depende del sesgo de cada modelo.
+    </p>
   </header>
 
-  <section class="evento" style="border-left-color: var(--color-ink-soft)" aria-label="Estado del módulo">
-    <div>
-      <span class="dato" style="color: var(--color-ink-soft)">En desarrollo</span>
-      <span class="etiqueta">Módulo 2 de 3</span>
+  <div id="contenido" hidden>
+    <div class="barra">
+      <select id="municipio" aria-label="Municipio"></select>
+      <div class="ctx" id="contexto"></div>
+      <div class="meta" id="meta"></div>
     </div>
-    <p class="nota">
-      Esta página todavía no muestra datos. Se publica así, y no con una
-      simulación, para que nadie la confunda con información real.
-    </p>
-  </section>
 
-  <section class="seccion">
-    <h2>Qué va a mostrar</h2>
-    <p>
-      Predecir el estado de la atmósfera dentro de tres días y cómo será el
-      próximo trimestre respecto a lo normal son problemas físicamente
-      distintos. La diferencia está en la fuente de predictibilidad, y por eso
-      el módulo separa las escalas en lugar de mezclarlas en un solo número.
-    </p>
-    <table class="cobertura">
-      <thead>
-        <tr><th>Escala</th><th>Horizonte</th><th>Qué se pronostica</th><th>Fuentes</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Tiempo</td><td>7 días</td>
-          <td>Lluvia, temperatura y humedad de cada día</td>
-          <td>WRF-IDEAM</td>
-        </tr>
-        <tr>
-          <td>Tiempo</td><td>16 días</td>
-          <td>Los mismos indicadores que el monitoreo, hacia adelante</td>
-          <td>GFS, GEFS, ECMWF, ICON, GEM</td>
-        </tr>
-        <tr>
-          <td>Estacional</td><td>1 a 3 meses</td>
-          <td>Probabilidad de estar por encima, dentro o por debajo de lo normal</td>
-          <td>NMME, SEAS5, IDEAM</td>
-        </tr>
-      </tbody>
-    </table>
-    <p>
-      La escala subestacional, de dos a seis semanas, queda deliberadamente
-      fuera: es la de menor predictibilidad y la menos desarrollada
-      operativamente, y mostrarla generaría más ruido que valor.
-    </p>
-  </section>
+    <div class="tarjetas" id="tarjetas"></div>
 
-  <section class="seccion">
-    <h2>Por qué se archiva cada pronóstico emitido</h2>
-    <p>
-      El dato observado se puede volver a descargar de la fuente. El pronóstico
-      emitido hoy, no: cuando sale la siguiente corrida, la anterior desaparece
-      y nadie guarda lo que se anunció.
-    </p>
-    <p>
-      Sin ese archivo no se puede calibrar el umbral que activa una medida
-      anticipatoria, porque no habría con qué medir cuántas veces acertó y
-      cuántas fue falsa alarma. Tampoco se podría rendir cuentas de qué se
-      anunció y cuándo, ni saber qué modelo funciona mejor en cada territorio.
-      Por eso cada emisión se guarda en un archivo propio que no se reescribe
-      nunca.
-    </p>
-  </section>
+    <section class="panel">
+      <div class="panel__cab">
+        <div class="pestanas" id="pestanas" role="group" aria-label="Variable"></div>
+        <div class="horiz" id="horizonte" role="group" aria-label="Horizonte">
+          <button type="button" data-dias="7" aria-pressed="true">7 d</button>
+          <button type="button" data-dias="16" aria-pressed="false">16 d</button>
+        </div>
+      </div>
+      <div class="panel__cuerpo">
+        <div id="grafico"></div>
+        <div class="leyenda" id="leyenda"></div>
+        <p class="nota" id="nota"></p>
+      </div>
+    </section>
 
+    <details class="mapa panel">
+      <summary>Mapa de lluvia y viento <span style="font-size:0.78rem;color:var(--color-ink-soft)">Windy, se carga al abrir</span></summary>
+      <div id="windy"></div>
+    </details>
+
+    <section class="panel">
+      <div class="panel__cuerpo">
+        <h2 style="font-family:var(--font-display);font-size:1.1rem;margin:0 0 6px">Verificación</h2>
+        <p style="margin:0;font-size:0.9rem;color:var(--color-ink-soft);line-height:1.6">
+          Pendiente de archivo. Cuando haya suficientes pronósticos emitidos y
+          verificados dirá, por municipio y variable, qué modelo acierta más y
+          con qué frecuencia los días de confianza alta resultaron correctos.
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <div id="vacio" hidden></div>
 
   <footer>
+    <p id="pie-fuentes"></p>
     <p>
-      Pipeline y documentación:
+      Metodología:
+      <a href="https://github.com/pmaclimafap/PMA_nino/blob/main/docs/PRONOSTICO.md" target="_blank" rel="noopener">PRONOSTICO.md</a>
+      · Pipeline:
       <a href="https://github.com/pmaclimafap/PMA_nino" target="_blank" rel="noopener">GitHub</a>
-      · Diseño del módulo:
-      <a href="https://github.com/pmaclimafap/PMA_nino/blob/main/docs/ARQUITECTURA.md" target="_blank" rel="noopener">ARQUITECTURA.md</a>
     </p>
   </footer>
-
 </div>
+
+<script>
+const cloudP=(c,dx=0,dy=0,s=1)=>`<path transform="translate(${dx},${dy}) scale(${s})" d="M18 46h30a11 11 0 0 0 0-22 15 15 0 0 0-28-3 10 10 0 0 0-2 25z" fill="${c}"/>`;
+const sunP=(c='#f2a93b',cx=32,cy=32,r=12,L=[18,25])=>`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${c}"/>`+[0,1,2,3,4,5,6,7].map(i=>{const a=i*Math.PI/4;return `<line x1="${(cx+L[0]*Math.cos(a)).toFixed(1)}" y1="${(cy+L[0]*Math.sin(a)).toFixed(1)}" x2="${(cx+L[1]*Math.cos(a)).toFixed(1)}" y2="${(cy+L[1]*Math.sin(a)).toFixed(1)}" stroke="${c}" stroke-width="4" stroke-linecap="round"/>`}).join('');
+const drops=(xs,y1,y2,c='#2668aa',w=3.5,op)=>xs.map((x,i)=>`<line x1="${x}" y1="${y1}" x2="${x-4}" y2="${y2}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"${op&&op[i]!=null?` opacity="${op[i]}"`:''}/>`).join('');
+const thermo=(x,y,h,c,fill)=>`<rect x="${x}" y="${y}" width="10" height="${h}" rx="5" fill="#fff" stroke="${c}" stroke-width="3"/><circle cx="${x+5}" cy="${y+h+5}" r="8" fill="${c}"/><rect x="${x+3}" y="${y+h-fill}" width="4" height="${fill+4}" fill="${c}"/>`;
+const moonP=(c='#6b5ea8',dx=0,dy=0)=>`<path transform="translate(${dx},${dy})" d="M52 20a14 14 0 1 1-14-14 11 11 0 0 0 14 14z" fill="${c}"/>`;
+const ICONS={
+  sun: sunP(),
+  hot: sunP('#e8702a',30,28,13,[19,26])+'<path d="M12 54q5-4 10 0t10 0 10 0 10 0" stroke="#c43e30" stroke-width="3.5" fill="none" stroke-linecap="round"/>',
+  part: `<g transform="translate(-6,-8) scale(.8)">${sunP()}</g>`+cloudP('#c9d2da',4,4),
+  cloudy: cloudP('#d6dde3',-8,-6)+cloudP('#aab6c1',6,4),
+  overcast: cloudP('#b7c1ca',-8,-8)+cloudP('#7f8f9e',6,3),
+  drizzle: cloudP('#a9b8c6',0,-6)+'<g fill="#2668aa"><circle cx="22" cy="50" r="2.3"/><circle cx="32" cy="54" r="2.3"/><circle cx="42" cy="50" r="2.3"/></g>',
+  rain: cloudP('#8fa3b5',0,-6)+drops([24,34,44],46,56),
+  heavy: cloudP('#6e8295',0,-8)+drops([18,26,34,42,50],42,58,'#1d5690',4),
+  storm: cloudP('#6e8295',0,-8)+'<path d="M33 36l-7 12h7l-4 11 12-15h-7l4-8z" fill="#f2b632"/>'+drops([18,46],42,52,'#1d5690',3.5),
+  showers: `<g transform="translate(-6,-8) scale(.8)">${sunP()}</g>`+cloudP('#9fb0bf',4,0)+drops([28,40],50,58),
+  rainlow: cloudP('#8fa3b5',0,-8)+drops([22,33,44],44,54,'#2668aa',3.5,[1,.2,.2]),
+  thermo_hot: `<g transform="translate(22,-4) scale(.62)">${sunP()}</g>`+thermo(14,10,34,'#c43e30',22),
+  thermo_cool: cloudP('#b7c1ca',14,-12,.8)+thermo(14,10,34,'#2668aa',8),
+  humid: '<path d="M24 10C24 10 8 30 8 40a16 16 0 0 0 32 0C40 30 24 10 24 10z" fill="#5aa7c9"/><path d="M16 40a8 8 0 0 0 8 8" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M46 26C46 26 38 36 38 41a8 8 0 0 0 16 0C54 36 46 26 46 26z" fill="#8cc5dc"/>'
+};
+const icon=(k)=>`<svg viewBox="0 0 64 64">${ICONS[k]||ICONS.part}</svg>`;
+
+</script>
+<script src="./pronostico.js"></script>
 </body>
 </html>

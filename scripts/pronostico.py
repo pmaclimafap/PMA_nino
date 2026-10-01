@@ -37,7 +37,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pandas as pd  # noqa: E402
 
-from pipeline import almacenamiento as alm, configuracion as config  # noqa: E402
+from pipeline import (  # noqa: E402
+    agregacion,
+    almacenamiento as alm,
+    configuracion as config,
+    desfase as dsf,
+    exportar_pronostico,
+)
 from pipeline.fuentes import chirps, ideam, open_meteo  # noqa: E402
 
 COLUMNAS = ["emision", "objetivo", "horizonte", "municipio",
@@ -224,13 +230,54 @@ def main() -> int:
         return 0
 
     destino = alm.guardar_pronostico_tiempo(todo, captura, forzar=args.forzar)
+    log()
     if destino:
-        log()
         log(f"Archivado en `{destino}`.")
     else:
-        log()
         log("La captura de hoy ya existe y no se reescribe. "
             "Usar --forzar si de verdad hace falta.")
+
+    # ---- Derivados: se recalculan siempre, nunca se archivan ----
+    cfg_desfase = config.pronostico()["desfase"]
+    sesgos = alm.leer(alm.ruta("sesgos"))
+    clim = alm.leer(alm.ruta("climatologia"))
+
+    corregido = cfg_desfase["aplicar"] and not sesgos.empty
+    variables_corregibles = [
+        k for k, v in config.pronostico()["variables"].items()
+        if v.get("corregir_desfase")
+    ]
+    ajustado = dsf.aplicar(
+        todo, sesgos, cfg_desfase["bandas_horizonte"],
+        variables_corregibles, activo=corregido,
+    )
+    if corregido:
+        n = int(ajustado.corregido.sum())
+        log(f"Desfase aplicado a {n} de {len(ajustado)} filas.")
+    else:
+        aviso("Sin desfases estimados todavía: la anomalía se publica SIN "
+              "corregir y el tablero lo declara.")
+
+    con_anomalia = dsf.anomalia(ajustado, clim)
+    if clim.empty:
+        aviso("Sin climatología de referencia: no hay anomalía. "
+              "Correr el workflow 05 con que=climatologia.")
+
+    agregado = agregacion.agregar(con_anomalia)
+    resumen = agregacion.resumen_dia(agregado)
+    log(f"Agregados {len(agregado)} registros · {len(resumen)} días-municipio.")
+
+    emisiones = {
+        m: str(pd.to_datetime(g.emision.iloc[0]).date())
+        for m, g in todo.groupby("modelo")
+    }
+    datos = exportar_pronostico.construir(
+        agregado, resumen, con_anomalia, emisiones, desfase_aplicado=corregido
+    )
+    ruta_json = exportar_pronostico.escribir(
+        datos, Path("publico/pronostico.json")
+    )
+    log(f"Exportado: pronostico.json ({ruta_json.stat().st_size / 1024:.0f} KB)")
 
     alm.registrar_corrida({
         "inicio": inicio.isoformat(),
@@ -239,6 +286,7 @@ def main() -> int:
         "filas": len(todo),
         "modelos": int(todo.modelo.nunique()),
         "incidencias": len(avisos),
+        "desfase_aplicado": bool(corregido),
     })
     return 0
 
