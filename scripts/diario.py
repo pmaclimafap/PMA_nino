@@ -70,6 +70,11 @@ def log(t: str = "") -> None:
     lineas.append(t)
 
 
+def aviso(texto: str) -> None:
+    """Anotacion de advertencia visible en la pestana Actions."""
+    print(f"::warning::{texto}", flush=True)
+
+
 def volcar_resumen() -> None:
     destino = os.environ.get("GITHUB_STEP_SUMMARY")
     if destino:
@@ -195,8 +200,12 @@ def procesar(servicio, pendientes: list[tuple], tmp: Path
             })
 
         except Exception as e:
-            errores.append({"variable": var, "fecha": str(fecha),
-                            "motivo": str(e)})
+            detalle = {"variable": var, "fecha": str(fecha),
+                       "archivo": remoto.nombre, "motivo": str(e)}
+            errores.append(detalle)
+            # El detalle va al resumen del job, no solo al manifest: si no se
+            # ve aqui, nadie sabe que archivo fallo ni por que.
+            log(f"- ERROR `{remoto.nombre}` ({var}, {fecha}): {e}")
             registros.append({
                 "carpeta": cfg["clave_carpeta"],
                 "archivo": remoto.nombre,
@@ -336,7 +345,9 @@ def main() -> int:
             log("```")
             log(nuevos.head(15).to_string(index=False))
             log("```")
-        return 1 if errores else 0
+        if errores:
+            aviso(f"{len(errores)} archivo(s) con error en modo seco.")
+        return 0
 
     if not nuevos.empty:
         rutas = alm.guardar_observado(nuevos)
@@ -353,6 +364,8 @@ def main() -> int:
     ventana = pd.concat(partes, ignore_index=True) if partes else pd.DataFrame()
 
     if ventana.empty:
+        # Esto si es un fallo: no hay nada que mostrar.
+        print("::error::Sin datos en el almacenamiento. No se publica.")
         log("Sin datos en el almacenamiento. No se publica.")
         return 1
 
@@ -429,7 +442,18 @@ def main() -> int:
     log()
     log(f"Ventana publicada: {ventana.fecha.nunique()} día(s), "
         f"hasta {ventana.fecha.max().date()}.")
-    return 1 if errores else 0
+
+    # La corrida es exitosa si se publico algo util. Un archivo fallido de
+    # cientos no debe impedir publicar los 60 dias que si se procesaron, ni
+    # bloquear el despliegue del sitio (que exige conclusion == success).
+    # Los errores se reportan como advertencias y quedan en el manifest.
+    if errores:
+        aviso(f"{len(errores)} archivo(s) con error. "
+              "El sitio se publica con el resto; ver detalle arriba y en "
+              "publico/data/manifest.json.")
+    if faltantes:
+        aviso(f"{len(faltantes)} archivo(s) sin publicar en origen.")
+    return 0
 
 
 if __name__ == "__main__":

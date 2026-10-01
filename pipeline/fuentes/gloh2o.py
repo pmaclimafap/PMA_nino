@@ -14,6 +14,7 @@ import io
 import json
 import os
 import tempfile
+import time
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -28,6 +29,13 @@ SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 # Un .nc diario global pesa MBs. Por debajo de esto, Drive no entregó el
 # contenido real (atajo sin resolver, archivo vacío o una página de error).
 TAMANO_MINIMO_BYTES = 10_000
+
+# GloH2O publica los archivos del NRT hacia las 01:35 UTC. Pedir uno
+# mientras se esta escribiendo devuelve contenido truncado, y la cuota de
+# descarga de la carpeta compartida tambien produce fallos transitorios.
+# Ambos casos se resuelven reintentando con espera creciente.
+REINTENTOS = 3
+ESPERA_BASE_S = 4
 
 
 @dataclass(frozen=True)
@@ -112,11 +120,25 @@ def buscar(servicio, carpeta_id: str, nombre: str) -> ArchivoRemoto | None:
 
 
 def descargar(servicio, archivo: ArchivoRemoto, destino: Path) -> Path:
-    """Descarga a disco de forma atómica.
+    """Descarga a disco de forma atómica, con reintentos.
 
     Se escribe a un temporal y se renombra al final. Si el proceso muere a
     mitad, no queda un archivo truncado que mañana se dé por bueno.
     """
+    ultimo_error: Exception | None = None
+    for intento in range(1, REINTENTOS + 1):
+        try:
+            return _descargar_una_vez(servicio, archivo, destino)
+        except Exception as e:
+            ultimo_error = e
+            if intento < REINTENTOS:
+                time.sleep(ESPERA_BASE_S * intento)
+    raise IOError(
+        f"'{archivo.nombre}' falló tras {REINTENTOS} intentos: {ultimo_error}"
+    ) from ultimo_error
+
+
+def _descargar_una_vez(servicio, archivo: ArchivoRemoto, destino: Path) -> Path:
     destino = Path(destino)
     destino.parent.mkdir(parents=True, exist_ok=True)
 
@@ -139,6 +161,14 @@ def descargar(servicio, archivo: ArchivoRemoto, destino: Path) -> Path:
                 f"'{archivo.nombre}' pesa solo {tamano} bytes. Drive no entregó "
                 "el contenido real (¿atajo sin resolver, archivo vacío o cuota "
                 "de descarga excedida?)."
+            )
+        # Drive informa el tamaño en la metadata: si lo descargado no
+        # coincide, llegó truncado y abrirlo daría un error confuso de
+        # NetCDF en vez de señalar la causa.
+        if archivo.tamano and tamano != archivo.tamano:
+            raise IOError(
+                f"'{archivo.nombre}' llegó truncado: {tamano} bytes de "
+                f"{archivo.tamano} esperados."
             )
 
         ruta_tmp.replace(destino)
