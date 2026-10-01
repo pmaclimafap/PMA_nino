@@ -1,0 +1,68 @@
+name: 04 - Pronóstico de tiempo
+
+# Captura diaria de las tres fuentes y archivo de la emisión.
+#
+# HORARIO. Publicación observada de cada fuente:
+#   CHIRPS-GEFS   ~08:25 UTC
+#   WRF-IDEAM     ~09:30 UTC  (el índice del IDEAM reporta en UTC: los
+#                 GeoTIFF internos llevan marca de las 04:26 hora de
+#                 Colombia y Apache muestra 09:27, cinco horas exactas)
+#   Open-Meteo    corrida 00Z disponible desde ~08:00 UTC
+#
+# A las 12:00 UTC (07:00 en Colombia) quedan 2,5 h de margen sobre la
+# publicación más tardía observada, y el tablero amanece actualizado.
+# Se separa del monitoreo (05:00 UTC) porque ninguna de estas fuentes está
+# lista a esa hora.
+
+on:
+  schedule:
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+    inputs:
+      seco:
+        description: "Modo seco: no escribe en Hugging Face"
+        type: boolean
+        required: false
+        default: false
+      forzar:
+        description: "Sobrescribir la captura del día si ya existe"
+        type: boolean
+        required: false
+        default: false
+      fecha:
+        description: "Corrida a capturar (AAAA-MM-DD). Vacío = hoy"
+        required: false
+        default: ""
+
+concurrency:
+  group: datos
+  cancel-in-progress: false
+
+jobs:
+  pronostico:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install --quiet -r requirements.txt
+
+      - name: Capturar
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          # CHIRPS entrega GeoTIFF globales de 69 MB. Se leen por rangos
+          # HTTP con /vsicurl/, y estas variables evitan que GDAL liste el
+          # directorio remoto y pida bytes de más.
+          GDAL_DISABLE_READDIR_ON_OPEN: EMPTY_DIR
+          CPL_VSIL_CURL_ALLOWED_EXTENSIONS: .tif
+        run: |
+          python scripts/pronostico.py \
+            ${{ github.event.inputs.seco == 'true' && '--seco' || '' }} \
+            ${{ github.event.inputs.forzar == 'true' && '--forzar' || '' }} \
+            ${{ github.event.inputs.fecha != '' && format('--fecha {0}', github.event.inputs.fecha) || '' }}

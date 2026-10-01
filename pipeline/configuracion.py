@@ -36,6 +36,12 @@ def umbrales() -> dict:
 
 
 @lru_cache(maxsize=1)
+def pronostico() -> dict:
+    """Configuración del módulo de pronóstico (modelos, pesos, confianza)."""
+    return _cargar("pronostico.yml")
+
+
+@lru_cache(maxsize=1)
 def _municipios_raw() -> dict:
     return _cargar("municipios.yml")
 

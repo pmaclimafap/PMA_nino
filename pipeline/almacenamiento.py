@@ -195,10 +195,10 @@ def guardar_grilla(df: pd.DataFrame) -> list[str]:
 # Pronóstico: inmutable
 # ---------------------------------------------------------------------------
 
-def guardar_pronostico_diario(
-    df: pd.DataFrame, emision: date, forzar: bool = False
+def guardar_pronostico_tiempo(
+    df: pd.DataFrame, captura: date, forzar: bool = False
 ) -> str | None:
-    """Guarda una emisión. NO reescribe una que ya exista.
+    """Guarda una captura diaria de pronósticos. NO reescribe una existente.
 
     Si el archivo está, la corrida se repitió el mismo día y sobrescribirlo
     solo puede destruir datos. Con `forzar=True` se sobrescribe, y es algo
@@ -208,7 +208,7 @@ def guardar_pronostico_diario(
         return None
 
     destino = ruta(
-        "pronostico_diario", anio=emision.year, fecha=emision.isoformat()
+        "pronostico_tiempo", anio=captura.year, fecha=captura.isoformat()
     )
 
     if existe(destino) and not forzar:
@@ -216,19 +216,17 @@ def guardar_pronostico_diario(
         return None
 
     escribir(
-        df, destino, f"pronóstico emitido {emision.isoformat()}: {len(df)} filas"
+        df, destino, f"pronóstico capturado {captura.isoformat()}: {len(df)} filas"
     )
     return destino
 
 
-def guardar_pronostico_estacional(
+def guardar_pronostico_clima(
     df: pd.DataFrame, emision: date, forzar: bool = False
 ) -> str | None:
     if df.empty:
         return None
-    destino = ruta(
-        "pronostico_estacional", anio=emision.year, mes=emision.month
-    )
+    destino = ruta("pronostico_clima", anio=emision.year, mes=emision.month)
     if existe(destino) and not forzar:
         print(f"  {destino} ya existe; no se reescribe.")
         return None
@@ -245,7 +243,7 @@ def leer_pronosticos(anio: int | None = None) -> pd.DataFrame:
         repo_type=_cfg()["tipo"],
         token=os.environ.get("HF_TOKEN"),
     )
-    prefijo = f"pronostico/diario/{anio}/" if anio else "pronostico/diario/"
+    prefijo = f"pronostico/tiempo/{anio}/" if anio else "pronostico/tiempo/"
     objetivo = [a for a in archivos if a.startswith(prefijo) and a.endswith(".parquet")]
     if not objetivo:
         return pd.DataFrame()

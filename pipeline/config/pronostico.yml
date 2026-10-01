@@ -1,0 +1,257 @@
+# Módulo de pronóstico — escala de tiempo
+#
+# Este archivo es DATO y lo editan personas. Los valores CALCULADOS por el
+# pipeline (desfases por modelo) van aparte, en referencia/sesgos.parquet,
+# para que un script no borre estos comentarios al reescribir.
+#
+# Metodología completa en docs/PRONOSTICO.md
+
+meta:
+  version: 0
+  actualizado: 2026-10-01
+
+# ---------------------------------------------------------------------------
+# Modelos
+# ---------------------------------------------------------------------------
+# Criterio de selección: LINAJES INDEPENDIENTES. Open-Meteo expone unos 45
+# modelos, pero muchos son variantes regionales sin cobertura de Colombia o
+# derivados del mismo modelo padre. Incluirlos todos sería ruido.
+#
+# peso: base 1.0. El WRF-IDEAM lleva bonificación regional por resolver
+#   Colombia a 10 km, que importa en Planadas (1.576 km² con fuerte gradiente
+#   altitudinal, donde una celda de 25 km promedia valle y montaña).
+# horizonte_max: más allá, el peso del modelo cae a 0 y deja de aportar.
+
+modelos:
+
+  ecmwf_ifs:
+    nombre: ECMWF IFS HRES
+    origen: ECMWF
+    tipo: fisico
+    adaptador: open_meteo
+    id_api: ecmwf_ifs
+    resolucion_km: 9
+    horizonte_max: 10
+    peso: 1.0
+
+  gfs:
+    nombre: NCEP GFS
+    origen: NOAA
+    tipo: fisico
+    adaptador: open_meteo
+    id_api: gfs_global
+    resolucion_km: 25
+    horizonte_max: 16
+    peso: 1.0
+
+  icon:
+    nombre: DWD ICON
+    origen: DWD
+    tipo: fisico
+    adaptador: open_meteo
+    id_api: icon_global
+    resolucion_km: 11
+    horizonte_max: 7
+    peso: 1.0
+
+  gem:
+    nombre: GEM
+    origen: CMC
+    tipo: fisico
+    adaptador: open_meteo
+    id_api: gem_global
+    resolucion_km: 15
+    horizonte_max: 10
+    peso: 1.0
+
+  ecmwf_aifs:
+    nombre: ECMWF AIFS
+    origen: ECMWF
+    tipo: ia
+    adaptador: open_meteo
+    id_api: ecmwf_aifs025_single
+    resolucion_km: 25
+    horizonte_max: 15
+    peso: 1.0
+
+  weathernext:
+    nombre: Google WeatherNext 2
+    origen: Google DeepMind
+    tipo: ia_ensamble
+    adaptador: open_meteo_ensamble
+    id_api: google_weathernext2
+    resolucion_km: 25
+    horizonte_max: 15
+    peso: 1.0
+    nota: >
+      Es un ENSAMBLE. Su media no es comparable sin más con un determinista:
+      es más suave y subestima los extremos, justo lo que importa en una
+      alerta. Se guarda la media y la dispersión, y el tablero lo marca.
+
+  wrf_ideam:
+    nombre: WRF-IDEAM
+    origen: IDEAM
+    tipo: fisico_regional
+    adaptador: ideam
+    resolucion_km: 10
+    horizonte_max: 7
+    peso: 1.3
+    nota: Bonificación regional por resolver Colombia a 10 km.
+
+  chirps_gefs:
+    nombre: CHIRPS-GEFS
+    origen: CHC/UCSB
+    tipo: hibrido
+    adaptador: chirps
+    resolucion_km: 5
+    horizonte_max: 16
+    peso: 1.3
+    solo_variables: [precipitacion]
+    nota: >
+      Único del conjunto YA CORREGIDO POR SESGO, por emparejamiento de
+      cuantiles contra la climatología de CHIRPS. Para lluvia, la variable
+      con peor sesgo en los modelos, tenerla calibrada de origen vale mucho.
+      Bonificación por eso.
+
+# ---------------------------------------------------------------------------
+# Variables
+# ---------------------------------------------------------------------------
+# Las MISMAS cuatro del monitoreo, a propósito: permite dibujar una serie
+# continua donde el pasado es observado y el futuro pronosticado.
+#
+# El viento NO es variable del módulo: se muestra solo vía el mapa de Windy.
+
+variables:
+
+  tmax:
+    unidad: °C
+    open_meteo_diaria: temperature_2m_max
+    presentacion: anomalia          # sesgo aditivo y estable
+    corregir_desfase: true
+
+  tmin:
+    unidad: °C
+    open_meteo_diaria: temperature_2m_min
+    presentacion: anomalia
+    corregir_desfase: true
+
+  precipitacion:
+    unidad: mm
+    open_meteo_diaria: precipitation_sum
+    presentacion: valor_y_probabilidad
+    corregir_desfase: false
+    nota: >
+      La anomalía comunica poco: lo normal de un día concreto suele ser cero.
+      Y el sesgo no es tanto de cantidad como de FRECUENCIA (los modelos
+      lluevan poquito casi todos los días). En la serie van los milímetros;
+      en las tarjetas, la probabilidad de superar el umbral de día con lluvia.
+      NUNCA se promedian modelos para lluvia: produce una llovizna constante
+      que ningún modelo predijo.
+
+  humedad_relativa:
+    unidad: "%"
+    # Open-Meteo no garantiza HR como variable diaria en todos los modelos.
+    # Se pide horaria y se agrega al día local.
+    open_meteo_horaria: relative_humidity_2m
+    agregaciones: [media, maxima]
+    presentacion: valor_y_probabilidad
+    corregir_desfase: false
+    nota: >
+      Acotada 0–100, así que una corrección aditiva se sale de rango cerca de
+      los extremos. Y está acoplada al error de temperatura: si el modelo da
+      Tmax baja, da HR alta. El umbral sí comunica (roya en café, estrés
+      calórico en pecuarios).
+
+# Presentación, no variable: alimenta el icono de la tarjeta.
+# Se agrega por grupo de severidad con más peso, no por promedio.
+codigo_tiempo:
+  open_meteo_diaria: weathercode
+  solo_presentacion: true
+
+# ---------------------------------------------------------------------------
+# Captura
+# ---------------------------------------------------------------------------
+
+captura:
+  horizonte_dias: 16
+  zona_horaria: America/Bogota     # el día local debe ser el mismo para todos
+  # El IDEAM publica hacia las 14:30 UTC, así que la corrida va después.
+  # El monitoreo corre a las 05:00 UTC; se separan a propósito.
+  hora_utc: 16
+  reintentos: 3
+
+# ---------------------------------------------------------------------------
+# Agregación y confianza
+# ---------------------------------------------------------------------------
+# Metodología adaptada de github.com/Flowm/meteocompare
+#
+#   spreadScore     = clamp(1 − desviación / dispersión_típica, 0, 1)
+#   modelFactor     = min(1, n / 3)
+#   predictibilidad = spreadScore × modelFactor
+#
+# El factor por número de modelos evita que uno solo alcance confianza alta
+# "coincidiendo consigo mismo".
+
+confianza:
+  modelos_para_factor_pleno: 3
+
+  # Dispersión que se considera normal para ese horizonte. Crece con los días
+  # porque la incertidumbre crece. PENDIENTE de calibrar con datos propios:
+  # estos son valores de partida.
+  dispersion_tipica:
+    tmax:              {1: 1.0, 3: 1.6, 7: 2.4, 16: 3.4}
+    tmin:              {1: 0.9, 3: 1.4, 7: 2.0, 16: 2.8}
+    precipitacion:     {1: 4.0, 3: 7.0, 7: 11.0, 16: 15.0}
+    humedad_relativa:  {1: 4.0, 3: 6.0, 7: 9.0, 16: 12.0}
+
+  # El día vale lo que vale su variable MENOS confiable.
+  # Promediar hace que todo quede en medio: una variable certera nunca
+  # levanta el día y una incierta nunca lo hunde.
+  resumen_dia: minimo
+  variables_resumen: [tmax, precipitacion]
+
+  cortes:
+    alta: 0.70
+    media: 0.40
+    # por debajo de 0.40, baja
+
+# ---------------------------------------------------------------------------
+# Corrección de desfase
+# ---------------------------------------------------------------------------
+# El desfase es la diferencia entre lo que pronostica un modelo y lo que
+# observa la referencia. NO se mide contra la realidad (no hay estaciones) y
+# no hace falta: la realidad se cancela en la resta.
+#
+# Se calcula sobre la RESTA DÍA POR DÍA, no sobre el promedio de pronósticos.
+# Promediar los pronósticos de abril-octubre 2026 daría una climatología corta
+# contaminada por El Niño; al promediar la resta, el calor está en ambas
+# columnas y se va.
+
+desfase:
+  aplicar: true
+  pares_minimos: 30        # con menos, se muestra sin corregir y se declara
+  bandas_horizonte: [[1, 3], [4, 7], [8, 16]]
+  recalcular: mensual      # día 1, junto al cierre del monitoreo
+
+  # Sobrescritura manual, si un estimado se ve raro. Vacío = usar el calculado.
+  manual: {}
+
+# ---------------------------------------------------------------------------
+# Referencia de la anomalía
+# ---------------------------------------------------------------------------
+# ERA5 no es dato observado y también está sesgado. No importa: se usa como
+# REGLA DE MEDIR, no como verdad. La pregunta que hacemos es una diferencia,
+# y el error de la regla se cancela en la resta siempre que todo se mida con
+# la misma.
+#
+# Lo que aporta y ningún modelo puede: QUÉ ES NORMAL. Eso requiere décadas, y
+# del archivo de pronósticos solo hay 6 meses, que además son de El Niño
+# fuerte.
+
+climatologia:
+  fuente: era5_open_meteo
+  periodo: [1991, 2020]
+  # Por día del año, no promedio anual único: el sesgo de ERA5 puede tener
+  # estacionalidad y así se cancela mejor.
+  resolucion: dia_del_anio
+  suavizado_dias: 15       # ventana centrada, para que no quede dentada
