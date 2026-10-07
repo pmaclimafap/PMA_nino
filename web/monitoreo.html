@@ -180,6 +180,9 @@
   .tab-btn:not(.activa):hover { color: var(--color-ink); background: var(--color-bg); }
 
   .campo-subtitulo-fuera { font-size: 0.85rem; color: var(--color-ink-soft); margin-bottom: 14px; }
+  .campo-estado { font-size: 0.85rem; color: var(--color-ink-soft); margin: -8px 0 14px; line-height: 1.5; }
+  .campo-estado strong { color: var(--color-ink); }
+  .campo-estado .aviso { color: #9A5B00; }
   .campo-vacio { font-size: 0.85rem; color: var(--color-ink-soft); font-style: italic; padding: 24px 0; text-align: center; }
 
   footer { margin-top: 28px; font-size: 0.78rem; color: var(--color-ink-soft); border-top: 1px solid var(--color-line); padding-top: 14px; }
@@ -219,6 +222,7 @@
 
   <div class="controls">
     <div class="field"><label for="sel-municipio">Municipio</label><select id="sel-municipio"></select></div>
+    <div class="field" id="campo-asociacion-field" style="display:none;"><label for="sel-asociacion">Asociación</label><select id="sel-asociacion"></select></div>
     <div class="field"><label for="sel-periodo">Período</label><select id="sel-periodo"></select></div>
     <div class="field"><label for="sel-variable">Variable</label><select id="sel-variable"></select></div>
   </div>
@@ -259,6 +263,7 @@
   </div>
 
   <div id="vista-campo" style="display:none;">
+    <div class="campo-estado" id="campo-estado"></div>
     <div class="cards" id="campo-cards"></div>
     <div class="chart-panel">
       <div class="temp-toggle" id="campo-temp-toggle" style="display:none;">
@@ -271,9 +276,9 @@
     </div>
 
     <div class="mapa-panel">
-      <h2 style="font-family:var(--font-display); font-size:1.05rem; font-weight:600; margin:0 0 12px;">Ubicación del reporte</h2>
+      <h2 style="font-family:var(--font-display); font-size:1.05rem; font-weight:600; margin:0 0 12px;">Ubicación del punto de monitoreo</h2>
       <div id="campo-mapa-leaflet"></div>
-      <div class="mapa-nota">Ubicación de la finca dentro del municipio donde se están tomando los datos.</div>
+      <div class="mapa-nota" id="campo-mapa-nota"></div>
     </div>
   </div>
 
@@ -304,6 +309,13 @@
    }
    ====================================================================== */
 
+/* ------------------------------------------------------------------------
+   MONITOREO COMUNITARIO: los reportes de las asociaciones NO vienen en
+   data.json. Los entrega un Google Apps Script (monitoreo_comunitario_apps_script.gs)
+   que lee las hojas de la carpeta "Monitoreo_climatico_comunitario" en Drive.
+   ------------------------------------------------------------------------ */
+const URL_MONITOREO_COMUNITARIO = "https://script.google.com/macros/s/AKfycbwQkCF_XlnDb_e5GfzSHZzl2zsaBezR7BsaOaWiSiC2pcz0byO8NjKKoWD6qw26_BU/exec";
+
 const MUNICIPIOS = [
   "Los Palmitos (Sucre)",
   "San José de Toluviejo (Sucre)",
@@ -321,70 +333,8 @@ function listaMunicipios() {
   return MUNICIPIOS.slice(0, -1).join(", ") + " y " + MUNICIPIOS.slice(-1);
 }
 
-function pseudoRandom(seed) {
-  let s = seed % 2147483647;
-  if (s <= 0) s += 2147483646;
-  return function () { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
-}
-
-function generarSerieMunicipio(nombre, seedBase, dias = 65) {
-  const rand = pseudoRandom(seedBase);
-  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
-  const fechas = [];
-  for (let i = dias - 1; i >= 0; i--) { const d = new Date(hoy); d.setDate(d.getDate() - i); fechas.push(d.toISOString().slice(0, 10)); }
-
-  const precip = fechas.map((f, i) => {
-    let v; const diasDesdeHoy = dias - 1 - i;
-    if (diasDesdeHoy <= 9) v = rand() < 0.15 ? +(rand() * 1).toFixed(1) : 0;
-    else if (diasDesdeHoy >= 30 && diasDesdeHoy <= 38) v = +(5 + rand() * 15).toFixed(1);
-    else v = rand() < 0.35 ? +(rand() * 12).toFixed(1) : +(rand() * 0.8).toFixed(1);
-    return { date: f, value: v };
-  });
-
-  const baseTemp = 22 + (seedBase % 5) * 1.3;
-  const tavg = fechas.map((f, i) => ({ date: f, value: +(baseTemp + Math.sin(i / 6) * 1.5 + (rand() - 0.5) * 1.2).toFixed(1) }));
-  // Se fuerzan algunos días calurosos recientes para poder ver el indicador de umbral funcionando
-  const tmin = tavg.map((p) => ({ date: p.date, value: +(p.value - (2 + rand() * 1.5)).toFixed(1) }));
-  const tmax = tavg.map((p, i) => {
-    const diasDesdeHoy = dias - 1 - i;
-    let extra = (diasDesdeHoy <= 12 && rand() < 0.4) ? 8 + rand() * 4 : 0;
-    return { date: p.date, value: +(p.value + (2.5 + rand() * 2) + extra).toFixed(1) };
-  });
-
-  const relhum = fechas.map((f, i) => {
-    const diasDesdeHoy = dias - 1 - i;
-    let base = 72 + Math.sin(i / 5) * 9 + (rand() - 0.5) * 8;
-    if (diasDesdeHoy >= 30 && diasDesdeHoy <= 38) base += 12; // coincide con período húmedo
-    return { date: f, value: Math.max(35, Math.min(97, +base.toFixed(0))) };
-  });
-
-  return { precip, tavg, tmin, tmax, relhum };
-}
-
-function generarDatosEjemplo() {
-  return {
-    generado_en: new Date().toISOString(),
-    municipios: Object.fromEntries(MUNICIPIOS.map((m, i) => [m, generarSerieMunicipio(m, 17 + i * 31)])),
-    observaciones: [],
-    enso: {
-      valor: 1.9,
-      categoria: "El Niño fuerte",
-      actualizado: "10 sep 2026 (CPC/NOAA)",
-      fuente_url: "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml",
-    },
-  };
-}
-
-// Se llena al arrancar: primero se intenta el data.json real (lo genera el
-// GitHub Action); si todavía no existe (o falla la carga), se usan datos de
-// ejemplo para que la página nunca se quede en blanco.
+// Se llena al arrancar con el data.json real (lo genera el GitHub Action).
 let datos;
-let datosReales = false;
-
-/* Sin datos, el tablero LO DICE. Antes caía en generarDatosEjemplo() avisando
-   solo por consola y seguía mostrando el sello de "Actualizado", así que una
-   simulación era indistinguible de la realidad para quien la mirara.
-   generarDatosEjemplo() se conserva y solo se usa con ?demo=1 en la URL. */
 function mostrarSinDatos(motivo) {
   const aviso = document.createElement("div");
   aviso.setAttribute("role", "alert");
@@ -405,20 +355,33 @@ function mostrarSinDatos(motivo) {
     .forEach((el) => (el.style.display = "none"));
 }
 
-async function cargarDatos() {
-  if (new URLSearchParams(location.search).get("demo") === "1") {
-    datos = generarDatosEjemplo();
-    datosReales = false;
-    console.warn("MODO DEMO: datos simulados, no reales.");
-    return;
+/* Reportes comunitarios: se piden aparte, en paralelo a data.json, para que
+   un problema con el Apps Script nunca deje sin datos la parte satelital. */
+let comunitario = null;        // respuesta del Apps Script
+let comunitarioError = null;   // texto del error si no se pudo cargar
+
+async function cargarComunitario() {
+  try {
+    if (!URL_MONITOREO_COMUNITARIO) throw new Error("Falta configurar URL_MONITOREO_COMUNITARIO en el tablero.");
+    const resp = await fetch(URL_MONITOREO_COMUNITARIO, { cache: "no-store" });
+    if (!resp.ok) throw new Error("HTTP " + resp.status + " al pedir los reportes comunitarios");
+    comunitario = await resp.json();
+    if (!Array.isArray(comunitario.asociaciones)) throw new Error("La respuesta no trae asociaciones");
+    (comunitario.avisos || []).forEach((a) => console.warn("Monitoreo comunitario:", a));
+  } catch (e) {
+    console.error("No se pudieron cargar los reportes comunitarios:", e);
+    comunitario = null;
+    comunitarioError = e.message;
   }
+}
+
+async function cargarDatos() {
   const resp = await fetch("./data.json", { cache: "no-store" });
   if (!resp.ok) throw new Error("HTTP " + resp.status + " al pedir data.json");
   datos = await resp.json();
   if (!datos.municipios || !Object.keys(datos.municipios).length) {
     throw new Error("data.json llegó sin municipios");
   }
-  datosReales = true;
 }
 
 /* ======================================================================
@@ -443,62 +406,31 @@ const MUNICIPIO_DEPARTAMENTO = {
 function slug(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]/g, "-").toLowerCase(); }
 
 /* ------------------------------------------------------------------------
-   GRILLA ESPACIAL POR MUNICIPIO Y VARIABLE (demo)
-   Hoy el pipeline extrae MSWX/MSWEP en un solo punto (centroide) por
-   municipio para las series de líneas, pero además recorta el RASTER
-   completo dentro del polígono para lluvia, temperatura y humedad — eso es
-   lo que llega en data.json como grid / grid_tavg / grid_relhum. Mientras
-   no exista ese archivo real, se simula aquí una grilla 7x7 de ejemplo.
+   GRILLA ESPACIAL POR MUNICIPIO Y VARIABLE
+   El pipeline recorta el ráster de MSWX/MSWEP dentro de cada municipio y lo
+   entrega en data.json como grid / grid_tavg / grid_relhum. Si un municipio
+   no trae su grilla, se devuelve vacía: el mapa muestra solo el contorno y
+   avisa que no hay datos.
    ------------------------------------------------------------------------ */
 const GRID_FIELD_POR_VARIABLE = { precip: "grid", tavg: "grid_tavg", relhum: "grid_relhum" };
-const gridCache = {};
 function obtenerGrilla(nombreMunicipio, varKey) {
-  const claveCache = nombreMunicipio + "|" + varKey;
-  if (gridCache[claveCache]) return gridCache[claveCache];
-
-  const campo = GRID_FIELD_POR_VARIABLE[varKey];
-  const gridReal = datos.municipios[nombreMunicipio][campo];
-  if (gridReal && gridReal.length) {
-    gridCache[claveCache] = { celdas: gridReal };
-    return gridCache[claveCache];
-  }
-
-  const depto = MUNICIPIO_DEPARTAMENTO[nombreMunicipio];
-  const feat = DEPARTAMENTOS_GEO[depto].features.find((f) => f.properties.target === nombreMunicipio);
-  const bboxMuni = bboxDeGeometria(feat.geometry);
   const vars = datos.municipios[nombreMunicipio];
-  const n = 7;
-  const [minlon, maxlon, minlat, maxlat] = bboxMuni;
-  const rand = pseudoRandom(MUNICIPIOS.indexOf(nombreMunicipio) * 977 + 13 + (varKey === "tavg" ? 1000 : varKey === "relhum" ? 2000 : 0));
-  // La lluvia varía bastante de un lado a otro del municipio (ejemplo);
-  // temperatura y humedad varían mucho menos en un área tan chica.
-  const [gMin, gMax] = varKey === "precip" ? [0.5, 1.4] : [0.95, 1.05];
-  const ruidoAmp = varKey === "precip" ? 0.3 : 0.03;
-  const celdas = [];
-  for (let i = 0; i < n; i++) {
-    for (let j = 0; j < n; j++) {
-      const lon = minlon + ((maxlon - minlon) * i) / (n - 1);
-      const lat = minlat + ((maxlat - minlat) * j) / (n - 1);
-      const gradiente = gMin + (gMax - gMin) * (i / (n - 1));
-      const ruido = 1 + (rand() - 0.5) * ruidoAmp;
-      const factor = gradiente * ruido;
-      const valores = vars[varKey].map((p) => +(p.value * factor).toFixed(1));
-      celdas.push({ lon, lat, valores });
-    }
-  }
-  gridCache[claveCache] = { celdas };
-  return gridCache[claveCache];
+  const gridReal = vars && vars[GRID_FIELD_POR_VARIABLE[varKey]];
+  return { celdas: Array.isArray(gridReal) ? gridReal : [] };
 }
 
 function agregadoCeldaPeriodo(valores, vars, diasPeriodo, fechaObjetivo, varKey) {
   let ventana;
-  if (fechaObjetivo) {
+  if (fechaObjetivo && vars && vars[varKey]) {
     const idx = vars[varKey].findIndex((p) => p.date === fechaObjetivo);
     ventana = idx >= 0 ? [valores[idx]] : [];
   } else {
     ventana = valores.slice(-diasPeriodo);
   }
-  if (!ventana.length) return 0;
+  // Días sin dato (null) no cuentan; si no queda ninguno, la celda no se
+  // pinta. Antes devolvía 0, que en lluvia se veía como "seco".
+  ventana = ventana.filter((v) => typeof v === "number" && isFinite(v));
+  if (!ventana.length) return null;
   if (varKey === "precip") return ventana.reduce((s, v) => s + v, 0); // acumulado
   return ventana.reduce((s, v) => s + v, 0) / ventana.length; // promedio
 }
@@ -514,17 +446,14 @@ const ETIQUETA_CON_UNIDAD = { "Lluvia": "Lluvia (mm)", "Temperatura": "Temperatu
 const MESES_ES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
 
 /* ------------------------------------------------------------------------
-   UMBRALES DE EJEMPLO — se editan aquí en el código, no desde la interfaz.
-   Cámbialos cuando tengas los valores reales para cada municipio/variable.
+   UMBRALES DE EJEMPLO 
+   Cambiarlos cuando se tengan los valores reales para cada municipio/variable.
    ------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------
    SISTEMA PRODUCTIVO: los umbrales de "días de calor" / "días de humedad
-   alta" dependen del cultivo (no es lo mismo el estrés por calor en arroz
-   que en café). Los cultivos disponibles dependen del departamento —lista
-   tomada de las fichas departamentales del Ministerio de Agricultura—.
-   "Ganadería" no se desglosa, es una sola opción genérica.
+   alta" dependen del cultivo.
    Los umbrales de abajo son de ejemplo por ahora — se reemplazan cuando
-   tengas el análisis agronómico real por cultivo.
+   se tenga el análisis agronómico real por cultivo.
    ------------------------------------------------------------------------ */
 const CULTIVOS_POR_DEPARTAMENTO = {
   Sucre: ["Arroz", "Maíz", "Ñame", "Yuca", "Ajonjolí", "Ganadería"],
@@ -548,8 +477,8 @@ const UMBRAL_HR_POR_CULTIVO = {
 // Umbrales de lluvia ACUMULADA, uno por cada duración de período — un
 // acumulado de "Fuerte" en un solo día es mucho menor que uno de "Fuerte"
 // en un mes, así que cada período tiene su propia escala. Valores de
-// ejemplo (referencia diaria de IDEAM, escalados para los demás); ajústalos
-// cuando tengas los umbrales reales de cada zona.
+// ejemplo (referencia diaria de IDEAM, escalados para los demás); AJUSTARLOS
+// cuando se tenga los umbrales reales de cada zona.
 const UMBRALES_LLUVIA_POR_DIAS = {
   1:  { seco: 1,  moderada: 15,  fuerte: 40 },   // Ayer (1 día)
   7:  { seco: 5,  moderada: 50,  fuerte: 100 },  // Última semana
@@ -604,9 +533,15 @@ function calcularIndicadores(vars, diasPeriodo, fechaObjetivo, umbralTmax, umbra
   }
   if (tmin && tmin.length) { tminPeriodo = seleccionar(tmin, diasPeriodo, fechaObjetivo); if (tminPeriodo.length) ind.temp_min = extremos(tminPeriodo).min; }
   if (tmaxPeriodo && tminPeriodo && tmaxPeriodo.length && tminPeriodo.length) {
-    const amp = tmaxPeriodo.map((p, i) => ({ date: p.date, value: p.value - tminPeriodo[i].value }));
-    ind.amplitud_promedio = amp.reduce((s, p) => s + p.value, 0) / amp.length;
-    ind.amplitud_max = extremos(amp).max;
+    // Se empareja por fecha: en los reportes comunitarios puede haber un día
+    // con máxima pero sin mínima.
+    const tminPorFecha = Object.fromEntries(tminPeriodo.map((p) => [p.date, p.value]));
+    const amp = tmaxPeriodo.filter((p) => tminPorFecha[p.date] !== undefined)
+      .map((p) => ({ date: p.date, value: p.value - tminPorFecha[p.date] }));
+    if (amp.length) {
+      ind.amplitud_promedio = amp.reduce((s, p) => s + p.value, 0) / amp.length;
+      ind.amplitud_max = extremos(amp).max;
+    }
   }
 
   const relhum = vars.relhum;
@@ -643,6 +578,28 @@ function actualizarOpcionesSistema() {
 }
 $municipio.addEventListener("change", actualizarOpcionesSistema);
 
+const $asociacion = document.getElementById("sel-asociacion");
+
+// Solo las asociaciones del municipio elegido. Se conserva la elección si
+// la asociación sigue disponible.
+function asociacionesDelMunicipio(municipio) {
+  return comunitario ? comunitario.asociaciones.filter((a) => a.municipio === municipio) : [];
+}
+function actualizarOpcionesAsociacion() {
+  const actual = $asociacion.value;
+  const lista = asociacionesDelMunicipio($municipio.value);
+  $asociacion.innerHTML = "";
+  if (!lista.length) {
+    $asociacion.add(new Option(comunitario ? "Sin asociaciones" : "Cargando…", ""));
+    $asociacion.disabled = true;
+    return;
+  }
+  $asociacion.disabled = false;
+  lista.forEach((a) => $asociacion.add(new Option(a.nombre, a.id)));
+  if (lista.some((a) => a.id === actual)) $asociacion.value = actual;
+}
+$municipio.addEventListener("change", actualizarOpcionesAsociacion);
+
 MUNICIPIOS.forEach((m) => $municipio.add(new Option(m, m)));
 Object.keys(PERIODOS).forEach((p) => $periodo.add(new Option(p, p)));
 VARIABLES_VISTA.forEach((v) => $variable.add(new Option(ETIQUETA_CON_UNIDAD[v], v)));
@@ -670,8 +627,6 @@ function enso_arco(cx, cy, r, angIni, angFin) {
 }
 function pintarEnso() {
   const e = datos.enso || {};
-  // El índice ONI todavía no está conectado al pipeline, así que puede venir
-  // nulo. Sin esta guarda, toFixed() rompe el arranque completo.
   if (e.valor === null || e.valor === undefined || !isFinite(e.valor)) {
     document.getElementById("enso-gauge").innerHTML = "";
     document.getElementById("enso-fase-texto").textContent = "Fase ENSO: sin dato";
@@ -771,7 +726,11 @@ function mostrarIndicadores(vars, diasPeriodo, etiqueta, variableElegida, fechaO
     if (ind.relhum_no_disponible) {
       contenedor.append(tarjeta(`Humedad relativa — ${etiqueta}`, "No disponible", "El dato de este día aún no se ha publicado", "--color-relhum", "💧"));
     } else if (ind.relhum_promedio !== undefined) {
-      const detalle = `Máx: ${ind.relhum_max.value.toFixed(0)}% (${fechaEs(ind.relhum_max.date)})  Mín: ${ind.relhum_min.value.toFixed(0)}% (${fechaEs(ind.relhum_min.date)})`;
+      // Los reportes comunitarios traen HR máxima y mínima diarias: si están,
+      // los extremos salen de ellas y no del promedio.
+      const hrMax = vars.relhum_max && vars.relhum_max.length ? extremos(vars.relhum_max.slice(-diasPeriodo)).max : ind.relhum_max;
+      const hrMin = vars.relhum_min && vars.relhum_min.length ? extremos(vars.relhum_min.slice(-diasPeriodo)).min : ind.relhum_min;
+      const detalle = `Máx: ${hrMax.value.toFixed(0)}% (${fechaEs(hrMax.date)})  Mín: ${hrMin.value.toFixed(0)}% (${fechaEs(hrMin.date)})`;
       contenedor.append(tarjeta(`Humedad relativa — ${etiqueta}`, `${ind.relhum_promedio.toFixed(0)} % promedio`, detalle, "--color-relhum", "💧"));
       if (ind.dias_hr_sobre_umbral !== undefined) {
         contenedor.append(tarjeta(`Humedad por encima de ${umbralHr}%`, `${ind.dias_hr_sobre_umbral} de ${dias(ind.dias_hr_total)}`, `Superaron el umbral para ${sistemaProductivo}`, "--color-relhum", "💦"));
@@ -820,7 +779,14 @@ function graficarPeriodo(vars, diasPeriodo, etiqueta, municipio, variableElegida
     }, { displayModeBar: false, responsive: true });
   } else if (variableElegida === "Humedad relativa") {
     const serie = vars.relhum.slice(-diasPeriodo);
-    const traces = [{ x: serie.map((p) => p.date), y: serie.map((p) => p.value), mode: "lines+markers", line: { color: "#4FA8C9", width: 2.5 }, marker: { size: 5 }, name: "Humedad relativa", hovertemplate: "%{x}<br>%{y:.0f}%<extra></extra>" }];
+    let traces = [{ x: serie.map((p) => p.date), y: serie.map((p) => p.value), mode: "lines+markers", line: { color: "#4FA8C9", width: 2.5 }, marker: { size: 5 }, name: "Humedad relativa", hovertemplate: "%{x}<br>%{y:.0f}%<extra></extra>" }];
+    if (vars.relhum_max) {
+      const hx = vars.relhum_max.slice(-diasPeriodo), hn = vars.relhum_min.slice(-diasPeriodo);
+      traces = [
+        { x: hx.map((p) => p.date), y: hx.map((p) => p.value), mode: "lines+markers", line: { color: "#2A6E85", width: 2.5 }, marker: { size: 5 }, name: "Humedad máxima", hovertemplate: "%{x}<br>%{y:.0f}%<extra></extra>" },
+        { x: hn.map((p) => p.date), y: hn.map((p) => p.value), mode: "lines+markers", line: { color: "#8FC1E0", width: 2.5 }, marker: { size: 5 }, name: "Humedad mínima", hovertemplate: "%{x}<br>%{y:.0f}%<extra></extra>" },
+      ];
+    }
     Plotly.newPlot(targetId, traces, {
       ...layoutBase, yaxis: { title: { text: "<b>%</b>", font: { size: 15 } } },
       title: { text: "<b>Humedad relativa diaria</b>", font: { size: 18 } },
@@ -875,13 +841,13 @@ let mapaZoomMunicipio = true; // por defecto, acercado al municipio seleccionado
 $btnMapaZoom.addEventListener("click", () => { mapaZoomMunicipio = !mapaZoomMunicipio; panel(); });
 
 /* ------------------------------------------------------------------------
-   COLORES Y CATEGORÍAS DEL MAPA — faltaban en el código original: mapean
-   la variable elegida en el selector ("Lluvia"/"Temperatura"/"Humedad
-   relativa") a la clave interna de los datos (precip/tavg/relhum), definen
-   los cortes que separan cada franja de color, y arman la franja + color
+   COLORES Y CATEGORÍAS DEL MAPA: mapean la variable elegida en el selector 
+   ("Lluvia"/"Temperatura"/"Humedad relativa") a la clave interna de los 
+   datos (precip/tavg/relhum), definen los cortes que separan cada franja de 
+   color, y arman la franja + color
    para un valor agregado dado. Los cortes de lluvia reutilizan
    UMBRALES_LLUVIA_POR_DIAS (ya definidos arriba); los de temperatura y
-   humedad son de ejemplo — ajústalos cuando tengas valores reales por zona.
+   humedad son de ejemplo —  AJUSTAR cuando se tengan los valores reales por zona.
    ------------------------------------------------------------------------ */
 const CLAVE_MAPA_VARIABLE = { "Lluvia": "precip", "Temperatura": "tavg", "Humedad relativa": "relhum" };
 const ETIQUETA_VARIABLE = { precip: "Lluvia", tavg: "Temperatura", relhum: "Humedad relativa" };
@@ -925,9 +891,7 @@ function pintarLeyendaMapa(varKey, diasPeriodo) {
 
 /* ------------------------------------------------------------------------
    MAPA: Leaflet real, con imágenes satelitales de fondo (Esri World
-   Imagery, gratis, sin necesitar clave de API) en vez de un fondo blanco.
-   Este sandbox de vista previa bloquea la carga de mapas base por
-   seguridad — en tu GitHub Pages real sí se ve el satélite de fondo.
+   Imagery) en vez de un fondo blanco.
    ------------------------------------------------------------------------ */
 let mapaLeaflet = null;
 let capasMapaActuales = [];
@@ -967,10 +931,7 @@ function pintarMapa(etiqueta, diasPeriodo, fechaObjetivo) {
     }).addTo(mapaLeaflet);
     mapaLeaflet.addControl(crearBrujula());
   }
-  // El contenedor pudo haber estado oculto (display:none) mientras se veía
-  // la otra pestaña — hay que recalcular el tamaño ANTES de centrar, o
-  // fitBounds calcula con un tamaño viejo/cero y el mapa queda mal ubicado
-  // (todo el mundo repetido en zoom muy bajo).
+
   mapaLeaflet.invalidateSize();
 
   capasMapaActuales.forEach((capa) => mapaLeaflet.removeLayer(capa));
@@ -998,8 +959,8 @@ function pintarMapa(etiqueta, diasPeriodo, fechaObjetivo) {
     const lonStep = lonsUnicos.length > 1 ? Math.min(...lonsUnicos.slice(1).map((v, i) => v - lonsUnicos[i])) : 0.03;
     const latStep = latsUnicos.length > 1 ? Math.min(...latsUnicos.slice(1).map((v, i) => v - latsUnicos[i])) : 0.03;
 
-    // Recorte geométrico real (no solo "¿el centro cae adentro?"): cada
-    // celda se intersecta con el polígono verdadero del municipio, así que
+    // Recorte geométrico real: 
+    // cada celda se intersecta con el polígono verdadero del municipio, así que
     // lo que se pinta nunca se sale de la forma ni deja huecos en el borde.
     const poligonoMunicipioTurf = feat.geometry.type === "Polygon"
       ? turf.polygon(feat.geometry.coordinates)
@@ -1008,6 +969,7 @@ function pintarMapa(etiqueta, diasPeriodo, fechaObjetivo) {
     const capaGrilla = L.layerGroup();
     celdas.forEach((celda) => {
       const agregado = agregadoCeldaPeriodo(celda.valores, varsObjetivo, diasPeriodo, fechaObjetivo, varKey);
+      if (agregado === null) return; // sin datos en el período: no se pinta
       const color = categoriaVariable(agregado, varKey, diasPeriodo).color;
       const celdaTurf = turf.polygon([[
         [celda.lon - lonStep / 2, celda.lat - latStep / 2],
@@ -1029,7 +991,8 @@ function pintarMapa(etiqueta, diasPeriodo, fechaObjetivo) {
       style: { color: esSel ? "#B23A3A" : "#8a8f7d", weight: esSel ? 3 : 1.5, fill: true, fillOpacity: 0.001 },
     });
     capaContorno.on("click", () => { $municipio.value = nombreObjetivo; panel(); });
-    capaContorno.bindTooltip(feat.properties.nombre_mun, { permanent: true, direction: "center", className: "mapa-etiqueta-mun" });
+    const etiquetaMun = celdas.length ? feat.properties.nombre_mun : `${feat.properties.nombre_mun} (sin datos)`;
+    capaContorno.bindTooltip(etiquetaMun, { permanent: true, direction: "center", className: "mapa-etiqueta-mun" });
     capaContorno.addTo(mapaLeaflet);
     capasMapaActuales.push(capaContorno);
 
@@ -1050,204 +1013,150 @@ function pintarMapa(etiqueta, diasPeriodo, fechaObjetivo) {
 const $campoCards = document.getElementById("campo-cards");
 const $campoChart = document.getElementById("campo-chart");
 const $campoVacio = document.getElementById("campo-vacio");
+const $campoEstado = document.getElementById("campo-estado");
+const $campoMapaNota = document.getElementById("campo-mapa-nota");
 
-// El registro de campo siempre se mira a "Última semana": los reportes de
-// productores son puntuales (no hay una grilla diaria como en el satélite),
-// así que promediar sobre 2 semanas o un mes tendría demasiados huecos para
-// ser útil. Tampoco hay mapa aquí: cada reporte es un solo punto (la finca
-// del productor), no hay variación espacial que mostrar como en el satélite.
-function construirVarsCampo(municipio, fechasVentana) {
-  const obs = (datos.observaciones || []).filter(
-    (o) => o.municipio === municipio && fechasVentana.includes(o.fecha)
-  );
+// Lo que escriben las comunidades se muestra como texto, nunca como HTML.
+function escaparHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function sumarDias(iso, n) {
+  const d = new Date(iso + "T00:00:00"); d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+function diasEntre(isoA, isoB) {
+  return Math.round((new Date(isoB + "T00:00:00") - new Date(isoA + "T00:00:00")) / 86400000);
+}
+function hoyIso() {
+  const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
+}
 
-  const porVariable = (clave) => obs
-    .filter((o) => o.variable === clave)
-    .map((o) => ({
-      date: o.fecha,
-      value: o.valor,
-      reportante: o.reportante,
-      comentario: o.comentario
-    }))
-    .sort((a, b) => (a.date < b.date ? -1 : 1));
-
-  const precip = porVariable("precip");
-  const tmax = porVariable("tmax");
-  const tmin = porVariable("tmin");
-  const relhum = porVariable("relhum");
-
-  // El promedio no se reporta directo — se calcula como el punto medio entre
-  // máxima y mínima, solo en las fechas donde el productor reportó ambas.
-  const tminPorFecha = Object.fromEntries(tmin.map((p) => [p.date, p.value]));
-  const tavg = tmax
-    .filter((p) => tminPorFecha[p.date] !== undefined)
-    .map((p) => ({ date: p.date, value: +((p.value + tminPorFecha[p.date]) / 2).toFixed(1) }));
-
+// Series de una asociación entre dos fechas, en el mismo formato que las
+// satelitales. Columnas de cada registro: fecha, lluvia, tmin, tmax, hrmin, hrmax.
+// Un día sin reporte simplemente no aparece (no se rellena con cero).
+function construirVarsCampo(asoc, inicio, fin) {
+  const filas = asoc.registros.filter((r) => r[0] >= inicio && r[0] <= fin);
+  const serie = (i) => filas.filter((r) => r[i] !== null && r[i] !== undefined).map((r) => ({ date: r[0], value: r[i] }));
+  const media = (i, j) => filas.filter((r) => r[i] != null && r[j] != null)
+    .map((r) => ({ date: r[0], value: +((r[i] + r[j]) / 2).toFixed(1) }));
   return {
-    precip,
-    tavg,
-    tmin,
-    tmax,
-    relhum
+    precip: serie(1),
+    tmin: serie(2),
+    tmax: serie(3),
+    tavg: media(2, 3),            // promedio entre mínima y máxima del día
+    relhum_min: serie(4),
+    relhum_max: serie(5),
+    relhum: media(4, 5),          // promedio entre HR mínima y máxima del día
+    fechas: filas.map((r) => r[0]),
   };
 }
 
 /* ------------------------------------------------------------------------
-   MAPA DE UBICACIÓN DEL REPORTE (pestaña de campo): todavía no hay
-   coordenadas reales de las fincas, así que se genera un punto de ejemplo
-   dentro del municipio — pseudo-aleatorio pero FIJO por municipio (no
-   cambia cada vez que se repinta), usando la misma prueba de
-   punto-en-polígono que ya existe para no caer fuera de la forma real.
-   Cuando los reportes de campo traigan lat/lon reales, este punto se
-   reemplaza por esos datos.
+   MAPA DEL PUNTO DE MONITOREO: contorno del municipio y, si el Apps Script
+   trae coordenadas de la asociación, su punto. Mientras no haya coordenadas
+   solo se muestra el contorno y la vereda.
    ------------------------------------------------------------------------ */
-const puntoFincaCache = {};
-function obtenerPuntoFinca(nombreMunicipio) {
-  if (puntoFincaCache[nombreMunicipio]) return puntoFincaCache[nombreMunicipio];
-  const dept = MUNICIPIO_DEPARTAMENTO[nombreMunicipio];
-  const feat = DEPARTAMENTOS_GEO[dept].features.find((f) => f.properties.target === nombreMunicipio);
-  const [minlon, maxlon, minlat, maxlat] = bboxDeGeometria(feat.geometry);
-  const rand = pseudoRandom(MUNICIPIOS.indexOf(nombreMunicipio) * 4321 + 7);
-  let lon, lat, intentos = 0;
-  do {
-    lon = minlon + rand() * (maxlon - minlon);
-    lat = minlat + rand() * (maxlat - minlat);
-    intentos++;
-  } while (!puntoEnPoligono(lon, lat, feat.geometry) && intentos < 300);
-  puntoFincaCache[nombreMunicipio] = [lat, lon];
-  return puntoFincaCache[nombreMunicipio];
-}
-
 let mapaCampoLeaflet = null;
 let capaCampoContorno = null;
 let capaCampoMarcador = null;
 
-function pintarMapaCampo(municipio) {
+function pintarMapaCampo(municipio, asoc) {
   const dept = MUNICIPIO_DEPARTAMENTO[municipio];
-  const feat = DEPARTAMENTOS_GEO[dept].features.find(
-    (f) => f.properties.target === municipio
-  );
-
+  const feat = DEPARTAMENTOS_GEO[dept].features.find((f) => f.properties.target === municipio);
   if (!feat || !feat.geometry) {
     console.warn("No hay geometría válida para el municipio:", municipio);
     return;
   }
-
   if (!mapaCampoLeaflet) {
-    mapaCampoLeaflet = L.map("campo-mapa-leaflet", {
-      attributionControl: true,
-      zoomControl: true
-    });
-
-    L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      {
-        maxZoom: 18,
-        attribution: "Imágenes: Esri, Maxar, Earthstar Geographics"
-      }
-    ).addTo(mapaCampoLeaflet);
+    mapaCampoLeaflet = L.map("campo-mapa-leaflet", { attributionControl: true, zoomControl: true });
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      { maxZoom: 18, attribution: "Imágenes: Esri, Maxar, Earthstar Geographics" }).addTo(mapaCampoLeaflet);
   }
-
   mapaCampoLeaflet.invalidateSize();
+  [capaCampoContorno, capaCampoMarcador].forEach((capa) => {
+    if (capa && mapaCampoLeaflet.hasLayer(capa)) mapaCampoLeaflet.removeLayer(capa);
+  });
+  capaCampoMarcador = null;
+  capaCampoContorno = L.geoJSON(feat, { style: { color: "#B23A3A", weight: 3, fill: false } }).addTo(mapaCampoLeaflet);
 
-  // Eliminar las capas anteriores de forma segura
-  if (capaCampoContorno) {
-    try {
-      if (mapaCampoLeaflet.hasLayer(capaCampoContorno)) {
-        mapaCampoLeaflet.removeLayer(capaCampoContorno);
-      }
-    } catch (e) {
-      console.warn("No se pudo eliminar el contorno anterior:", e);
-    }
-    capaCampoContorno = null;
+  const tieneCoordenadas = asoc && typeof asoc.lat === "number" && typeof asoc.lon === "number";
+  if (tieneCoordenadas) {
+    capaCampoMarcador = L.circleMarker([asoc.lat, asoc.lon], {
+      radius: 8, color: "white", weight: 2, fillColor: "#B23A3A", fillOpacity: 1,
+    }).bindTooltip(`${escaparHtml(asoc.nombre)} — ${escaparHtml(asoc.ubicacion)}`).addTo(mapaCampoLeaflet);
   }
+  const bounds = capaCampoContorno.getBounds();
+  if (bounds.isValid()) mapaCampoLeaflet.fitBounds(bounds.pad(0.15));
 
-  if (capaCampoMarcador) {
-    try {
-      if (mapaCampoLeaflet.hasLayer(capaCampoMarcador)) {
-        mapaCampoLeaflet.removeLayer(capaCampoMarcador);
-      }
-    } catch (e) {
-      console.warn("No se pudo eliminar el marcador anterior:", e);
-    }
-    capaCampoMarcador = null;
+  $campoMapaNota.textContent = !asoc ? ""
+    : tieneCoordenadas ? `Punto de monitoreo de ${asoc.nombre}: ${asoc.ubicacion}.`
+    : `${asoc.nombre}: ${asoc.ubicacion || municipio}. Todavía no hay coordenadas de este punto, por eso solo se muestra el contorno del municipio.`;
+}
+
+function mensajeCampo(texto) {
+  $campoCards.innerHTML = "";
+  $campoEstado.innerHTML = "";
+  Plotly.purge("campo-chart"); $campoChart.innerHTML = "";
+  $campoVacio.style.display = "block";
+  $campoVacio.textContent = texto;
+}
+
+/* Pinta la pestaña comunitaria para la asociación elegida. El período va
+   hacia atrás desde el ÚLTIMO REPORTE de la asociación, y si la asociación tiene menos días que el período, se muestra lo que hay. */
+function pintarVistaCampo(municipio, periodoNombre, diasPeriodo, variableElegida, sistemaProductivo) {
+  const visible = document.getElementById("vista-campo").style.display !== "none";
+  if (periodoNombre === "Última fecha") {
+    mensajeCampo("Elige \"Última semana\" o un período más largo arriba para ver los reportes comunitarios.");
+    return;
   }
-
-  // Crear nuevo contorno
-  try {
-    capaCampoContorno = L.geoJSON(feat, {
-      style: {
-        color: "#B23A3A",
-        weight: 3,
-        fill: false
-      }
-    }).addTo(mapaCampoLeaflet);
-  } catch (e) {
-    console.error("Error dibujando geometría del municipio:", municipio, feat, e);
-    capaCampoContorno = null;
+  if (!comunitario) {
+    if (visible) pintarMapaCampo(municipio, null);
+    mensajeCampo(comunitarioError ? `No se pudieron cargar los reportes comunitarios. ${comunitarioError}` : "Cargando los reportes comunitarios…");
+    return;
+  }
+  const asoc = comunitario.asociaciones.find((a) => a.id === $asociacion.value);
+  if (visible) pintarMapaCampo(municipio, asoc);
+  if (!asoc) {
+    mensajeCampo(`Todavía no hay asociaciones registradas para ${municipio}.`);
+    return;
+  }
+  if (!asoc.registros.length || !asoc.ultimo_reporte) {
+    mensajeCampo(`${asoc.nombre} no tiene datos registrados en los últimos 2 meses.`);
     return;
   }
 
-  // Crear marcador
-  const [lat, lon] = obtenerPuntoFinca(municipio);
+  const fin = asoc.ultimo_reporte;
+  const inicioPeriodo = sumarDias(fin, -(diasPeriodo - 1));
+  const vars = construirVarsCampo(asoc, inicioPeriodo, fin);
+  const inicio = vars.fechas[0];  
+  const etiqueta = `${periodoNombre} con reportes (${fechaEs(inicio)} a ${fechaEs(fin)})`;
 
-  capaCampoMarcador = L.circleMarker([lat, lon], {
-    radius: 8,
-    color: "white",
-    weight: 2,
-    fillColor: "#B23A3A",
-    fillOpacity: 1
-  })
-    .bindTooltip(`Finca en ${municipio} (ubicación de ejemplo)`)
-    .addTo(mapaCampoLeaflet);
+  const haceDias = diasEntre(fin, hoyIso());
+  const hace = haceDias <= 0 ? "hoy" : haceDias === 1 ? "ayer" : `hace ${haceDias} días`;
+  const atrasado = haceDias > 7 ? ` <span class="aviso">· Sin reportes en la última semana</span>` : "";
+  $campoEstado.innerHTML =
+    `<strong>${escaparHtml(asoc.nombre)}</strong>${asoc.ubicacion ? " · " + escaparHtml(asoc.ubicacion) : ""}<br>` +
+    `Reportes en ${vars.fechas.length} de ${diasPeriodo} días del período · último reporte: ${fechaEs(fin)} (${hace})${atrasado}`;
 
-  // Ajustar mapa al contorno
-  const bounds = capaCampoContorno.getBounds();
-
-  if (bounds.isValid()) {
-    mapaCampoLeaflet.fitBounds(bounds.pad(0.15));
-  }
-}
-
-function pintarVistaCampo(municipio, variableElegida, fechasVentana, etiqueta, sistemaProductivo) {
-  // El mapa de Leaflet solo se crea/actualiza cuando su contenedor ya es
-  // visible. Si se inicializa mientras la pestaña está oculta (display:none
-  // — pasa la primera vez que carga la página, ya que "Monitoreo satelital"
-  // es la pestaña activa por defecto), Leaflet calcula un tamaño de 0x0 y
-  // el centrado queda mal (se ve el mundo entero repetido). Cuando el
-  // usuario sí cambie a esta pestaña, panel() se vuelve a ejecutar con el
-  // contenedor ya visible y ahí se dibuja bien.
-  if (document.getElementById("vista-campo").style.display !== "none") {
-    pintarMapaCampo(municipio);
-  }
-
-
-  const varsCampo = construirVarsCampo(municipio, fechasVentana);
-  // diasPeriodo se pasa "de sobra" a propósito: los datos ya vienen
-  // filtrados a la ventana de la semana, así que slice(-N) con N grande no
-  // recorta nada — evita que se pierdan reportes si algún día faltó otro.
-  mostrarIndicadores(varsCampo, 999, etiqueta, variableElegida, null, $campoCards, sistemaProductivo);
-
-  const hayDatos =
-  varsCampo.precip.length ||
-  varsCampo.tmax.length ||
-  varsCampo.tmin.length ||
-  varsCampo.relhum.length;
-  if (!hayDatos) {
+  // diasPeriodo = 999 a propósito: las series ya vienen recortadas al período.
+  mostrarIndicadores(vars, 999, etiqueta, variableElegida, null, $campoCards, sistemaProductivo);
+  const hayDatos = { "Lluvia": vars.precip, "Temperatura": vars.tmax.length ? vars.tmax : vars.tmin, "Humedad relativa": vars.relhum_max.length ? vars.relhum_max : vars.relhum_min }[variableElegida];
+  if (!hayDatos || !hayDatos.length) {
     Plotly.purge("campo-chart"); $campoChart.innerHTML = "";
     $campoVacio.style.display = "block";
-    $campoVacio.textContent = `Todavía no hay reportes comunitarios de ${municipio} para esta semana.`;
+    $campoVacio.textContent = `${asoc.nombre} no registró ${variableElegida.toLowerCase()} en este período.`;
     return;
   }
   $campoVacio.style.display = "none";
-  graficarPeriodo(varsCampo, 999, etiqueta, municipio, variableElegida, "campo-chart");
+  graficarPeriodo(vars, 999, etiqueta, municipio, variableElegida, "campo-chart");
 }
 
 // --- Pestañas: alternar entre la vista de fuentes secundarias y la de campo ---
 const $headerDescripcion = document.getElementById("header-descripcion");
 const DESCRIPCION_POR_VISTA = {
   secundaria: () => `Lluvia, temperatura y humedad relativa de los últimos días para ${listaMunicipios()}, calculadas a partir de datos satelitales (MSWX / MSWEP). Incluye mapa por variable, gráficos por período y alertas de días por encima del umbral de calor o humedad.`,
-  campo: () => `Lluvia, temperatura y humedad relativa que los propios productores registraron semana a semana en ${listaMunicipios()}, a partir de sus reportes comunitarios.`,
+  campo: () => `Lluvia, temperatura y humedad relativa que registran las asociaciones en sus hojas de monitoreo comunitario. Elige el municipio y la asociación para ver sus datos.`,
 };
 
 // Cada casilla (máxima/mínima/promedio) existe por duplicado, una en cada
@@ -1295,6 +1204,7 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
     const vista = btn.dataset.vista;
     document.getElementById("vista-secundaria").style.display = vista === "secundaria" ? "" : "none";
     document.getElementById("vista-campo").style.display = vista === "campo" ? "" : "none";
+    document.getElementById("campo-asociacion-field").style.display = vista === "campo" ? "" : "none";
     $headerDescripcion.textContent = DESCRIPCION_POR_VISTA[vista]();
     actualizarOpcionesPeriodo(vista);
     panel(); // redibuja: evita que un gráfico quede mal dimensionado por haber estado oculto
@@ -1327,11 +1237,10 @@ function panel() {
 
   const etiqueta = etiquetaPeriodo(periodoNombre, diasPeriodo, ultimaFecha, fechaObjetivo);
 
-  // Las tarjetas y la gráfica van PRIMERO y a propósito: son lo esencial y
+  // Las tarjetas y la gráfica van PRIMERO: son lo esencial y
   // lo más confiable (no dependen de librerías externas de mapas). Si algo
   // más abajo (mapa satelital, mapa de la finca) llega a fallar por lo que
-  // sea — un CDN externo que no cargó, por ejemplo — ya alcanzaron a
-  // dibujarse y no se quedan en blanco por un error ajeno a ellas.
+  // sea ya alcanzaron a dibujarse y no se quedan en blanco por un error ajeno a ellas.
   mostrarIndicadores(vars, diasPeriodo, etiqueta, variableElegida, fechaObjetivo, $cards, $sistema.value);
 
   if (periodoNombre === "Última fecha") {
@@ -1346,58 +1255,22 @@ function panel() {
     console.error("No se pudo dibujar el mapa satelital:", e);
   }
 
-  // El registro de campo usa el mismo período elegido arriba (última
-  // semana, 2 semanas, mes), salvo "Ayer": un reporte puntual no tiene
-  // sentido mirado día a día, así que esa opción no aplica aquí y se
-  // avisa en vez de mostrar datos.
+  // Monitoreo comunitario: mismo período elegido arriba, por asociación.
   try {
-    if (periodoNombre === "Última fecha") {
-      $campoCards.innerHTML = "";
-      Plotly.purge("campo-chart"); $campoChart.innerHTML = "";
-      $campoVacio.style.display = "block";
-      $campoVacio.textContent = "Elige \"Última semana\" o un período más largo arriba para ver los reportes comunitarios — un reporte puntual no se puede mirar día a día.";
-    } else {
-      const observacionesMunicipio = (datos.observaciones || [])
-  .filter((o) => o.municipio === municipio && o.fecha);
-
-const fechasCampo = observacionesMunicipio
-  .map((o) => o.fecha)
-  .sort();
-
-if (!fechasCampo.length) {
-  $campoCards.innerHTML = "";
-  Plotly.purge("campo-chart");
-  $campoChart.innerHTML = "";
-  $campoVacio.style.display = "block";
-  $campoVacio.textContent =
-    `Todavía no hay reportes comunitarios de ${municipio}.`;
-} else {
-  const ultimaFechaCampo = fechasCampo[fechasCampo.length - 1];
-
-  const fechaFin = new Date(ultimaFechaCampo + "T00:00:00");
-  const fechaInicio = new Date(fechaFin);
-  fechaInicio.setDate(fechaInicio.getDate() - (diasPeriodo - 1));
-
-  const fechasVentanaCampo = fechasCampo.filter((f) => {
-    const d = new Date(f + "T00:00:00");
-    return d >= fechaInicio && d <= fechaFin;
-  });
-
-  pintarVistaCampo(
-    municipio,
-    variableElegida,
-    fechasVentanaCampo,
-    etiqueta,
-    $sistema.value
-  );
-}
-    }
+    pintarVistaCampo(municipio, periodoNombre, diasPeriodo, variableElegida, $sistema.value);
   } catch (e) {
     console.error("No se pudo dibujar el módulo de monitoreo comunitario:", e);
   }
 }
 
 async function iniciar() {
+  // Los reportes comunitarios se piden en paralelo: cuando lleguen, se llena
+  // el selector de asociación y se redibuja.
+  cargarComunitario().then(() => {
+    actualizarOpcionesAsociacion();
+    if (datos) panel();
+  });
+  actualizarOpcionesAsociacion();
   try {
     await cargarDatos();
   } catch (e) {
@@ -1417,10 +1290,10 @@ async function iniciar() {
   }
   const ultima = datos.municipios[conSerie].precip.slice(-1)[0].date;
   $fuenteFecha.textContent =
-    (datosReales ? "Datos hasta " : "DEMO — datos simulados hasta ") + fechaEs(ultima);
+    "Datos hasta " + fechaEs(ultima);
   $headerDescripcion.textContent = DESCRIPCION_POR_VISTA.secundaria();
   pintarEnso();
-  [$municipio, $periodo, $variable, $sistema].forEach((el) => el.addEventListener("change", panel));
+  [$municipio, $periodo, $variable, $sistema, $asociacion].forEach((el) => el.addEventListener("change", panel));
   panel();
 }
 iniciar();
