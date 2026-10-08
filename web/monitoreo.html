@@ -580,23 +580,28 @@ $municipio.addEventListener("change", actualizarOpcionesSistema);
 
 const $asociacion = document.getElementById("sel-asociacion");
 
-// Solo las asociaciones del municipio elegido. Se conserva la elección si
-// la asociación sigue disponible.
-function asociacionesDelMunicipio(municipio) {
-  return comunitario ? comunitario.asociaciones.filter((a) => a.municipio === municipio) : [];
-}
+// Asociaciones de cada municipio, fijas como MUNICIPIOS: el selector se llena
+// al instante, sin esperar al Apps Script (que solo trae los DATOS de cada
+// una). Los nombres tienen que ser iguales a los de las carpetas de Drive.
+const ASOCIACIONES_POR_MUNICIPIO = {
+  "Los Palmitos (Sucre)":          ["COOMULPAZ"],
+  "San José de Toluviejo (Sucre)": ["ASOCOMAN", "ASOPROYUS"],
+  "Icononzo (Tolima)":             ["EPZ"],
+  "Planadas (Tolima)":             ["ASOCAFE", "ASOVIUNION", "ASPROAGROPE", "COOPROCAFE"],
+  "Fonseca (La Guajira)":          ["ASMUPERIJA", "COOMPAZCOL"],
+  "Manaure (Cesar)":               ["AMGTG", "COOPERPAZCE"],
+  "El Paso (Cesar)":               ["ASOINREPA"],
+};
+// Se conserva la asociación elegida si sigue disponible en el municipio.
 function actualizarOpcionesAsociacion() {
   const actual = $asociacion.value;
-  const lista = asociacionesDelMunicipio($municipio.value);
+  const municipio = $municipio.value;
+  const lista = ASOCIACIONES_POR_MUNICIPIO[municipio] || [];
   $asociacion.innerHTML = "";
-  if (!lista.length) {
-    $asociacion.add(new Option(comunitario ? "Sin asociaciones" : "Cargando…", ""));
-    $asociacion.disabled = true;
-    return;
-  }
-  $asociacion.disabled = false;
-  lista.forEach((a) => $asociacion.add(new Option(a.nombre, a.id)));
-  if (lista.some((a) => a.id === actual)) $asociacion.value = actual;
+  $asociacion.disabled = !lista.length;
+  if (!lista.length) { $asociacion.add(new Option("Sin asociaciones", "")); return; }
+  lista.forEach((nombre) => $asociacion.add(new Option(nombre, `${municipio}|${nombre}`)));
+  if (lista.some((nombre) => `${municipio}|${nombre}` === actual)) $asociacion.value = actual;
 }
 $municipio.addEventListener("change", actualizarOpcionesAsociacion);
 
@@ -1110,15 +1115,24 @@ function pintarVistaCampo(municipio, periodoNombre, diasPeriodo, variableElegida
     mensajeCampo("Elige \"Última semana\" o un período más largo arriba para ver los reportes comunitarios.");
     return;
   }
+  const nombreAsoc = $asociacion.value ? $asociacion.value.split("|")[1] : "";
   if (!comunitario) {
     if (visible) pintarMapaCampo(municipio, null);
-    mensajeCampo(comunitarioError ? `No se pudieron cargar los reportes comunitarios. ${comunitarioError}` : "Cargando los reportes comunitarios…");
+    mensajeCampo(comunitarioError ? `No se pudieron cargar los reportes comunitarios. ${comunitarioError}`
+      : `Cargando los datos de ${nombreAsoc || "la asociación"}…`);
+    return;
+  }
+  if (!nombreAsoc) {
+    if (visible) pintarMapaCampo(municipio, null);
+    mensajeCampo(`Todavía no hay asociaciones registradas para ${municipio}.`);
     return;
   }
   const asoc = comunitario.asociaciones.find((a) => a.id === $asociacion.value);
   if (visible) pintarMapaCampo(municipio, asoc);
   if (!asoc) {
-    mensajeCampo(`Todavía no hay asociaciones registradas para ${municipio}.`);
+    // Está en el tablero pero el script no la encontró en Drive (p. ej. la
+    // carpeta tiene otro nombre): se dice, en vez de mostrar datos vacíos.
+    mensajeCampo(`No se encontró la carpeta de ${nombreAsoc} en Drive.`);
     return;
   }
   if (!asoc.registros.length || !asoc.ultimo_reporte) {
