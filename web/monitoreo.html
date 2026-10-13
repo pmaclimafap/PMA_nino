@@ -155,6 +155,9 @@
   .leyenda-fila i { width: 18px; height: 18px; border-radius: 4px; display: inline-block; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.08); }
   .leyenda-nombre { font-weight: 700; font-size: 0.88rem; }
   .leyenda-rango { font-size: 0.78rem; color: var(--color-ink-soft); margin-left: auto; }
+  .leyenda-nota { grid-column: 1 / -1; margin: 0; font-size: 0.78rem; color: var(--color-ink-soft); }
+  .leyenda-nota.aviso { color: #9A5B00; font-weight: 700; }
+  .chip-cat { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.72em; font-weight: 700; vertical-align: middle; border: 1px solid rgba(0,0,0,0.08); white-space: nowrap; }
   .mapa-nota { font-size: 0.78rem; color: var(--color-ink-soft); margin-top: 12px; }
 
   .selector-cultivo {
@@ -474,18 +477,6 @@ const UMBRAL_HR_POR_CULTIVO = {
   "Cultivos de pancoger": 82, "Palma de aceite": 88,
 };
 
-// Umbrales de lluvia ACUMULADA, uno por cada duración de período — un
-// acumulado de "Fuerte" en un solo día es mucho menor que uno de "Fuerte"
-// en un mes, así que cada período tiene su propia escala. Valores de
-// ejemplo (referencia diaria de IDEAM, escalados para los demás); AJUSTARLOS
-// cuando se tenga los umbrales reales de cada zona.
-const UMBRALES_LLUVIA_POR_DIAS = {
-  1:  { seco: 1,  moderada: 15,  fuerte: 40 },   // Ayer (1 día)
-  7:  { seco: 5,  moderada: 50,  fuerte: 100 },  // Última semana
-  14: { seco: 10, moderada: 90,  fuerte: 180 },  // Últimas 2 semanas
-  30: { seco: 15, moderada: 150, fuerte: 300 },  // Último mes
-};
-
 function dias(n) { return `${n} día${n === 1 ? "" : "s"}`; }
 
 function fechaEs(iso) {
@@ -700,7 +691,13 @@ function tarjeta(label, value, detail, accentVar, icono = "") {
   div.innerHTML = `<div class="label">${icono ? `<span class="card-icono">${icono}</span>` : ""}${label}</div><div class="value">${value}</div><div class="detail">${detail}</div>`;
   return div;
 }
-function mostrarIndicadores(vars, diasPeriodo, etiqueta, variableElegida, fechaObjetivo, contenedor = $cards, sistemaProductivo = "Ganadería") {
+  
+/* municipioCategorias: nombre del municipio para mostrar la categoría
+   histórica en las tarjetas (pixel del punto del tablero). Es null en el
+   monitoreo comunitario. */
+function mostrarIndicadores(vars, diasPeriodo, etiqueta, variableElegida, fechaObjetivo, contenedor = $cards, sistemaProductivo = "Ganadería", municipioCategorias = null) {
+  const cat = (valor, varKey, ventana) => municipioCategorias
+    ? chipCategoria(categoriaHistorica(valor, varKey, cortesPixel(municipioCategorias, varKey, ventana))) : "";
   const umbralTmax = UMBRAL_TMAX_POR_CULTIVO[sistemaProductivo] ?? UMBRAL_TMAX_POR_CULTIVO.Ganadería;
   const umbralHr = UMBRAL_HR_POR_CULTIVO[sistemaProductivo] ?? UMBRAL_HR_POR_CULTIVO.Ganadería;
   const ind = calcularIndicadores(vars, diasPeriodo, fechaObjetivo, umbralTmax, umbralHr);
@@ -713,16 +710,17 @@ function mostrarIndicadores(vars, diasPeriodo, etiqueta, variableElegida, fechaO
       const diasSinLluvia = ind.precip_dias_periodo - ind.precip_dias_con_lluvia;
       contenedor.append(tarjeta(`Días con lluvia — ${etiqueta}`, `${dias(ind.precip_dias_con_lluvia)} con lluvia`, "", "--color-rain", "🌧️"));
       contenedor.append(tarjeta(`Días secos — ${etiqueta}`, `${dias(diasSinLluvia)} ${diasSinLluvia === 1 ? "seco" : "secos"}`, "", "--color-rain", "☀️"));
-      contenedor.append(tarjeta(`Lluvia total — ${etiqueta}`, `${ind.precip_total.toFixed(1)} mm`, "", "--color-rain", "🌧️"));
+            contenedor.append(tarjeta(`Lluvia total — ${etiqueta}`, `${ind.precip_total.toFixed(1)} mm ${cat(ind.precip_total, "precip", diasPeriodo)}`, "", "--color-rain", "🌧️"));
     }
   } else if (variableElegida === "Temperatura") {
     if (ind.temp_no_disponible) {
       contenedor.append(tarjeta(`Temperatura — ${etiqueta}`, "No disponible", "El dato de este día aún no se ha publicado", "--color-temp", "🌡️"));
     } else if (ind.temp_promedio !== undefined) {
       let detalle = "";
-      if (ind.temp_max) detalle += `Máx: ${ind.temp_max.value.toFixed(1)}°C (${fechaEs(ind.temp_max.date)})  `;
-      if (ind.temp_min) detalle += `Mín: ${ind.temp_min.value.toFixed(1)}°C (${fechaEs(ind.temp_min.date)})`;
-      contenedor.append(tarjeta(`Temperatura — ${etiqueta}`, `${ind.temp_promedio.toFixed(1)} °C promedio`, detalle, "--color-temp", "🌡️"));
+            // Máx y mín son de UN día, así que se comparan con la ventana de 1 día.
+      if (ind.temp_max) detalle += `Máx: ${ind.temp_max.value.toFixed(1)}°C (${fechaEs(ind.temp_max.date)}) ${cat(ind.temp_max.value, "tmax", 1)}  `;
+      if (ind.temp_min) detalle += `Mín: ${ind.temp_min.value.toFixed(1)}°C (${fechaEs(ind.temp_min.date)}) ${cat(ind.temp_min.value, "tmin", 1)}`;
+      contenedor.append(tarjeta(`Temperatura — ${etiqueta}`, `${ind.temp_promedio.toFixed(1)} °C promedio ${cat(ind.temp_promedio, "tavg", diasPeriodo)}`, detalle, "--color-temp", "🌡️"));
     }
     if (ind.dias_tmax_sobre_umbral !== undefined) {
       contenedor.append(tarjeta(`Temperaturas por encima de ${umbralTmax}°C`, `${ind.dias_tmax_sobre_umbral} de ${dias(ind.dias_tmax_total)}`, `Superaron el umbral para ${sistemaProductivo}`, "--color-temp", "🔥"));
@@ -736,7 +734,7 @@ function mostrarIndicadores(vars, diasPeriodo, etiqueta, variableElegida, fechaO
       const hrMax = vars.relhum_max && vars.relhum_max.length ? extremos(vars.relhum_max.slice(-diasPeriodo)).max : ind.relhum_max;
       const hrMin = vars.relhum_min && vars.relhum_min.length ? extremos(vars.relhum_min.slice(-diasPeriodo)).min : ind.relhum_min;
       const detalle = `Máx: ${hrMax.value.toFixed(0)}% (${fechaEs(hrMax.date)})  Mín: ${hrMin.value.toFixed(0)}% (${fechaEs(hrMin.date)})`;
-      contenedor.append(tarjeta(`Humedad relativa — ${etiqueta}`, `${ind.relhum_promedio.toFixed(0)} % promedio`, detalle, "--color-relhum", "💧"));
+      contenedor.append(tarjeta(`Humedad relativa — ${etiqueta}`, `${ind.relhum_promedio.toFixed(0)} % promedio ${cat(ind.relhum_promedio, "relhum", diasPeriodo)}`, detalle, "--color-relhum", "💧"));
       if (ind.dias_hr_sobre_umbral !== undefined) {
         contenedor.append(tarjeta(`Humedad por encima de ${umbralHr}%`, `${ind.dias_hr_sobre_umbral} de ${dias(ind.dias_hr_total)}`, `Superaron el umbral para ${sistemaProductivo}`, "--color-relhum", "💦"));
       }
@@ -817,9 +815,7 @@ function bboxDeGeometria(geom) {
   return [minlon, maxlon, minlat, maxlat];
 }
 
-// Punto-en-polígono (ray casting, XOR entre anillos para manejar huecos) —
-// se usa para no dibujar celdas de la grilla fuera de la forma real del
-// municipio, ya que Leaflet no tiene un "clip a polígono" nativo simple.
+// Punto-en-polígono 
 function puntoEnPoligono(lon, lat, geom) {
   const polys = geom.type === "Polygon" ? [geom.coordinates] : geom.coordinates;
   let dentro = false;
@@ -845,55 +841,186 @@ const $btnMapaZoom = document.getElementById("btn-mapa-zoom");
 let mapaZoomMunicipio = true; // por defecto, acercado al municipio seleccionado
 $btnMapaZoom.addEventListener("click", () => { mapaZoomMunicipio = !mapaZoomMunicipio; panel(); });
 
+
 /* ------------------------------------------------------------------------
-   COLORES Y CATEGORÍAS DEL MAPA: mapean la variable elegida en el selector 
-   ("Lluvia"/"Temperatura"/"Humedad relativa") a la clave interna de los 
-   datos (precip/tavg/relhum), definen los cortes que separan cada franja de 
-   color, y arman la franja + color
-   para un valor agregado dado. Los cortes de lluvia reutilizan
-   UMBRALES_LLUVIA_POR_DIAS (ya definidos arriba); los de temperatura y
-   humedad son de ejemplo —  AJUSTAR cuando se tengan los valores reales por zona.
+   CATEGORÍAS HISTÓRICAS 1991–2020 (MSWEP / MSWX Past)
+   Salen de percentiles_historicos.ipynb → Categorias_1991-2020.csv. Se
+   calcularon una sola vez y quedan fijas en ese archivo, que el tablero lee
+   al arrancar (cargarCategorias, más abajo).
+
+   Cada valor se compara con lo normal EN ESE MISMO PIXEL:
+     Muy bajo  = el 10 % más bajo de 1991–2020        (por debajo de corte 1)
+     Bajo      = siguiente 26,7 %                      (corte 1 – corte 2)
+     Medio     = 26,7 % del centro                     (corte 2 – corte 3)
+     Alto      = siguiente 26,7 %                      (corte 3 – corte 4)
+     Muy alto  = el 10 % más alto                      (desde corte 4)
+   En lluvia hay además "Sin lluvia" (< 1 mm); las otras 5 se calcularon solo
+   con las ventanas que sí tuvieron lluvia.
+
+   periodo_dias = ventana de 1, 7, 14 o 30 días (suma en lluvia, promedio en
+   lo demás). punto_tablero = "sí" marca el pixel del punto del municipio: el
+   que alimenta las tarjetas. Los demás solo colorean su celda en el mapa.
    ------------------------------------------------------------------------ */
 const CLAVE_MAPA_VARIABLE = { "Lluvia": "precip", "Temperatura": "tavg", "Humedad relativa": "relhum" };
 const ETIQUETA_VARIABLE = { precip: "Lluvia", tavg: "Temperatura", relhum: "Humedad relativa" };
-const UNIDAD_VARIABLE = { precip: "mm", tavg: "°C", relhum: "%" };
+const UNIDAD_VARIABLE = { precip: "mm", tavg: "°C", tmax: "°C", tmin: "°C", relhum: "%" };
 
-const CATEGORIAS_MAPA = {
-  precip: { etiquetas: ["Seco", "Moderada", "Fuerte", "Muy fuerte"], colores: ["#DCE9F4", "#8FC1E0", "#3E7CA6", "#1D5A8C"] },
-  tavg:   { etiquetas: ["Fresco", "Templado", "Cálido", "Muy caliente"], colores: ["#FBE3C4", "#F0B673", "#D97F2B", "#B2591A"] },
-  relhum: { etiquetas: ["Bajo", "Moderado", "Alto", "Muy alto"], colores: ["#DDF1F7", "#A9DCEA", "#4FA8C9", "#2A6E85"] },
+const UMBRAL_SIN_LLUVIA_MM = 1.0;
+const ETIQUETAS_CATEGORIA = ["Muy bajo", "Bajo", "Medio", "Alto", "Muy alto"];
+const COLORES_CATEGORIA = {
+  precip: { sinLluvia: "#EFE4CB", colores: ["#DCEAF5", "#A6CBE6", "#6AA5D1", "#3474A8", "#173F70"] },
+  tavg:   { colores: ["#3B6FA8", "#9DC4E2", "#ECE7D6", "#EFA35C", "#C2461E"] },
+  relhum: { colores: ["#B98A4B", "#E3CC9C", "#E8EEE4", "#7DBFD3", "#245F78"] },
 };
-const CORTES_TAVG = [24, 27, 30];     // °C — promedio del período
-const CORTES_RELHUM = [65, 75, 85];   // % — promedio del período
+COLORES_CATEGORIA.tmax = COLORES_CATEGORIA.tavg;
+COLORES_CATEGORIA.tmin = COLORES_CATEGORIA.tavg;
 
-function cortesVariable(varKey, diasPeriodo) {
-  if (varKey === "precip") {
-    const u = UMBRALES_LLUVIA_POR_DIAS[diasPeriodo] || UMBRALES_LLUVIA_POR_DIAS[7];
-    return [u.seco, u.moderada, u.fuerte];
+// Se llena al arrancar leyendo Categorias_1991-2020.csv (ver cargarCategorias).
+// Estructura: { municipio: { precip: [ {lat, lon, d1:[4 cortes], d7, d14, d30, tablero}, ... ], tavg, tmax, tmin, relhum } }
+let CATEGORIAS_HISTORICAS = {};
+let categoriasError = "";
+
+/* ------------------------------------------------------------------------
+   LECTURA DEL CSV DE CATEGORÍAS
+   Para actualizar las categorías basta con reemplazar el archivo
+   web/Categorias_1991-2020.csv por el que genera percentiles_historicos.ipynb
+   (o editarlo en Excel). Columnas que se usan: municipio, lat, lon,
+   punto_tablero, variable, periodo_dias, corte_1, corte_2, corte_3, corte_4.
+   Las demás se ignoran.
+   Acepta separador "," con punto decimal (como sale del notebook) o ";" con
+   coma decimal (como lo guarda Excel en español), y UTF-8 o Windows-1252.
+   ------------------------------------------------------------------------ */
+const ARCHIVO_CATEGORIAS = "./Categorias_1991-2020.csv";
+
+function normalizarTexto(s) {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+}
+const VARIABLE_CSV = {
+  "lluvia acumulada": "precip", "temperatura media": "tavg", "temperatura maxima": "tmax",
+  "temperatura minima": "tmin", "humedad relativa": "relhum",
+};
+
+function separarCsv(linea, sep) {
+  const campos = []; let actual = "", entreComillas = false;
+  for (let i = 0; i < linea.length; i++) {
+    const ch = linea[i];
+    if (ch === '"') {
+      if (entreComillas && linea[i + 1] === '"') { actual += '"'; i++; } else entreComillas = !entreComillas;
+    } else if (ch === sep && !entreComillas) { campos.push(actual); actual = ""; }
+    else actual += ch;
   }
-  return varKey === "tavg" ? CORTES_TAVG : CORTES_RELHUM;
+  campos.push(actual);
+  return campos.map((c) => c.trim());
 }
 
-function categoriaVariable(valor, varKey, diasPeriodo) {
-  const cat = CATEGORIAS_MAPA[varKey];
-  const [c0, c1, c2] = cortesVariable(varKey, diasPeriodo);
-  const i = valor >= c2 ? 3 : valor >= c1 ? 2 : valor >= c0 ? 1 : 0;
-  return { color: cat.colores[i], etiqueta: cat.etiquetas[i] };
+function leerCsvCategorias(texto) {
+  const lineas = texto.replace(/^\uFEFF/, "").split(/\r?\n/).filter((l) => l.trim());
+  if (lineas.length < 2) throw new Error("el archivo está vacío");
+  const sep = (lineas[0].match(/;/g) || []).length > (lineas[0].match(/,/g) || []).length ? ";" : ",";
+  const num = (s) => Number(sep === ";" ? s.replace(/\./g, "").replace(",", ".") : s);
+  const cab = separarCsv(lineas[0], sep).map(normalizarTexto);
+  const col = (n) => { const i = cab.indexOf(n); if (i < 0) throw new Error(`falta la columna "${n}"`); return i; };
+  const iMun = col("municipio"), iLat = col("lat"), iLon = col("lon"), iPunto = col("punto_tablero"),
+        iVar = col("variable"), iDias = col("periodo_dias"),
+        iCortes = ["corte_1", "corte_2", "corte_3", "corte_4"].map(col);
+  const salida = {}, pixeles = {};
+  let filas = 0;
+  lineas.slice(1).forEach((linea) => {
+    const c = separarCsv(linea, sep);
+    const varKey = VARIABLE_CSV[normalizarTexto(c[iVar] || "")];
+    const lat = num(c[iLat]), lon = num(c[iLon]), dias = num(c[iDias]);
+    const cortes = iCortes.map((i) => num(c[i]));
+    if (!varKey || ![lat, lon, dias, ...cortes].every(isFinite)) return; // fila incompleta: se ignora
+    const municipio = c[iMun];
+    const clave = `${municipio}|${varKey}|${lat}|${lon}`;
+    if (!pixeles[clave]) {
+      pixeles[clave] = { lat, lon, tablero: false };
+      ((salida[municipio] ||= {})[varKey] ||= []).push(pixeles[clave]);
+    }
+    pixeles[clave][`d${dias}`] = cortes;
+    if (c[iPunto]) pixeles[clave].tablero = true; // "sí" (o cualquier texto no vacío)
+    filas++;
+  });
+  if (!filas) throw new Error("no se encontró ninguna fila válida");
+  return salida;
 }
 
-function pintarLeyendaMapa(varKey, diasPeriodo) {
-  const cat = CATEGORIAS_MAPA[varKey];
+async function cargarCategorias() {
+  try {
+    const resp = await fetch(ARCHIVO_CATEGORIAS, { cache: "no-store" });
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const bytes = await resp.arrayBuffer();
+    let texto;
+    try { texto = new TextDecoder("utf-8", { fatal: true }).decode(bytes); }
+    catch (e) { texto = new TextDecoder("windows-1252").decode(bytes); }
+    CATEGORIAS_HISTORICAS = leerCsvCategorias(texto);
+  } catch (e) {
+    CATEGORIAS_HISTORICAS = {};
+    categoriasError = `No se pudo leer ${ARCHIVO_CATEGORIAS.slice(2)} (${e.message}).`;
+    console.error(categoriasError);
+  }
+}
+
+/* Cortes de un pixel. Busca el pixel más cercano a (lat, lon) entre los del
+   municipio; si no hay ninguno a menos de ~6 km (0,06°) devuelve null y esa
+   celda/tarjeta queda sin categoría. Con lat/lon = null
+   devuelve el pixel del punto del tablero. */
+function cortesPixel(municipio, varKey, dias, lat = null, lon = null) {
+  const pixeles = (CATEGORIAS_HISTORICAS[municipio] || {})[varKey];
+  if (!pixeles || !pixeles.length) return null;
+  let elegido = null;
+  if (lat === null) {
+    elegido = pixeles.find((p) => p.tablero) || null;
+  } else {
+    let mejor = Infinity;
+    pixeles.forEach((p) => {
+      const dist = (p.lat - lat) ** 2 + (p.lon - lon) ** 2;
+      if (dist < mejor) { mejor = dist; elegido = p; }
+    });
+    if (mejor > 0.06 ** 2) elegido = null;
+  }
+  return elegido ? elegido[`d${dias}`] || null : null;
+}
+
+/* Categoría de un valor dados los cortes de su pixel. null si no hay cortes. */
+function categoriaHistorica(valor, varKey, cortes) {
+  if (!cortes || typeof valor !== "number" || !isFinite(valor)) return null;
+  const paleta = COLORES_CATEGORIA[varKey];
+  if (varKey === "precip" && valor < UMBRAL_SIN_LLUVIA_MM) return { etiqueta: "Sin lluvia", color: paleta.sinLluvia };
+  const i = cortes.filter((c) => valor >= c).length; // 0 a 4
+  return { etiqueta: ETIQUETAS_CATEGORIA[i], color: paleta.colores[i] };
+}
+
+function colorTexto(fondo) {
+  const n = parseInt(fondo.slice(1), 16);
+  const lum = 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255);
+  return lum > 150 ? "#2B2B23" : "#FFFFFF";
+}
+function chipCategoria(cat) {
+  if (!cat) return "";
+  return `<span class="chip-cat" style="background:${cat.color};color:${colorTexto(cat.color)}">${cat.etiqueta}</span>`;
+}
+
+function pintarLeyendaMapa(varKey, diasPeriodo, municipio) {
+  const paleta = COLORES_CATEGORIA[varKey];
   const unidad = UNIDAD_VARIABLE[varKey];
-  const [c0, c1, c2] = cortesVariable(varKey, diasPeriodo);
-  const rangos = [`< ${c0}`, `${c0} – ${c1}`, `${c1} – ${c2}`, `≥ ${c2}`];
-  $mapaLeyenda.innerHTML = cat.etiquetas.map((et, i) => `
+  const c = cortesPixel(municipio, varKey, diasPeriodo);
+  const r = (x) => x.toFixed(1);
+  const rangos = c ? [`< ${r(c[0])}`, `${r(c[0])} – ${r(c[1])}`, `${r(c[1])} – ${r(c[2])}`, `${r(c[2])} – ${r(c[3])}`, `≥ ${r(c[3])}`]
+                   : ["", "", "", "", ""];
+  if (c && varKey === "precip") rangos[0] = `${r(UMBRAL_SIN_LLUVIA_MM)} – ${r(c[0])}`;
+  const filas = ETIQUETAS_CATEGORIA.map((et, i) => ({ et, color: paleta.colores[i], rango: rangos[i] }));
+  if (varKey === "precip") filas.unshift({ et: "Sin lluvia", color: paleta.sinLluvia, rango: c ? `< ${r(UMBRAL_SIN_LLUVIA_MM)}` : "" });
+  $mapaLeyenda.innerHTML = filas.map((f) => `
     <div class="leyenda-fila">
-      <i style="background:${cat.colores[i]}"></i>
-      <span class="leyenda-nombre">${et}</span>
-      <span class="leyenda-rango">${rangos[i]} ${unidad}</span>
-    </div>`).join("");
+      <i style="background:${f.color}"></i>
+      <span class="leyenda-nombre">${f.et}</span>
+      <span class="leyenda-rango">${f.rango ? f.rango + " " + unidad : ""}</span>
+    </div>`).join("") +
+    (categoriasError ? `<p class="leyenda-nota aviso">${categoriasError} Las celdas se muestran en gris.</p>`
+      : `<p class="leyenda-nota">Comparado con lo normal de 1991–2020 en cada lugar. Los rangos son los del punto de ${municipio}; cada celda del mapa usa los de su propio pixel.</p>`);
 }
-
+  
 /* ------------------------------------------------------------------------
    MAPA: Leaflet real, con imágenes satelitales de fondo (Esri World
    Imagery) en vez de un fondo blanco.
@@ -925,7 +1052,7 @@ function pintarMapa(etiqueta, diasPeriodo, fechaObjetivo) {
   const fc = DEPARTAMENTOS_GEO[dept];
   const varKey = CLAVE_MAPA_VARIABLE[$variable.value];
   $mapaTitulo.textContent = `${ETIQUETA_VARIABLE[varKey]} en ${dept}`;
-  pintarLeyendaMapa(varKey, diasPeriodo);
+    pintarLeyendaMapa(varKey, diasPeriodo, municipioSel);
   $btnMapaZoom.textContent = mapaZoomMunicipio ? "Ver departamento completo" : "Acercar al municipio";
 
   if (!mapaLeaflet) {
@@ -964,9 +1091,7 @@ function pintarMapa(etiqueta, diasPeriodo, fechaObjetivo) {
     const lonStep = lonsUnicos.length > 1 ? Math.min(...lonsUnicos.slice(1).map((v, i) => v - lonsUnicos[i])) : 0.03;
     const latStep = latsUnicos.length > 1 ? Math.min(...latsUnicos.slice(1).map((v, i) => v - latsUnicos[i])) : 0.03;
 
-    // Recorte geométrico real: 
-    // cada celda se intersecta con el polígono verdadero del municipio, así que
-    // lo que se pinta nunca se sale de la forma ni deja huecos en el borde.
+    // Recorte geométrico 
     const poligonoMunicipioTurf = feat.geometry.type === "Polygon"
       ? turf.polygon(feat.geometry.coordinates)
       : turf.multiPolygon(feat.geometry.coordinates);
@@ -975,7 +1100,9 @@ function pintarMapa(etiqueta, diasPeriodo, fechaObjetivo) {
     celdas.forEach((celda) => {
       const agregado = agregadoCeldaPeriodo(celda.valores, varsObjetivo, diasPeriodo, fechaObjetivo, varKey);
       if (agregado === null) return; // sin datos en el período: no se pinta
-      const color = categoriaVariable(agregado, varKey, diasPeriodo).color;
+      // Cada celda se compara con lo normal de SU pixel. 
+      const cat = categoriaHistorica(agregado, varKey, cortesPixel(nombreObjetivo, varKey, diasPeriodo, celda.lat, celda.lon));
+      const color = cat ? cat.color : "#B8B8B0";
       const celdaTurf = turf.polygon([[
         [celda.lon - lonStep / 2, celda.lat - latStep / 2],
         [celda.lon + lonStep / 2, celda.lat - latStep / 2],
@@ -1039,7 +1166,7 @@ function hoyIso() {
 
 // Series de una asociación entre dos fechas, en el mismo formato que las
 // satelitales. Columnas de cada registro: fecha, lluvia, tmin, tmax, hrmin, hrmax.
-// Un día sin reporte simplemente no aparece (no se rellena con cero).
+// Un día sin reporte no aparece.
 function construirVarsCampo(asoc, inicio, fin) {
   const filas = asoc.registros.filter((r) => r[0] >= inicio && r[0] <= fin);
   const serie = (i) => filas.filter((r) => r[i] !== null && r[i] !== undefined).map((r) => ({ date: r[0], value: r[i] }));
@@ -1251,11 +1378,7 @@ function panel() {
 
   const etiqueta = etiquetaPeriodo(periodoNombre, diasPeriodo, ultimaFecha, fechaObjetivo);
 
-  // Las tarjetas y la gráfica van PRIMERO: son lo esencial y
-  // lo más confiable (no dependen de librerías externas de mapas). Si algo
-  // más abajo (mapa satelital, mapa de la finca) llega a fallar por lo que
-  // sea ya alcanzaron a dibujarse y no se quedan en blanco por un error ajeno a ellas.
-  mostrarIndicadores(vars, diasPeriodo, etiqueta, variableElegida, fechaObjetivo, $cards, $sistema.value);
+  mostrarIndicadores(vars, diasPeriodo, etiqueta, variableElegida, fechaObjetivo, $cards, $sistema.value, municipio);
 
   if (periodoNombre === "Última fecha") {
     Plotly.purge("chart"); document.getElementById("chart").innerHTML = "";
@@ -1285,8 +1408,10 @@ async function iniciar() {
     if (datos) panel();
   });
   actualizarOpcionesAsociacion();
+  const categoriasListas = cargarCategorias();
   try {
     await cargarDatos();
+    await categoriasListas;
   } catch (e) {
     console.error("No se pudieron cargar los datos:", e);
     mostrarSinDatos(e.message);
