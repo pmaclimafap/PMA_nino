@@ -85,13 +85,6 @@
   .header-row { margin-bottom: 20px; }
   .header-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px; }
 
-  .fuente-badge {
-    display: flex; align-items: center; gap: 8px; padding: 10px 16px; flex-shrink: 0;
-    background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 999px;
-    font-size: 0.9rem; font-weight: 600; color: var(--color-ink);
-  }
-  .fuente-badge .chulito { color: #2E7D4F; font-weight: 700; font-size: 1.1rem; }
-  .fuente-badge--header { margin-top: 10px; }
 
   .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; padding: 16px;
     background: var(--color-panel); border: 1px solid var(--color-line); border-radius: var(--radius); margin-bottom: 24px; }
@@ -198,7 +191,6 @@
         <div>
           <h1>Monitoreo climático comunitario y satelital</h1>
           <p id="header-descripcion">Lluvia, temperatura y humedad relativa de los últimos días para Los Palmitos (Sucre), San José de Toluviejo (Sucre), Icononzo (Tolima), Planadas (Tolima), Fonseca (La Guajira), Manaure (Cesar) y El Paso (Cesar), calculadas a partir de datos satelitales (MSWX / MSWEP). Incluye mapa, gráficos por período y alertas de días por encima del umbral de calor o humedad según el sistema productivo.</p>
-          <div class="fuente-badge fuente-badge--header"><span class="chulito">✓</span><span id="fuente-fecha">Actualizado —</span></div>
         </div>
       </div>
     </header>
@@ -538,7 +530,6 @@ const $periodo = document.getElementById("sel-periodo");
 const $variable = document.getElementById("sel-variable");
 const $sistema = document.getElementById("sel-sistema");
 const $cards = document.getElementById("cards");
-const $fuenteFecha = document.getElementById("fuente-fecha");
 
 function actualizarOpcionesSistema() {
   const dept = MUNICIPIO_DEPARTAMENTO[$municipio.value];
@@ -621,7 +612,7 @@ function mostrarIndicadores(vars, diasPeriodo, etiqueta, variableElegida, fechaO
             // Máx y mín son de UN día, así que se comparan con la ventana de 1 día.
       if (ind.temp_max) detalle += `Máx: ${ind.temp_max.value.toFixed(1)}°C (${fechaEs(ind.temp_max.date)}) ${cat(ind.temp_max.value, "tmax", 1)}  `;
       if (ind.temp_min) detalle += `Mín: ${ind.temp_min.value.toFixed(1)}°C (${fechaEs(ind.temp_min.date)}) ${cat(ind.temp_min.value, "tmin", 1)}`;
-      contenedor.append(tarjeta(`Temperatura — ${etiqueta}`, `${ind.temp_promedio.toFixed(1)} °C promedio ${cat(ind.temp_promedio, "tavg", diasPeriodo)}`, detalle, "--color-temp", "🌡️"));
+      contenedor.append(tarjeta(`Temperatura — ${etiqueta}`, `${ind.temp_promedio.toFixed(1)} °C promedio`, detalle, "--color-temp", "🌡️"));
     }
     if (ind.dias_tmax_sobre_umbral !== undefined) {
       contenedor.append(tarjeta(`Temperaturas por encima de ${umbralTmax}°C`, `${ind.dias_tmax_sobre_umbral} de ${dias(ind.dias_tmax_total)}`, `Superaron el umbral para ${sistemaProductivo}`, "--color-temp", "🔥"));
@@ -635,7 +626,7 @@ function mostrarIndicadores(vars, diasPeriodo, etiqueta, variableElegida, fechaO
       const hrMax = vars.relhum_max && vars.relhum_max.length ? extremos(vars.relhum_max.slice(-diasPeriodo)).max : ind.relhum_max;
       const hrMin = vars.relhum_min && vars.relhum_min.length ? extremos(vars.relhum_min.slice(-diasPeriodo)).min : ind.relhum_min;
       const detalle = `Máx: ${hrMax.value.toFixed(0)}% (${fechaEs(hrMax.date)})  Mín: ${hrMin.value.toFixed(0)}% (${fechaEs(hrMin.date)})`;
-      contenedor.append(tarjeta(`Humedad relativa — ${etiqueta}`, `${ind.relhum_promedio.toFixed(0)} % promedio ${cat(ind.relhum_promedio, "relhum", diasPeriodo)}`, detalle, "--color-relhum", "💧"));
+      contenedor.append(tarjeta(`Humedad relativa — ${etiqueta}`, `${ind.relhum_promedio.toFixed(0)} % promedio`, detalle, "--color-relhum", "💧"));
       if (ind.dias_hr_sobre_umbral !== undefined) {
         contenedor.append(tarjeta(`Humedad por encima de ${umbralHr}%`, `${ind.dias_hr_sobre_umbral} de ${dias(ind.dias_hr_total)}`, `Superaron el umbral para ${sistemaProductivo}`, "--color-relhum", "💦"));
       }
@@ -774,7 +765,7 @@ const COLORES_CATEGORIA = {
   //                  Muy bajo   Bajo       Medio      Alto       Muy alto
   precip: { sinLluvia: "#fff7fb", colores: ["#d0d1e6", "#a6bddb", "#2b8cbe", "#045a8d", "#023858"] },
   tavg:   { colores: ["#ffffcc", "#fed976", "#fd8d3c", "#e31a1c", "#800026"] },
-  relhum: { colores: ["#d0d1e6", "#a6bddb", "#2b8cbe", "#045a8d", "#023858"] },
+  relhum: { colores: ["#fff7fb", "#a6bddb", "#2b8cbe", "#045a8d", "#023858"] },
 };
 COLORES_CATEGORIA.tmax = COLORES_CATEGORIA.tavg;
 COLORES_CATEGORIA.tmin = COLORES_CATEGORIA.tavg;
@@ -948,6 +939,48 @@ function crearBrujula() {
   return new Brujula();
 }
 
+/* ------------------------------------------------------------------------
+   SUAVIZADO DEL MAPA (interpolación bilineal)
+   El satélite entrega pixeles de 0,1° (~11 km). Para que el mapa no se vea en
+   bloques, cada pixel se divide en SUBDIVISION x SUBDIVISION cuadritos y a cada
+   uno se le calcula un valor intermedio entre los 4 pixeles vecinos, con
+   más peso al más cercano. Los cortes de las categorías se interpolan igual,
+   así cada cuadrito se sigue comparando con lo normal de su lugar.
+   Es solo visual: no agrega detalle real, el dato sigue siendo de 11 km.
+   SUBDIVISION = 1 vuelve al mapa de pixeles sin suavizar.
+   ------------------------------------------------------------------------ */
+const SUBDIVISION = 10; // 10 → cuadritos de ~1 km
+
+function indicePixeles(pixeles, lonStep, latStep) {
+  const lon0 = Math.min(...pixeles.map((p) => p.lon)), lat0 = Math.min(...pixeles.map((p) => p.lat));
+  const porPosicion = {};
+  pixeles.forEach((p) => {
+    porPosicion[`${Math.round((p.lon - lon0) / lonStep)},${Math.round((p.lat - lat0) / latStep)}`] = p;
+  });
+  return { porPosicion, lon0, lat0, lonStep, latStep };
+}
+
+/* Promedio ponderado (bilineal) de los 4 pixeles vecinos. Si alguno no
+   existe (borde del municipio) o no tiene dato, se reparte el peso entre los
+   que sí tienen. Valor y cortes se interpolan por separado: un pixel sin
+   cortes no impide interpolar el valor. */
+function interpolarPixeles(indice, lon, lat) {
+  const fx = (lon - indice.lon0) / indice.lonStep, fy = (lat - indice.lat0) / indice.latStep;
+  const ix = Math.floor(fx), iy = Math.floor(fy), tx = fx - ix, ty = fy - iy;
+  let sumaV = 0, pesoV = 0, pesoC = 0;
+  const sumaC = [0, 0, 0, 0];
+  [[0, 0, (1 - tx) * (1 - ty)], [1, 0, tx * (1 - ty)], [0, 1, (1 - tx) * ty], [1, 1, tx * ty]].forEach(([dx, dy, w]) => {
+    const p = indice.porPosicion[`${ix + dx},${iy + dy}`];
+    if (!p || w === 0) return;
+    if (p.valor !== null) { sumaV += w * p.valor; pesoV += w; }
+    if (p.cortes) { p.cortes.forEach((c, k) => { sumaC[k] += w * c; }); pesoC += w; }
+  });
+  return {
+    valor: pesoV > 0 ? sumaV / pesoV : null,
+    cortes: pesoC > 0 ? sumaC.map((s) => s / pesoC) : null,
+  };
+}
+
 function pintarMapa(etiqueta, diasPeriodo, fechaObjetivo) {
   $mapaPeriodoActual.textContent = etiqueta;
   const municipioSel = $municipio.value;
@@ -965,6 +998,11 @@ function pintarMapa(etiqueta, diasPeriodo, fechaObjetivo) {
       attribution: "Imágenes: Esri, Maxar, Earthstar Geographics",
     }).addTo(mapaLeaflet);
     mapaLeaflet.addControl(crearBrujula());
+    // Panel propio para las celdas: queda debajo de los contornos (para que
+    // sigan recibiendo el clic) y le da la transparencia a todas juntas.
+    const panelCeldas = mapaLeaflet.createPane("celdas");
+    panelCeldas.style.zIndex = 390;
+    panelCeldas.style.opacity = 0.75;
   }
 
   mapaLeaflet.invalidateSize();
@@ -1001,24 +1039,45 @@ function pintarMapa(etiqueta, diasPeriodo, fechaObjetivo) {
       ? turf.polygon(feat.geometry.coordinates)
       : turf.multiPolygon(feat.geometry.coordinates);
 
+    // Valor del período y cortes de cada pixel, para interpolar entre ellos.
+    const pixeles = celdas.map((celda) => ({
+      lat: celda.lat, lon: celda.lon,
+      valor: agregadoCeldaPeriodo(celda.valores, varsObjetivo, diasPeriodo, fechaObjetivo, varKey),
+      cortes: cortesPixel(nombreObjetivo, varKey, diasPeriodo, celda.lat, celda.lon),
+    }));
+    const indice = indicePixeles(pixeles, lonStep, latStep);
+
+    // Cada pixel se divide en SUBDIVISION x SUBDIVISION cuadritos. A cada
+    // cuadrito se le interpola el valor y los cortes desde los 4 pixeles
+    // vecinos, y se clasifica con esos cortes.
     const capaGrilla = L.layerGroup();
-    celdas.forEach((celda) => {
-      const agregado = agregadoCeldaPeriodo(celda.valores, varsObjetivo, diasPeriodo, fechaObjetivo, varKey);
-      if (agregado === null) return; // sin datos en el período: no se pinta
-      // Cada celda se compara con lo normal de SU pixel. 
-      const cat = categoriaHistorica(agregado, varKey, cortesPixel(nombreObjetivo, varKey, diasPeriodo, celda.lat, celda.lon));
-      const color = cat ? cat.color : "#B8B8B0";
-      const celdaTurf = turf.polygon([[
-        [celda.lon - lonStep / 2, celda.lat - latStep / 2],
-        [celda.lon + lonStep / 2, celda.lat - latStep / 2],
-        [celda.lon + lonStep / 2, celda.lat + latStep / 2],
-        [celda.lon - lonStep / 2, celda.lat + latStep / 2],
-        [celda.lon - lonStep / 2, celda.lat - latStep / 2],
-      ]]);
-      let recorte;
-      try { recorte = turf.intersect(celdaTurf, poligonoMunicipioTurf); } catch (e) { recorte = null; }
-      if (!recorte) return; // esta celda no toca el municipio para nada
-      L.geoJSON(recorte, { style: { stroke: false, fillColor: color, fillOpacity: 0.75 } }).addTo(capaGrilla);
+    const sx = lonStep / SUBDIVISION, sy = latStep / SUBDIVISION;
+    const geom = feat.geometry;
+    pixeles.forEach((px) => {
+      for (let i = 0; i < SUBDIVISION; i++) {
+        for (let j = 0; j < SUBDIVISION; j++) {
+          const lon0 = px.lon - lonStep / 2 + i * sx, lat0 = px.lat - latStep / 2 + j * sy;
+          const lon1 = lon0 + sx, lat1 = lat0 + sy;
+          const esquinas = [[lon0, lat0], [lon1, lat0], [lon1, lat1], [lon0, lat1]];
+          const dentro = esquinas.filter(([x, y]) => puntoEnPoligono(x, y, geom)).length;
+          let forma;
+          if (dentro === 4) {
+            forma = turf.polygon([[...esquinas, esquinas[0]]]);
+          } else {
+            // Cuadrito en el borde: se recorta con el polígono real del municipio.
+            try { forma = turf.intersect(turf.polygon([[...esquinas, esquinas[0]]]), poligonoMunicipioTurf); } catch (e) { forma = null; }
+            if (!forma) continue; // no toca el municipio
+          }
+          const { valor, cortes } = interpolarPixeles(indice, (lon0 + lon1) / 2, (lat0 + lat1) / 2);
+          if (valor === null) continue; // sin datos alrededor: no se pinta
+          const cat = categoriaHistorica(valor, varKey, cortes);
+          const color = cat ? cat.color : "#B8B8B0"; // gris = sin cortes de referencia
+          // Opacidad 1 y borde del mismo color para que no se vean líneas entre
+          // cuadritos; la transparencia la pone el panel "celdas" completo.
+          L.geoJSON(forma, { pane: "celdas", interactive: false,
+            style: { stroke: true, weight: 0.8, color, fillColor: color, fillOpacity: 1, opacity: 1 } }).addTo(capaGrilla);
+        }
+      }
     });
     capaGrilla.addTo(mapaLeaflet);
     capasMapaActuales.push(capaGrilla);
@@ -1336,9 +1395,6 @@ async function iniciar() {
     mostrarSinDatos("Ningún municipio tiene serie de lluvia.");
     return;
   }
-  const ultima = datos.municipios[conSerie].precip.slice(-1)[0].date;
-  $fuenteFecha.textContent =
-    "Datos hasta " + fechaEs(ultima);
   $headerDescripcion.textContent = DESCRIPCION_POR_VISTA.secundaria();
   [$municipio, $periodo, $variable, $sistema, $asociacion].forEach((el) => el.addEventListener("change", panel));
   panel();
