@@ -93,18 +93,6 @@
   .fuente-badge .chulito { color: #2E7D4F; font-weight: 700; font-size: 1.1rem; }
   .fuente-badge--header { margin-top: 10px; }
 
-  .enso-panel {
-    display: flex; gap: 18px; align-items: center; flex-wrap: wrap;
-    background: var(--color-panel); border: 1px solid var(--color-line); border-radius: var(--radius);
-    padding: 16px 22px; margin-bottom: 24px;
-  }
-  .enso-panel svg { display: block; }
-  .enso-texto { font-size: 0.85rem; line-height: 1.4; }
-  .enso-texto .fase { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; color: var(--color-ink); }
-  .enso-texto .valor { font-size: 0.88rem; color: var(--color-ink-soft); margin-top: 2px; }
-  .enso-texto .detalle { color: var(--color-ink-soft); margin-top: 2px; }
-  .enso-texto .detalle a { color: var(--color-ink-soft); }
-
   .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; padding: 16px;
     background: var(--color-panel); border: 1px solid var(--color-line); border-radius: var(--radius); margin-bottom: 24px; }
   .field { display: flex; flex-direction: column; gap: 5px; }
@@ -150,11 +138,12 @@
     border: 1px solid var(--color-line); background: var(--color-bg); color: var(--color-ink-soft); cursor: pointer;
   }
   .mapa-zoom-btn:hover { border-color: var(--color-rain); color: var(--color-ink); }
-  .mapa-leyenda { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-bottom: 16px; }
-  .leyenda-fila { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--color-bg); border-radius: 6px; }
-  .leyenda-fila i { width: 18px; height: 18px; border-radius: 4px; display: inline-block; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.08); }
-  .leyenda-nombre { font-weight: 700; font-size: 0.88rem; }
-  .leyenda-rango { font-size: 0.78rem; color: var(--color-ink-soft); margin-left: auto; }
+  .mapa-leyenda { display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 8px; margin-bottom: 16px; }
+  /* Cuadro de color a la izquierda; nombre arriba y rango abajo, sin partirse en dos líneas. */
+  .leyenda-fila { display: grid; grid-template-columns: 18px 1fr; column-gap: 8px; align-items: center; padding: 8px 10px; background: var(--color-bg); border-radius: 6px; }
+  .leyenda-fila i { grid-row: span 2; width: 18px; height: 18px; border-radius: 4px; display: inline-block; border: 1px solid rgba(0,0,0,0.12); }
+  .leyenda-nombre { font-weight: 700; font-size: 0.88rem; white-space: nowrap; line-height: 1.2; }
+  .leyenda-rango { font-size: 0.78rem; color: var(--color-ink-soft); white-space: nowrap; line-height: 1.2; }
   .leyenda-nota { grid-column: 1 / -1; margin: 0; font-size: 0.78rem; color: var(--color-ink-soft); }
   .leyenda-nota.aviso { color: #9A5B00; font-weight: 700; }
   .chip-cat { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.72em; font-weight: 700; vertical-align: middle; border: 1px solid rgba(0,0,0,0.08); white-space: nowrap; }
@@ -213,14 +202,6 @@
         </div>
       </div>
     </header>
-  </div>
-
-  <div class="enso-panel">
-    <div id="enso-gauge"></div>
-    <div class="enso-texto">
-      <div class="fase" id="enso-fase-texto"></div>
-      <div class="detalle" id="enso-detalle"></div>
-    </div>
   </div>
 
   <div class="controls">
@@ -286,7 +267,7 @@
   </div>
 
   <footer>
-    <div class="footer-texto">Fuente satelital: GloH2O (MSWX / MSWEP). Condición ENSO: NOAA Climate Prediction Center (índice ONI / diagnóstico ENSO mensual).</div>
+    <div class="footer-texto">Fuente satelital: GloH2O (MSWX / MSWEP).</div>
   </footer>
 </div>
 
@@ -354,7 +335,7 @@ function mostrarSinDatos(motivo) {
     motivo + "</p>";
   const w = document.querySelector(".wrap");
   (w || document.body).appendChild(aviso);
-  document.querySelectorAll(".controls, .enso-panel, #cards, .panel, main")
+  document.querySelectorAll(".controls, #cards, .panel, main")
     .forEach((el) => (el.style.display = "none"));
 }
 
@@ -603,86 +584,6 @@ $periodo.value = "Última semana";
 $variable.value = "Lluvia";
 actualizarOpcionesSistema();
 
-// --- Manómetro ENSO: dial pequeño (SVG), sin librerías de gráficos ---
-// El valor (ONI aproximado) solo decide dónde apunta la aguja dentro de
-// las tres franjas; lo que importa para el agricultor es la franja, no
-// el número exacto.
-const ENSO_MIN = -3, ENSO_MAX = 3;
-function enso_angulo(v) {
-  const t = Math.max(0, Math.min(1, (v - ENSO_MIN) / (ENSO_MAX - ENSO_MIN)));
-  return 180 - t * 180;
-}
-function enso_polar(cx, cy, r, angDeg) {
-  const rad = (angDeg * Math.PI) / 180;
-  return [cx + r * Math.cos(rad), cy - r * Math.sin(rad)];
-}
-function enso_arco(cx, cy, r, angIni, angFin) {
-  const [x1, y1] = enso_polar(cx, cy, r, angIni);
-  const [x2, y2] = enso_polar(cx, cy, r, angFin);
-  return `M ${x1.toFixed(1)},${y1.toFixed(1)} A ${r},${r} 0 0,1 ${x2.toFixed(1)},${y2.toFixed(1)}`;
-}
-function pintarEnso() {
-  const e = datos.enso || {};
-  if (e.valor === null || e.valor === undefined || !isFinite(e.valor)) {
-    document.getElementById("enso-gauge").innerHTML = "";
-    document.getElementById("enso-fase-texto").textContent = "Fase ENSO: sin dato";
-    document.getElementById("enso-detalle").innerHTML =
-      '<div class="detalle">El índice ONI aún no está conectado. ' +
-      '<a href="' + (e.fuente_url || "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml") +
-      '" target="_blank" rel="noopener">Consultar en NOAA CPC</a></div>';
-    return;
-  }
-  const cx = 105, cy = 98, r = 68;
-  const estilos = getComputedStyle(document.body);
-  const segmentos = [
-    { desde: ENSO_MIN, hasta: -0.5, color: estilos.getPropertyValue("--color-enso-fria").trim() },      // La Niña
-    { desde: -0.5, hasta: 0.5, color: estilos.getPropertyValue("--color-enso-neutral").trim() },        // Normal
-    { desde: 0.5, hasta: ENSO_MAX, color: estilos.getPropertyValue("--color-enso-calida").trim() },     // El Niño
-  ];
-  const track = `<path d="${enso_arco(cx, cy, r, enso_angulo(ENSO_MIN), enso_angulo(ENSO_MAX))}" stroke="var(--color-line)" stroke-width="18" fill="none"></path>`;
-  const arcos = segmentos
-    .map((s) => `<path d="${enso_arco(cx, cy, r, enso_angulo(s.desde), enso_angulo(s.hasta))}" stroke="${s.color}" stroke-width="16" stroke-linecap="round" fill="none"></path>`)
-    .join("");
-  const angAguja = enso_angulo(e.valor);
-  const [xa, ya] = enso_polar(cx, cy, r - 18, angAguja);
-  // Etiquetas con el valor donde empieza/termina cada fase (no solo el actual).
-  // labelR deja suficiente margen dentro del viewBox para que ni "+0.5" (arriba)
-  // ni los extremos "-3"/"+3" (a los lados) se corten.
-  const labelR = r + 18;
-  const limites = [ENSO_MIN, -0.5, 0.5, ENSO_MAX];
-  const etiquetasLimites = limites.map((v) => {
-    const [tx, ty] = enso_polar(cx, cy, labelR, enso_angulo(v));
-    return `<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="middle" font-size="10" fill="var(--color-ink-soft)">${v > 0 ? "+" : ""}${v}</text>`;
-  }).join("");
-  const svg = `
-    <svg viewBox="0 0 210 128" width="200" height="122" xmlns="http://www.w3.org/2000/svg">
-      ${track}
-      ${arcos}
-      ${etiquetasLimites}
-      <line x1="${cx}" y1="${cy}" x2="${xa.toFixed(1)}" y2="${ya.toFixed(1)}" stroke="var(--color-ink)" stroke-width="3.5" stroke-linecap="round"></line>
-      <circle cx="${cx}" cy="${cy}" r="6" fill="var(--color-panel)" stroke="var(--color-ink)" stroke-width="2.5"></circle>
-      <text x="${cx}" y="${cy - 24}" text-anchor="middle" font-family="Zilla Slab, serif" font-weight="700" font-size="20" fill="var(--color-ink)">${e.valor.toFixed(1)}</text>
-    </svg>`;
-  document.getElementById("enso-gauge").innerHTML = svg;
-  const fase = e.valor >= 0.5 ? "El Niño" : e.valor <= -0.5 ? "La Niña" : "Normal";
-  document.getElementById("enso-fase-texto").textContent = `Fase ENSO: ${fase}`;
-  // Contexto histórico y provisionalidad: el valor del trimestre más
-  // reciente puede cambiar hasta dos meses después de publicarse.
-  const ranking = e.historico && e.historico.texto ? ` · ${e.historico.texto}` : "";
-  const provisional = e.provisional
-    ? ' <span title="La NOAA puede ajustar este valor hasta dos meses después de publicarlo">(provisional)</span>'
-    : "";
-  // Un valor servido desde el archivo propio sigue siendo válido, porque el
-  // ONI es mensual. Pero se declara su procedencia.
-  const cache = e.en_cache
-    ? ` <span title="${e.nota_cache || ""}">· valor archivado</span>`
-    : "";
-  document.getElementById("enso-detalle").innerHTML =
-    `<div class="valor">${e.indice || "Índice"}: ${e.valor.toFixed(1)} — ${e.categoria}${provisional}</div>` +
-    `<div class="detalle">${e.trimestre_largo || e.actualizado}${ranking}${cache} · ` +
-    `<a href="${e.fuente_url}" target="_blank" rel="noopener">NOAA CPC</a></div>`;
-}
-
 function tarjeta(label, value, detail, accentVar, icono = "") {
   const div = document.createElement("div");
   div.className = "card";
@@ -815,7 +716,9 @@ function bboxDeGeometria(geom) {
   return [minlon, maxlon, minlat, maxlat];
 }
 
-// Punto-en-polígono 
+// Punto-en-polígono (ray casting, XOR entre anillos para manejar huecos) —
+// se usa para no dibujar celdas de la grilla fuera de la forma real del
+// municipio, ya que Leaflet no tiene un "clip a polígono" nativo simple.
 function puntoEnPoligono(lon, lat, geom) {
   const polys = geom.type === "Polygon" ? [geom.coordinates] : geom.coordinates;
   let dentro = false;
@@ -868,9 +771,10 @@ const UNIDAD_VARIABLE = { precip: "mm", tavg: "°C", tmax: "°C", tmin: "°C", r
 const UMBRAL_SIN_LLUVIA_MM = 1.0;
 const ETIQUETAS_CATEGORIA = ["Muy bajo", "Bajo", "Medio", "Alto", "Muy alto"];
 const COLORES_CATEGORIA = {
-  precip: { sinLluvia: "#EFE4CB", colores: ["#DCEAF5", "#A6CBE6", "#6AA5D1", "#3474A8", "#173F70"] },
-  tavg:   { colores: ["#3B6FA8", "#9DC4E2", "#ECE7D6", "#EFA35C", "#C2461E"] },
-  relhum: { colores: ["#B98A4B", "#E3CC9C", "#E8EEE4", "#7DBFD3", "#245F78"] },
+  //                  Muy bajo   Bajo       Medio      Alto       Muy alto
+  precip: { sinLluvia: "#fff7fb", colores: ["#d0d1e6", "#a6bddb", "#2b8cbe", "#045a8d", "#023858"] },
+  tavg:   { colores: ["#ffffcc", "#fed976", "#fd8d3c", "#e31a1c", "#800026"] },
+  relhum: { colores: ["#d0d1e6", "#a6bddb", "#2b8cbe", "#045a8d", "#023858"] },
 };
 COLORES_CATEGORIA.tmax = COLORES_CATEGORIA.tavg;
 COLORES_CATEGORIA.tmin = COLORES_CATEGORIA.tavg;
@@ -1017,8 +921,7 @@ function pintarLeyendaMapa(varKey, diasPeriodo, municipio) {
       <span class="leyenda-nombre">${f.et}</span>
       <span class="leyenda-rango">${f.rango ? f.rango + " " + unidad : ""}</span>
     </div>`).join("") +
-    (categoriasError ? `<p class="leyenda-nota aviso">${categoriasError} Las celdas se muestran en gris.</p>`
-      : `<p class="leyenda-nota">Comparado con lo normal de 1991–2020 en cada lugar. Los rangos son los del punto de ${municipio}; cada celda del mapa usa los de su propio pixel.</p>`);
+    (categoriasError ? `<p class="leyenda-nota aviso">${categoriasError} Las celdas se muestran en gris.</p>` : "");
 }
   
 /* ------------------------------------------------------------------------
@@ -1091,7 +994,9 @@ function pintarMapa(etiqueta, diasPeriodo, fechaObjetivo) {
     const lonStep = lonsUnicos.length > 1 ? Math.min(...lonsUnicos.slice(1).map((v, i) => v - lonsUnicos[i])) : 0.03;
     const latStep = latsUnicos.length > 1 ? Math.min(...latsUnicos.slice(1).map((v, i) => v - latsUnicos[i])) : 0.03;
 
-    // Recorte geométrico 
+    // Recorte geométrico real: 
+    // cada celda se intersecta con el polígono verdadero del municipio, así que
+    // lo que se pinta nunca se sale de la forma ni deja huecos en el borde.
     const poligonoMunicipioTurf = feat.geometry.type === "Polygon"
       ? turf.polygon(feat.geometry.coordinates)
       : turf.multiPolygon(feat.geometry.coordinates);
@@ -1166,7 +1071,7 @@ function hoyIso() {
 
 // Series de una asociación entre dos fechas, en el mismo formato que las
 // satelitales. Columnas de cada registro: fecha, lluvia, tmin, tmax, hrmin, hrmax.
-// Un día sin reporte no aparece.
+// Un día sin reporte simplemente no aparece (no se rellena con cero).
 function construirVarsCampo(asoc, inicio, fin) {
   const filas = asoc.registros.filter((r) => r[0] >= inicio && r[0] <= fin);
   const serie = (i) => filas.filter((r) => r[i] !== null && r[i] !== undefined).map((r) => ({ date: r[0], value: r[i] }));
@@ -1378,6 +1283,10 @@ function panel() {
 
   const etiqueta = etiquetaPeriodo(periodoNombre, diasPeriodo, ultimaFecha, fechaObjetivo);
 
+  // Las tarjetas y la gráfica van PRIMERO: son lo esencial y
+  // lo más confiable (no dependen de librerías externas de mapas). Si algo
+  // más abajo (mapa satelital, mapa de la finca) llega a fallar por lo que
+  // sea ya alcanzaron a dibujarse y no se quedan en blanco por un error ajeno a ellas.
   mostrarIndicadores(vars, diasPeriodo, etiqueta, variableElegida, fechaObjetivo, $cards, $sistema.value, municipio);
 
   if (periodoNombre === "Última fecha") {
@@ -1431,7 +1340,6 @@ async function iniciar() {
   $fuenteFecha.textContent =
     "Datos hasta " + fechaEs(ultima);
   $headerDescripcion.textContent = DESCRIPCION_POR_VISTA.secundaria();
-  pintarEnso();
   [$municipio, $periodo, $variable, $sistema, $asociacion].forEach((el) => el.addEventListener("change", panel));
   panel();
 }
