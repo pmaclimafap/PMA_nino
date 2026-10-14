@@ -79,24 +79,17 @@
 
   .wrap { max-width: min(1680px, 100% - 2.5rem); margin: 0 auto; padding: 32px 0 60px; }
   @media (max-width: 40rem) { .wrap { max-width: 100%; padding: 24px 16px 48px; } }
-  /* Encabezado tipo portada: fondo azul degradado con texto blanco. Los
-     círculos suaves del fondo son solo decorativos. Colores fijos, para que
-     se vea igual en modo claro y oscuro. */
-  header {
-    position: relative; overflow: hidden; border-radius: 16px; color: #FFFFFF;
-    padding: clamp(26px, 4vw, 46px) clamp(22px, 4vw, 48px);
-    background:
-      radial-gradient(circle at 92% 18%, rgba(255, 196, 79, 0.45) 0, rgba(255, 196, 79, 0) 32%),
-      radial-gradient(circle at 78% 120%, rgba(107, 174, 214, 0.55) 0, rgba(107, 174, 214, 0) 45%),
-      linear-gradient(135deg, #0B2E4F 0%, #145A8C 55%, #1F7A8C 100%);
-    box-shadow: 0 10px 30px rgba(11, 46, 79, 0.18);
+  /* Banda de color solo detrás del título (la descripción queda afuera).
+     El degradado va del azul de la lluvia al naranja de la temperatura.
+     Colores fijos, para que se vea igual en modo claro y oscuro. */
+  .titulo-banda {
+    border-radius: 12px; padding: 18px 26px;
+    background: linear-gradient(100deg, #08306b 0%, #145a8c 42%, #2b8cbe 68%, #ec7014 100%);
+    box-shadow: 0 6px 18px rgba(8, 48, 107, 0.15);
   }
-  .header-eyebrow { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 14px; padding: 5px 14px;
-    border-radius: 999px; background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.28);
-    font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-  header h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(2.1rem, 4.6vw, 3.3rem); line-height: 1.08;
-    letter-spacing: -0.01em; color: #FFFFFF; margin: 0 0 16px; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.18); }
-  header p { color: rgba(255, 255, 255, 0.9); margin: 0; max-width: 80ch; font-size: 1.05rem; line-height: 1.6; }
+  header h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.8rem, 3.4vw, 2.5rem); line-height: 1.12;
+    letter-spacing: -0.01em; color: #FFFFFF; margin: 0; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.2); }
+  header p { color: var(--color-ink-soft); margin: 14px 0 0; max-width: 85ch; font-size: 1.02rem; line-height: 1.6; }
 
   .header-row { margin-bottom: 20px; }
   .header-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px; }
@@ -109,13 +102,13 @@
   select { font-family: var(--font-body); font-size: 0.92rem; padding: 8px 10px;
     border: 1px solid var(--color-line); border-radius: 4px; background: var(--color-bg); color: var(--color-ink); min-width: 200px; }
 
-  /* Recuadro con el período y sus fechas, una sola vez encima de las tarjetas. */
-  .periodo-caja { display: inline-flex; align-items: center; gap: 14px; margin-bottom: 14px; padding: 12px 20px 12px 16px;
-    background: var(--color-panel); border: 1px solid var(--color-line); border-left: 5px solid var(--color-rain); border-radius: var(--radius); }
+  /* Recuadro con el período y sus fechas, a la derecha de los selectores. */
+  .periodo-caja { display: inline-flex; align-items: center; gap: 12px; margin-left: auto; padding: 8px 18px 8px 14px;
+    background: var(--color-bg); border: 1px solid var(--color-line); border-left: 5px solid var(--color-rain); border-radius: var(--radius); }
   .periodo-caja:empty { display: none; }
-  .periodo-caja-icono { font-size: 1.8rem; line-height: 1; }
-  .periodo-caja-nombre { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-ink-soft); }
-  .periodo-caja-fechas { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: var(--color-ink); line-height: 1.25; }
+  .periodo-caja-icono { font-size: 1.6rem; line-height: 1; }
+  .periodo-caja-nombre { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-ink-soft); }
+  .periodo-caja-fechas { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--color-ink); line-height: 1.25; }
   .cards { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
   .card { flex: 1; min-width: 200px; background: color-mix(in srgb, var(--card-tinte, var(--color-rain)) 6%, var(--color-panel)); border: 1px solid var(--color-line);
     border-left: 3px solid var(--card-accent, var(--color-rain)); border-radius: var(--radius); padding: 14px 16px; }
@@ -216,8 +209,7 @@
     <header>
       <div class="header-top">
         <div>
-          <div class="header-eyebrow">🌦️ Fenómeno de El Niño</div>
-          <h1>Monitoreo climático comunitario y satelital</h1>
+          <div class="titulo-banda"><h1>Monitoreo climático comunitario y satelital</h1></div>
           <p id="header-descripcion">Acá encontrará cómo han estado la lluvia, la temperatura y la humedad relativa en los últimos días en siete municipios de cuatro departamentos: Los Palmitos y San José de Toluviejo, en Sucre; Icononzo y Planadas, en Tolima; Fonseca, en La Guajira; y Manaure y El Paso, en Cesar. La información proviene de satélites (MSWX y MSWEP). Puede consultar un mapa por variable, gráficos día a día y cuántos días el calor o la humedad superaron el umbral de su sistema productivo.</p>
         </div>
       </div>
@@ -229,10 +221,11 @@
     <div class="field" id="campo-asociacion-field" style="display:none;"><label for="sel-asociacion">Asociación</label><select id="sel-asociacion"></select></div>
     <div class="field"><label for="sel-periodo">Período</label><select id="sel-periodo"></select></div>
     <div class="field"><label for="sel-variable">Variable</label><select id="sel-variable"></select></div>
+    <div class="periodo-caja" id="periodo-caja"></div>
   </div>
 
   <div class="selector-cultivo" id="selector-cultivo" style="display:none;">
-    <label for="sel-sistema">Umbral según sistema productivo:</label>
+    <label for="sel-sistema">Seleccione el sistema productivo:</label>
     <select id="sel-sistema"></select>
   </div>
 
@@ -242,7 +235,6 @@
   </div>
 
   <div id="vista-secundaria">
-    <div class="periodo-caja" id="periodo-caja"></div>
     <div class="cards" id="cards"></div>
 
     <div class="chart-panel">
@@ -267,7 +259,6 @@
   </div>
 
   <div id="vista-campo" style="display:none;">
-    <div class="periodo-caja" id="campo-periodo-caja"></div>
     <div class="campo-estado" id="campo-estado"></div>
     <div class="cards" id="campo-cards"></div>
     <div class="chart-panel">
@@ -1248,7 +1239,9 @@ function pintarMapaCampo(municipio, asoc) {
 function mensajeCampo(texto) {
   $campoCards.innerHTML = "";
   $campoEstado.innerHTML = "";
-  document.getElementById("campo-periodo-caja").innerHTML = "";
+  // El recuadro de fechas es uno solo para las dos pestañas: se vacía solo
+  // si la pestaña comunitaria es la que está a la vista.
+  if (document.getElementById("vista-campo").style.display !== "none") document.getElementById("periodo-caja").innerHTML = "";
   Plotly.purge("campo-chart"); $campoChart.innerHTML = "";
   $campoVacio.style.display = "block";
   $campoVacio.textContent = texto;
@@ -1292,7 +1285,7 @@ function pintarVistaCampo(municipio, periodoNombre, diasPeriodo, variableElegida
   const vars = construirVarsCampo(asoc, inicioPeriodo, fin);
   const inicio = vars.fechas[0];  
   const etiqueta = `${periodoNombre} con reportes (${fechaEs(inicio)} a ${fechaEs(fin)})`;
-  pintarCajaPeriodo("campo-periodo-caja", periodoNombre, inicio, fin);
+  if (visible) pintarCajaPeriodo("periodo-caja", periodoNombre, inicio, fin); // fechas de los reportes
 
   const haceDias = diasEntre(fin, hoyIso());
   const hace = haceDias <= 0 ? "hoy" : haceDias === 1 ? "ayer" : `hace ${haceDias} días`;
