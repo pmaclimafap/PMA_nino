@@ -79,12 +79,24 @@
 
   .wrap { max-width: min(1680px, 100% - 2.5rem); margin: 0 auto; padding: 32px 0 60px; }
   @media (max-width: 40rem) { .wrap { max-width: 100%; padding: 24px 16px 48px; } }
-  header h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(2rem, 4.2vw, 3rem); line-height: 1.1;
-    letter-spacing: -0.01em; color: var(--color-ink); margin: 0 0 14px; }
-  /* Franja de color sobre el título: lluvia, humedad y temperatura. */
-  header h1::before { content: ""; display: block; width: 72px; height: 6px; border-radius: 3px; margin-bottom: 16px;
-    background: linear-gradient(90deg, var(--color-rain), var(--color-relhum), var(--color-temp)); }
-  header p { color: var(--color-ink-soft); margin: 0; max-width: 80ch; font-size: 1.02rem; line-height: 1.6; }
+  /* Encabezado tipo portada: fondo azul degradado con texto blanco. Los
+     círculos suaves del fondo son solo decorativos. Colores fijos, para que
+     se vea igual en modo claro y oscuro. */
+  header {
+    position: relative; overflow: hidden; border-radius: 16px; color: #FFFFFF;
+    padding: clamp(26px, 4vw, 46px) clamp(22px, 4vw, 48px);
+    background:
+      radial-gradient(circle at 92% 18%, rgba(255, 196, 79, 0.45) 0, rgba(255, 196, 79, 0) 32%),
+      radial-gradient(circle at 78% 120%, rgba(107, 174, 214, 0.55) 0, rgba(107, 174, 214, 0) 45%),
+      linear-gradient(135deg, #0B2E4F 0%, #145A8C 55%, #1F7A8C 100%);
+    box-shadow: 0 10px 30px rgba(11, 46, 79, 0.18);
+  }
+  .header-eyebrow { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 14px; padding: 5px 14px;
+    border-radius: 999px; background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.28);
+    font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+  header h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(2.1rem, 4.6vw, 3.3rem); line-height: 1.08;
+    letter-spacing: -0.01em; color: #FFFFFF; margin: 0 0 16px; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.18); }
+  header p { color: rgba(255, 255, 255, 0.9); margin: 0; max-width: 80ch; font-size: 1.05rem; line-height: 1.6; }
 
   .header-row { margin-bottom: 20px; }
   .header-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px; }
@@ -97,6 +109,13 @@
   select { font-family: var(--font-body); font-size: 0.92rem; padding: 8px 10px;
     border: 1px solid var(--color-line); border-radius: 4px; background: var(--color-bg); color: var(--color-ink); min-width: 200px; }
 
+  /* Recuadro con el período y sus fechas, una sola vez encima de las tarjetas. */
+  .periodo-caja { display: inline-flex; align-items: center; gap: 14px; margin-bottom: 14px; padding: 12px 20px 12px 16px;
+    background: var(--color-panel); border: 1px solid var(--color-line); border-left: 5px solid var(--color-rain); border-radius: var(--radius); }
+  .periodo-caja:empty { display: none; }
+  .periodo-caja-icono { font-size: 1.8rem; line-height: 1; }
+  .periodo-caja-nombre { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-ink-soft); }
+  .periodo-caja-fechas { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: var(--color-ink); line-height: 1.25; }
   .cards { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
   .card { flex: 1; min-width: 200px; background: color-mix(in srgb, var(--card-tinte, var(--color-rain)) 6%, var(--color-panel)); border: 1px solid var(--color-line);
     border-left: 3px solid var(--card-accent, var(--color-rain)); border-radius: var(--radius); padding: 14px 16px; }
@@ -197,6 +216,7 @@
     <header>
       <div class="header-top">
         <div>
+          <div class="header-eyebrow">🌦️ Fenómeno de El Niño</div>
           <h1>Monitoreo climático comunitario y satelital</h1>
           <p id="header-descripcion">Acá encontrará cómo han estado la lluvia, la temperatura y la humedad relativa en los últimos días en siete municipios de cuatro departamentos: Los Palmitos y San José de Toluviejo, en Sucre; Icononzo y Planadas, en Tolima; Fonseca, en La Guajira; y Manaure y El Paso, en Cesar. La información proviene de satélites (MSWX y MSWEP). Puede consultar un mapa por variable, gráficos día a día y cuántos días el calor o la humedad superaron el umbral de su sistema productivo.</p>
         </div>
@@ -222,6 +242,7 @@
   </div>
 
   <div id="vista-secundaria">
+    <div class="periodo-caja" id="periodo-caja"></div>
     <div class="cards" id="cards"></div>
 
     <div class="chart-panel">
@@ -246,6 +267,7 @@
   </div>
 
   <div id="vista-campo" style="display:none;">
+    <div class="periodo-caja" id="campo-periodo-caja"></div>
     <div class="campo-estado" id="campo-estado"></div>
     <div class="cards" id="campo-cards"></div>
     <div class="chart-panel">
@@ -308,9 +330,8 @@ const MUNICIPIOS = [
   "El Paso (Cesar)",
 ];
 
-// Arma "Sucre (A y B), Tolima (C y D) y Cesar (E)" a partir de MUNICIPIOS,
-// para usar en las descripciones sin repetir cada departamento (y que quede
-// sincronizada si cambia la lista).
+// Arma "Sucre (A y B), Tolima (C y D) y Cesar (E)" a partir de MUNICIPIOS.
+
 function unirConY(lista) {
   if (lista.length <= 1) return lista.join("");
   return lista.slice(0, -1).join(", ") + " y " + lista.slice(-1);
@@ -614,36 +635,36 @@ function mostrarIndicadores(vars, diasPeriodo, etiqueta, variableElegida, fechaO
 
   if (variableElegida === "Lluvia") {
     if (ind.precip_no_disponible) {
-      contenedor.append(tarjeta(`Lluvia — ${etiqueta}`, "No disponible", "El dato de este día aún no se ha publicado", "--color-rain", "🌧️"));
+      contenedor.append(tarjeta(`Lluvia`, "No disponible", "El dato de este día aún no se ha publicado", "--color-rain", "🌧️"));
     } else if (ind.precip_dias_periodo !== undefined) {
       const diasSinLluvia = ind.precip_dias_periodo - ind.precip_dias_con_lluvia;
-      contenedor.append(tarjeta(`Días con lluvia — ${etiqueta}`, `${dias(ind.precip_dias_con_lluvia)} con lluvia`, "", "--color-rain", "🌧️"));
-      contenedor.append(tarjeta(`Días secos — ${etiqueta}`, `${dias(diasSinLluvia)} ${diasSinLluvia === 1 ? "seco" : "secos"}`, "", "--color-rain", "☀️"));
-            contenedor.append(tarjeta(`Lluvia total — ${etiqueta}`, `${ind.precip_total.toFixed(1)} mm ${cat(ind.precip_total, "precip", diasPeriodo)}`, "", "--color-rain", "🌧️"));
+      contenedor.append(tarjeta(`Días con lluvia`, `${dias(ind.precip_dias_con_lluvia)} con lluvia`, "", "--color-rain", "🌧️"));
+      contenedor.append(tarjeta(`Días secos`, `${dias(diasSinLluvia)} ${diasSinLluvia === 1 ? "seco" : "secos"}`, "", "--color-rain", "☀️"));
+            contenedor.append(tarjeta(`Lluvia total`, `${ind.precip_total.toFixed(1)} mm ${cat(ind.precip_total, "precip", diasPeriodo)}`, "", "--color-rain", "🌧️"));
     }
   } else if (variableElegida === "Temperatura") {
     if (ind.temp_no_disponible) {
-      contenedor.append(tarjeta(`Temperatura — ${etiqueta}`, "No disponible", "El dato de este día aún no se ha publicado", "--color-temp", "🌡️"));
+      contenedor.append(tarjeta(`Temperatura`, "No disponible", "El dato de este día aún no se ha publicado", "--color-temp", "🌡️"));
     } else if (ind.temp_promedio !== undefined) {
       let detalle = "";
             // Máx y mín son de UN día, así que se comparan con la ventana de 1 día.
       if (ind.temp_max) detalle += `Máx: ${ind.temp_max.value.toFixed(1)}°C (${fechaEs(ind.temp_max.date)}) ${cat(ind.temp_max.value, "tmax", 1)}  `;
       if (ind.temp_min) detalle += `Mín: ${ind.temp_min.value.toFixed(1)}°C (${fechaEs(ind.temp_min.date)}) ${cat(ind.temp_min.value, "tmin", 1)}`;
-      contenedor.append(tarjeta(`Temperatura — ${etiqueta}`, `${ind.temp_promedio.toFixed(1)} °C promedio ${cat(ind.temp_promedio, "tavg", diasPeriodo)}`, detalle, "--color-temp", "🌡️"));
+      contenedor.append(tarjeta(`Temperatura`, `${ind.temp_promedio.toFixed(1)} °C promedio ${cat(ind.temp_promedio, "tavg", diasPeriodo)}`, detalle, "--color-temp", "🌡️"));
     }
     if (ind.dias_tmax_sobre_umbral !== undefined) {
       contenedor.append(tarjeta(`Temperaturas por encima de ${umbralTmax}°C`, `${ind.dias_tmax_sobre_umbral} de ${dias(ind.dias_tmax_total)}`, `Superaron el umbral para ${sistemaProductivo}`, "--color-temp", "🔥"));
     }
   } else if (variableElegida === "Humedad relativa") {
     if (ind.relhum_no_disponible) {
-      contenedor.append(tarjeta(`Humedad relativa — ${etiqueta}`, "No disponible", "El dato de este día aún no se ha publicado", "--color-relhum", "💧"));
+      contenedor.append(tarjeta(`Humedad relativa`, "No disponible", "El dato de este día aún no se ha publicado", "--color-relhum", "💧"));
     } else if (ind.relhum_promedio !== undefined) {
       // Los reportes comunitarios traen HR máxima y mínima diarias: si están,
       // los extremos salen de ellas y no del promedio.
       const hrMax = vars.relhum_max && vars.relhum_max.length ? extremos(vars.relhum_max.slice(-diasPeriodo)).max : ind.relhum_max;
       const hrMin = vars.relhum_min && vars.relhum_min.length ? extremos(vars.relhum_min.slice(-diasPeriodo)).min : ind.relhum_min;
       const detalle = `Máx: ${hrMax.value.toFixed(0)}% (${fechaEs(hrMax.date)})  Mín: ${hrMin.value.toFixed(0)}% (${fechaEs(hrMin.date)})`;
-      contenedor.append(tarjeta(`Humedad relativa — ${etiqueta}`, `${ind.relhum_promedio.toFixed(0)} % promedio ${cat(ind.relhum_promedio, "relhum", diasPeriodo)}`, detalle, "--color-relhum", "💧"));
+      contenedor.append(tarjeta(`Humedad relativa`, `${ind.relhum_promedio.toFixed(0)} % promedio ${cat(ind.relhum_promedio, "relhum", diasPeriodo)}`, detalle, "--color-relhum", "💧"));
       if (ind.dias_hr_sobre_umbral !== undefined) {
         contenedor.append(tarjeta(`Humedad por encima de ${umbralHr}%`, `${ind.dias_hr_sobre_umbral} de ${dias(ind.dias_hr_total)}`, `Superaron el umbral para ${sistemaProductivo}`, "--color-relhum", "💦"));
       }
@@ -668,8 +689,7 @@ function graficarPeriodo(vars, diasPeriodo, etiqueta, municipio, variableElegida
     Plotly.newPlot(targetId, traces, { ...layoutBase, yaxis: { title: { text: "<b>mm/día</b>", font: { size: 15 } } }, title: { text: "<b>Lluvia diaria</b>", font: { size: 18 } } }, { displayModeBar: false, responsive: true });
   } else if (variableElegida === "Temperatura") {
     const tmin = vars.tmin.slice(-diasPeriodo), tmax = vars.tmax.slice(-diasPeriodo);
-    // Cada línea (máxima/mínima/promedio) se activa o apaga por separado con
-    // su propia casilla — puedes ver cualquier combinación, incluida una sola.
+    // Cada línea (máxima/mínima) se activa o apaga por separado 
     const traces = [];
     if (mostrarMaxTemp) {
       traces.push({ x: tmax.map((p) => p.date), y: tmax.map((p) => p.value), mode: "lines+markers", line: { color: "#B23A3A", width: 2.5 }, marker: { size: 5 }, name: "Temperatura máxima", hovertemplate: "%{x}<br>%{y:.1f} °C<extra></extra>" });
@@ -697,8 +717,8 @@ function graficarPeriodo(vars, diasPeriodo, etiqueta, municipio, variableElegida
       ];
     }
     Plotly.newPlot(targetId, traces, {
-      // Rango fijo de 0 a 100 %: así un cambio pequeño no se ve como un pico.
-      ...layoutBase, yaxis: { title: { text: "<b>% de Humedad Relativa</b>", font: { size: 15 } }, range: [0, 100], dtick: 20 },
+      // Rango fijo de 30 a 100 %: así un cambio pequeño no se ve como un pico.
+      ...layoutBase, yaxis: { title: { text: "<b>% de Humedad Relativa</b>", font: { size: 15 } }, range: [30, 100], dtick: 10 },
       title: { text: "<b>Humedad relativa diaria</b>", font: { size: 18 } },
     }, { displayModeBar: false, responsive: true });
   }
@@ -932,7 +952,7 @@ function pintarLeyendaMapa(varKey, diasPeriodo, municipio) {
   
 /* ------------------------------------------------------------------------
    MAPA: Leaflet real, con imágenes satelitales de fondo (Esri World
-   Imagery) en vez de un fondo blanco.
+   Imagery)
    ------------------------------------------------------------------------ */
 let mapaLeaflet = null;
 let capasMapaActuales = [];
@@ -1132,6 +1152,25 @@ const $campoMapaNota = document.getElementById("campo-mapa-nota");
 function escaparHtml(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
+const MESES_LARGOS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+// "2026-10-13" → "13 de octubre de 2026" (sin el año si conAnio = false)
+function fechaLarga(iso, conAnio = true) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${d} de ${MESES_LARGOS[m - 1]}${conAnio ? ` de ${y}` : ""}`;
+}
+// "6 al 12 de octubre de 2026" o "14 de septiembre al 13 de octubre de 2026".
+// El mes y el año van una sola vez cuando se repiten.
+function rangoLargo(inicio, fin) {
+  if (inicio === fin) return fechaLarga(fin);
+  if (inicio.slice(0, 7) === fin.slice(0, 7)) return `${Number(inicio.slice(8))} al ${fechaLarga(fin)}`;
+  return `${fechaLarga(inicio, inicio.slice(0, 4) !== fin.slice(0, 4))} al ${fechaLarga(fin)}`;
+}
+function pintarCajaPeriodo(idCaja, nombrePeriodo, inicio, fin) {
+  document.getElementById(idCaja).innerHTML =
+    `<span class="periodo-caja-icono" aria-hidden="true">📅</span>` +
+    `<div><div class="periodo-caja-nombre">${nombrePeriodo}</div><div class="periodo-caja-fechas">${rangoLargo(inicio, fin)}</div></div>`;
+}
+
 function sumarDias(iso, n) {
   const d = new Date(iso + "T00:00:00"); d.setDate(d.getDate() + n);
   return d.toISOString().slice(0, 10);
@@ -1209,6 +1248,7 @@ function pintarMapaCampo(municipio, asoc) {
 function mensajeCampo(texto) {
   $campoCards.innerHTML = "";
   $campoEstado.innerHTML = "";
+  document.getElementById("campo-periodo-caja").innerHTML = "";
   Plotly.purge("campo-chart"); $campoChart.innerHTML = "";
   $campoVacio.style.display = "block";
   $campoVacio.textContent = texto;
@@ -1252,6 +1292,7 @@ function pintarVistaCampo(municipio, periodoNombre, diasPeriodo, variableElegida
   const vars = construirVarsCampo(asoc, inicioPeriodo, fin);
   const inicio = vars.fechas[0];  
   const etiqueta = `${periodoNombre} con reportes (${fechaEs(inicio)} a ${fechaEs(fin)})`;
+  pintarCajaPeriodo("campo-periodo-caja", periodoNombre, inicio, fin);
 
   const haceDias = diasEntre(fin, hoyIso());
   const hace = haceDias <= 0 ? "hoy" : haceDias === 1 ? "ayer" : `hace ${haceDias} días`;
@@ -1260,7 +1301,6 @@ function pintarVistaCampo(municipio, periodoNombre, diasPeriodo, variableElegida
     `<strong>${escaparHtml(asoc.nombre)}</strong>${asoc.ubicacion ? " · " + escaparHtml(asoc.ubicacion) : ""}<br>` +
     `Reportes en ${vars.fechas.length} de ${diasPeriodo} días del período · último reporte: ${fechaEs(fin)} (${hace})${atrasado}`;
 
-  // diasPeriodo = 999 a propósito: las series ya vienen recortadas al período.
   mostrarIndicadores(vars, 999, etiqueta, variableElegida, null, $campoCards, sistemaProductivo);
   const hayDatos = { "Lluvia": vars.precip, "Temperatura": vars.tmax.length ? vars.tmax : vars.tmin, "Humedad relativa": vars.relhum_max.length ? vars.relhum_max : vars.relhum_min }[variableElegida];
   if (!hayDatos || !hayDatos.length) {
@@ -1281,7 +1321,7 @@ const DESCRIPCION_POR_VISTA = {
     `Elija el municipio y la asociación para consultar sus datos.`,
 };
 
-// Cada casilla (máxima/mínima/promedio) existe por duplicado, una en cada
+// Cada casilla (máxima/mínima) existe por duplicado, una en cada
 // pestaña — se mantienen sincronizadas entre sí para que no haya que volver
 // a marcarlas al cambiar de "Monitoreo satelital" a "Monitoreo comunitario".
 function conectarInterruptorTemp(idPrincipal, idCampo, variableSetter) {
@@ -1357,11 +1397,9 @@ function panel() {
   }
 
   const etiqueta = etiquetaPeriodo(periodoNombre, diasPeriodo, ultimaFecha, fechaObjetivo);
+  pintarCajaPeriodo("periodo-caja", periodoNombre,
+    fechaObjetivo || sumarDias(ultimaFecha, -(diasPeriodo - 1)), fechaObjetivo || ultimaFecha);
 
-  // Las tarjetas y la gráfica van PRIMERO: son lo esencial y
-  // lo más confiable (no dependen de librerías externas de mapas). Si algo
-  // más abajo (mapa satelital, mapa de la finca) llega a fallar por lo que
-  // sea ya alcanzaron a dibujarse y no se quedan en blanco por un error ajeno a ellas.
   mostrarIndicadores(vars, diasPeriodo, etiqueta, variableElegida, fechaObjetivo, $cards, $sistema.value, municipio);
 
   if (periodoNombre === "Última fecha") {
