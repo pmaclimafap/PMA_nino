@@ -763,7 +763,7 @@ const UMBRAL_SIN_LLUVIA_MM = 1.0;
 const ETIQUETAS_CATEGORIA = ["Muy bajo", "Bajo", "Medio", "Alto", "Muy alto"];
 const COLORES_CATEGORIA = {
   //                  Muy bajo   Bajo       Medio      Alto       Muy alto
-  precip: { sinLluvia: "#fff7fb", colores: ["#d0d1e6", "#a6bddb", "#2b8cbe", "#045a8d", "#023858"] },
+  precip: { sinLluvia: "#7f0000", colores: ["#d7301f", "#ec7014", "#fec44f", "#6baed6", "#08306b"] },
   tavg:   { colores: ["#ffffcc", "#fed976", "#fd8d3c", "#e31a1c", "#800026"] },
   relhum: { colores: ["#fff7fb", "#a6bddb", "#2b8cbe", "#045a8d", "#023858"] },
 };
@@ -949,7 +949,7 @@ function crearBrujula() {
    Es solo visual: no agrega detalle real, el dato sigue siendo de 11 km.
    SUBDIVISION = 1 vuelve al mapa de pixeles sin suavizar.
    ------------------------------------------------------------------------ */
-const SUBDIVISION = 10; // 10 → cuadritos de ~1 km
+const SUBDIVISION = 2; // 2 → cuadritos de 0,05° (~5,5 km)
 
 function indicePixeles(pixeles, lonStep, latStep) {
   const lon0 = Math.min(...pixeles.map((p) => p.lon)), lat0 = Math.min(...pixeles.map((p) => p.lat));
