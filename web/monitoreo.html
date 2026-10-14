@@ -90,6 +90,12 @@
   header h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.8rem, 3.4vw, 2.5rem); line-height: 1.12;
     letter-spacing: -0.01em; color: #FFFFFF; margin: 0; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.2); }
   header p { color: var(--color-ink-soft); margin: 14px 0 0; max-width: 85ch; font-size: 1.02rem; line-height: 1.6; }
+  /* Título y descripción a todo el ancho y centrados. En celular la
+     descripción vuelve a la izquierda, que se lee mejor en pantallas angostas. */
+  .header-top > div { width: 100%; }
+  header h1 { text-align: center; }
+  header p { max-width: none; text-align: center; }
+  @media (max-width: 40rem) { header p { text-align: left; } }
 
   .header-row { margin-bottom: 20px; }
   .header-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px; }
@@ -109,6 +115,13 @@
   .periodo-caja-icono { font-size: 1.6rem; line-height: 1; }
   .periodo-caja-nombre { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-ink-soft); }
   .periodo-caja-fechas { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--color-ink); line-height: 1.25; }
+  /* En celular: cada selector ocupa todo el ancho y el recuadro de fechas
+     también, en vez de quedar corrido a la derecha. */
+  @media (max-width: 40rem) {
+    .controls .field { flex: 1 1 100%; }
+    .controls select { width: 100%; min-width: 0; }
+    .periodo-caja { margin-left: 0; width: 100%; }
+  }
   .cards { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
   .card { flex: 1; min-width: 200px; background: color-mix(in srgb, var(--card-tinte, var(--color-rain)) 6%, var(--color-panel)); border: 1px solid var(--color-line);
     border-left: 3px solid var(--card-accent, var(--color-rain)); border-radius: var(--radius); padding: 14px 16px; }
