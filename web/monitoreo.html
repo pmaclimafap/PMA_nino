@@ -6,7 +6,7 @@
 <title>Monitoreo climático comunitario y satelital — Fenómeno el niño, PMA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -79,23 +79,26 @@
 
   .wrap { max-width: min(1680px, 100% - 2.5rem); margin: 0 auto; padding: 32px 0 60px; }
   @media (max-width: 40rem) { .wrap { max-width: 100%; padding: 24px 16px 48px; } }
-  /* Banda de color solo detrás del título (la descripción queda afuera).
-     El degradado va del azul de la lluvia al naranja de la temperatura.
+  /* Encabezado con foto de fondo: la foto se oscurece con un degradado para
+     que el texto blanco se lea bien, y abajo lleva una franja de colores
+     (verde, amarillo, naranja y rojo). La foto está en web/img/encabezado.jpg.
      Colores fijos, para que se vea igual en modo claro y oscuro. */
-  .titulo-banda {
-    border-radius: 12px; padding: 18px 26px;
-    background: linear-gradient(100deg, #08306b 0%, #145a8c 42%, #2b8cbe 68%, #ec7014 100%);
-    box-shadow: 0 6px 18px rgba(8, 48, 107, 0.15);
+  header {
+    position: relative; overflow: hidden; border-radius: 14px; color: #FFFFFF;
+    padding: clamp(44px, 7vw, 96px) clamp(20px, 5vw, 64px) clamp(52px, 8vw, 104px);
+    background:
+      linear-gradient(90deg, rgba(8, 22, 18, 0.78) 0%, rgba(8, 22, 18, 0.55) 55%, rgba(8, 22, 18, 0.35) 100%),
+      url("img/encabezado.jpg") center 40% / cover no-repeat,
+      #1F3D2E;
   }
-  header h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.8rem, 3.4vw, 2.5rem); line-height: 1.12;
-    letter-spacing: -0.01em; color: #FFFFFF; margin: 0; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.2); }
-  header p { color: var(--color-ink-soft); margin: 14px 0 0; max-width: 85ch; font-size: 1.02rem; line-height: 1.6; }
-  /* Título y descripción a todo el ancho y centrados. En celular la
-     descripción vuelve a la izquierda, que se lee mejor en pantallas angostas. */
-  .header-top > div { width: 100%; }
-  header h1 { text-align: center; }
-  header p { max-width: none; text-align: center; }
-  @media (max-width: 40rem) { header p { text-align: left; } }
+  header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 6px;
+    background: linear-gradient(90deg, #4C9A2A 0%, #A6C34A 30%, #fec44f 55%, #ec7014 78%, #d7301f 100%); }
+  .header-top > div { width: 100%; max-width: 1050px; margin: 0 auto; }
+  .titulo-banda { background: none; padding: 0; }
+  header h1 { font-family: var(--font-body); font-weight: 700; font-size: clamp(2rem, 4.4vw, 3.3rem); line-height: 1.12;
+    letter-spacing: -0.015em; color: #FFFFFF; margin: 0; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35); }
+  header p { color: rgba(255, 255, 255, 0.9); margin: 20px 0 0; max-width: 68ch; font-size: 1.08rem; line-height: 1.65;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35); }
 
   .header-row { margin-bottom: 20px; }
   .header-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px; }
@@ -164,6 +167,14 @@
     border: 1px solid var(--color-line); background: var(--color-bg); color: var(--color-ink-soft); cursor: pointer;
   }
   .mapa-zoom-btn:hover { border-color: var(--color-rain); color: var(--color-ink); }
+  /* Botones para cambiar el período desde el mapa (mismo efecto que el selector de arriba). */
+  .mapa-periodos { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 3px; margin-left: auto;
+    background: var(--color-bg); border: 1px solid var(--color-line); border-radius: 999px; }
+  .mapa-periodos button { font-family: var(--font-body); font-size: 0.82rem; font-weight: 600; padding: 6px 14px;
+    border: 0; border-radius: 999px; background: transparent; color: var(--color-ink-soft); cursor: pointer; }
+  .mapa-periodos button:hover { color: var(--color-ink); }
+  .mapa-periodos button[aria-pressed="true"] { background: var(--color-rain); color: #FFFFFF; }
+  @media (max-width: 40rem) { .mapa-periodos { margin-left: 0; } }
   .mapa-leyenda { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
   /* Cuadro de color a la izquierda; nombre arriba y rango abajo, sin partirse en dos líneas. */
   .leyenda-fila { display: grid; grid-template-columns: 30px 1fr; column-gap: 10px; align-items: center; padding: 10px 12px; background: var(--color-bg); border-radius: 6px; }
@@ -263,6 +274,7 @@
         <div class="mapa-header-texto">
           <h2 id="mapa-titulo">Lluvia por municipio</h2>
           <button type="button" id="btn-mapa-zoom" class="mapa-zoom-btn"></button>
+          <div class="mapa-periodos" id="mapa-periodos" role="group" aria-label="Período del mapa"></div>
         </div>
       </div>
       <div class="mapa-leyenda" id="mapa-leyenda"></div>
@@ -472,23 +484,24 @@ const MESES_ES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","n
    Los umbrales de abajo son de ejemplo por ahora — se reemplazan cuando
    se tenga el análisis agronómico real por cultivo.
    ------------------------------------------------------------------------ */
-const CULTIVOS_POR_DEPARTAMENTO = {
-  Sucre: ["Arroz", "Maíz", "Ñame", "Yuca", "Ajonjolí", "Ganadería"],
-  Tolima: ["Arroz", "Café", "Maíz", "Soya", "Algodón", "Ganadería"],
-  "La Guajira": ["Algodón", "Maíz tecnificado", "Cebolla de bulbo", "Fríjol", "Cultivos de pancoger", "Ganadería"],
-  Cesar: ["Arroz", "Maíz", "Algodón", "Palma de aceite", "Café", "Ganadería"],
+// Sistemas productivos de los 7 municipios. Se muestran todos en cualquier
+// municipio (en orden alfabético), no solo los de cada uno.
+const SISTEMAS_PRODUCTIVOS = ["Aguacate", "Cacao", "Café", "Gallinas ponedoras", "Ganadería", "Maíz", "Plátano", "Porcicultura", "Yuca"];
+// Emoji que acompaña a cada sistema en el selector (solo decorativo: el valor
+// sigue siendo el nombre, que es el que usan los umbrales).
+const EMOJI_SISTEMA = {
+  Aguacate: "🥑", Cacao: "🍫", Café: "☕", "Gallinas ponedoras": "🐔", Ganadería: "🐄",
+  Maíz: "🌽", Plátano: "🍌", Porcicultura: "🐖", Yuca: "🥔",
 };
+// Umbrales DE EJEMPLO: temperatura máxima (°C) y humedad relativa (%) por
+// encima de las cuales se cuenta un "día de calor" o "de humedad alta".
 const UMBRAL_TMAX_POR_CULTIVO = {
-  Arroz: 35, Maíz: 33, Ñame: 32, Yuca: 34, Ajonjolí: 33,
-  Café: 28, Soya: 32, Algodón: 36, Ganadería: 33,
-  "Maíz tecnificado": 33, "Cebolla de bulbo": 30, Fríjol: 30,
-  "Cultivos de pancoger": 33, "Palma de aceite": 36,
+  Aguacate: 32, Cacao: 33, Café: 28, "Gallinas ponedoras": 30,
+  Ganadería: 33, Maíz: 33, Plátano: 34, Porcicultura: 30, Yuca: 34,
 };
 const UMBRAL_HR_POR_CULTIVO = {
-  Arroz: 85, Maíz: 80, Ñame: 82, Yuca: 83, Ajonjolí: 78,
-  Café: 75, Soya: 80, Algodón: 78, Ganadería: 80,
-  "Maíz tecnificado": 80, "Cebolla de bulbo": 80, Fríjol: 80,
-  "Cultivos de pancoger": 82, "Palma de aceite": 88,
+  Aguacate: 85, Cacao: 85, Café: 75, "Gallinas ponedoras": 75,
+  Ganadería: 80, Maíz: 80, Plátano: 85, Porcicultura: 80, Yuca: 83,
 };
 
 function dias(n) { return `${n} día${n === 1 ? "" : "s"}`; }
@@ -573,11 +586,10 @@ const $sistema = document.getElementById("sel-sistema");
 const $cards = document.getElementById("cards");
 
 function actualizarOpcionesSistema() {
-  const dept = MUNICIPIO_DEPARTAMENTO[$municipio.value];
-  const opciones = CULTIVOS_POR_DEPARTAMENTO[dept] || ["Ganadería"];
+  const opciones = SISTEMAS_PRODUCTIVOS; // la misma lista para todos los municipios
   const actual = $sistema.value;
   $sistema.innerHTML = "";
-  opciones.forEach((c) => $sistema.add(new Option(c, c)));
+  opciones.forEach((c) => $sistema.add(new Option(`${EMOJI_SISTEMA[c] ? EMOJI_SISTEMA[c] + " " : ""}${c}`, c)));
   $sistema.value = opciones.includes(actual) ? actual : opciones[0];
 }
 $municipio.addEventListener("change", actualizarOpcionesSistema);
@@ -611,6 +623,20 @@ $municipio.addEventListener("change", actualizarOpcionesAsociacion);
 
 MUNICIPIOS.forEach((m) => $municipio.add(new Option(m, m)));
 Object.keys(PERIODOS).forEach((p) => $periodo.add(new Option(p, p)));
+
+// Botones de período en el mapa: cambian el mismo selector de arriba y
+// redibujan todo, así tarjetas, gráfico y mapa siempre muestran el mismo período.
+const NOMBRE_CORTO_PERIODO = { "Última fecha": "1 día", "Última semana": "1 semana", "Últimas 2 semanas": "2 semanas", "Último mes": "1 mes" };
+const $mapaPeriodos = document.getElementById("mapa-periodos");
+Object.keys(PERIODOS).forEach((p) => {
+  const boton = document.createElement("button");
+  boton.type = "button";
+  boton.dataset.periodo = p;
+  boton.textContent = NOMBRE_CORTO_PERIODO[p] || p;
+  boton.title = p;
+  boton.addEventListener("click", () => { $periodo.value = p; panel(); });
+  $mapaPeriodos.appendChild(boton);
+});
 VARIABLES_VISTA.forEach((v) => $variable.add(new Option(ETIQUETA_CON_UNIDAD[v], v)));
 $periodo.value = "Última semana";
 $variable.value = "Lluvia";
@@ -1391,6 +1417,7 @@ function panel() {
   const variableElegida = $variable.value;
   const diasPeriodo = PERIODOS[periodoNombre];
   const vars = datos.municipios[municipio];
+  $mapaPeriodos.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.periodo === periodoNombre)));
 
   document.getElementById("temp-toggle").style.display = variableElegida === "Temperatura" ? "flex" : "none";
   document.getElementById("campo-temp-toggle").style.display = variableElegida === "Temperatura" ? "flex" : "none";
