@@ -497,7 +497,7 @@ const SISTEMAS_PRODUCTIVOS = ["Aguacate", "Cacao", "Café", "Gallinas ponedoras"
 // sigue siendo el nombre, que es el que usan los umbrales).
 const EMOJI_SISTEMA = {
   Aguacate: "🥑", Cacao: "🍫", Café: "☕", "Gallinas ponedoras": "🐔", Ganadería: "🐄",
-  Maíz: "🌽", Plátano: "🍌", Porcicultura: "🐖", Yuca: "🥔",
+  Maíz: "🌽", Plátano: "🍌", Porcicultura: "🐖", Yuca: "🌱",
 };
 // Umbrales DE EJEMPLO: temperatura máxima (°C) y humedad relativa (%) por
 // encima de las cuales se cuenta un "día de calor" o "de humedad alta".
@@ -998,11 +998,14 @@ let mapaLeaflet = null;
    "Satélite": imágenes de alta resolución de Esri (World Imagery, el mismo
    tipo de imagen que Google Earth: más detalle a medida que se acerca), con
    encima las vías y los nombres de lugares para ubicarse.
-   "Calles": el mapa de calles y vías de Esri.
+   "Mapa" (el que sale por defecto): OpenStreetMap, un mapa de vías al
+   estilo de Google Maps que muestra más vías, veredas y nombres a medida que
+   se acerca. (Google Maps no se puede usar directamente: sus condiciones
+   exigen la API de pago con una clave, que quedaría expuesta en el código.)
    Se cambia con el control de capas del mapa (arriba a la derecha).
    ------------------------------------------------------------------------ */
 const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/";
-let fondoSatelite = true;      // qué fondo está activo (cambia el estilo de los bordes)
+let fondoSatelite = false;     // qué fondo está activo (cambia el estilo de los bordes)
 let capaContextoActual = null; // municipios vecinos del mapa satelital, para re-estilizarlos
 function estiloContexto() {
   return fondoSatelite
@@ -1023,10 +1026,10 @@ function agregarFondos(mapa) {
     L.tileLayer(ESRI + "Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", {
       maxZoom: 19, pane: "referencias" }),
   ]);
-  const calles = L.tileLayer(ESRI + "World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
-    maxZoom: 19, attribution: "Mapa: Esri, HERE, Garmin, OpenStreetMap" });
+  const calles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">colaboradores de OpenStreetMap</a>' });
   (fondoSatelite ? satelite : calles).addTo(mapa);
-  L.control.layers({ "🛰️ Satélite": satelite, "🗺️ Calles": calles }, null, { position: "topright" }).addTo(mapa);
+  L.control.layers({ "🗺️ Mapa": calles, "🛰️ Satélite": satelite }, null, { position: "topright" }).addTo(mapa);
   mapa.on("baselayerchange", (e) => {
     if (mapa !== mapaLeaflet) return; // solo el mapa satelital cambia el estilo de los bordes
     fondoSatelite = e.layer === satelite;
@@ -1106,7 +1109,7 @@ function pintarMapa(etiqueta, diasPeriodo, fechaObjetivo) {
 
   if (!mapaLeaflet) {
     mapaLeaflet = L.map("mapa-leaflet", { attributionControl: true, zoomControl: true });
-    agregarFondos(mapaLeaflet); // satélite con vías (por defecto) o calles
+    agregarFondos(mapaLeaflet); // mapa de vías (por defecto) o satélite
     mapaLeaflet.addControl(crearBrujula());
     // Panel propio para las celdas: queda debajo de los contornos (para que
     // sigan recibiendo el clic) y le da la transparencia a todas juntas.
