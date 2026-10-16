@@ -169,14 +169,16 @@
     border: 1px solid var(--color-line); background: var(--color-bg); color: var(--color-ink-soft); cursor: pointer;
   }
   .mapa-zoom-btn:hover { border-color: var(--color-rain); color: var(--color-ink); }
-  /* Botones para cambiar el período desde el mapa (mismo efecto que el selector de arriba). */
-  .mapa-periodos { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 3px; margin-left: auto;
+  /* Botones para cambiar el período desde el gráfico (mismo efecto que el selector de arriba). */
+  .grafico-controles { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 10px; }
+  .grafico-controles .temp-toggle { margin-bottom: 0; }
+  .periodo-botones { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 3px; margin-left: auto;
     background: var(--color-bg); border: 1px solid var(--color-line); border-radius: 999px; }
-  .mapa-periodos button { font-family: var(--font-body); font-size: 0.82rem; font-weight: 600; padding: 6px 14px;
+  .periodo-botones button { font-family: var(--font-body); font-size: 0.82rem; font-weight: 600; padding: 6px 14px;
     border: 0; border-radius: 999px; background: transparent; color: var(--color-ink-soft); cursor: pointer; }
-  .mapa-periodos button:hover { color: var(--color-ink); }
-  .mapa-periodos button[aria-pressed="true"] { background: var(--color-rain); color: #FFFFFF; }
-  @media (max-width: 40rem) { .mapa-periodos { margin-left: 0; } }
+  .periodo-botones button:hover { color: var(--color-ink); }
+  .periodo-botones button[aria-pressed="true"] { background: var(--color-rain); color: #FFFFFF; }
+  @media (max-width: 40rem) { .periodo-botones { margin-left: 0; } }
   .mapa-leyenda { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
   /* Cuadro de color a la izquierda; nombre arriba y rango abajo, sin partirse en dos líneas. */
   .leyenda-fila { display: grid; grid-template-columns: 30px 1fr; column-gap: 10px; align-items: center; padding: 10px 12px; background: var(--color-bg); border-radius: 6px; }
@@ -264,9 +266,12 @@
     <div class="cards" id="cards"></div>
 
     <div class="chart-panel">
-      <div class="temp-toggle" id="temp-toggle" style="display:none;">
-        <label class="temp-toggle-check"><input type="checkbox" id="chk-max-temp" checked> Máxima</label>
-        <label class="temp-toggle-check"><input type="checkbox" id="chk-min-temp" checked> Mínima</label>
+      <div class="grafico-controles">
+        <div class="temp-toggle" id="temp-toggle" style="display:none;">
+          <label class="temp-toggle-check"><input type="checkbox" id="chk-max-temp" checked> Máxima</label>
+          <label class="temp-toggle-check"><input type="checkbox" id="chk-min-temp" checked> Mínima</label>
+        </div>
+        <div class="periodo-botones" id="periodo-botones" role="group" aria-label="Período"></div>
       </div>
       <div id="chart"></div>
     </div>
@@ -276,7 +281,6 @@
         <div class="mapa-header-texto">
           <h2 id="mapa-titulo">Lluvia por municipio</h2>
           <button type="button" id="btn-mapa-zoom" class="mapa-zoom-btn"></button>
-          <div class="mapa-periodos" id="mapa-periodos" role="group" aria-label="Período del mapa"></div>
         </div>
       </div>
       <div class="mapa-leyenda" id="mapa-leyenda"></div>
@@ -626,10 +630,10 @@ $municipio.addEventListener("change", actualizarOpcionesAsociacion);
 MUNICIPIOS.forEach((m) => $municipio.add(new Option(m, m)));
 Object.keys(PERIODOS).forEach((p) => $periodo.add(new Option(p, p)));
 
-// Botones de período en el mapa: cambian el mismo selector de arriba y
+// Botones de período sobre el gráfico: cambian el mismo selector de arriba y
 // redibujan todo, así tarjetas, gráfico y mapa siempre muestran el mismo período.
 const NOMBRE_CORTO_PERIODO = { "Última fecha": "1 día", "Última semana": "1 semana", "Últimas 2 semanas": "2 semanas", "Último mes": "1 mes" };
-const $mapaPeriodos = document.getElementById("mapa-periodos");
+const $periodoBotones = document.getElementById("periodo-botones");
 Object.keys(PERIODOS).forEach((p) => {
   const boton = document.createElement("button");
   boton.type = "button";
@@ -637,7 +641,7 @@ Object.keys(PERIODOS).forEach((p) => {
   boton.textContent = NOMBRE_CORTO_PERIODO[p] || p;
   boton.title = p;
   boton.addEventListener("click", () => { $periodo.value = p; panel(); });
-  $mapaPeriodos.appendChild(boton);
+  $periodoBotones.appendChild(boton);
 });
 VARIABLES_VISTA.forEach((v) => $variable.add(new Option(ETIQUETA_CON_UNIDAD[v], v)));
 $periodo.value = "Última semana";
@@ -1419,7 +1423,7 @@ function panel() {
   const variableElegida = $variable.value;
   const diasPeriodo = PERIODOS[periodoNombre];
   const vars = datos.municipios[municipio];
-  $mapaPeriodos.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.periodo === periodoNombre)));
+  $periodoBotones.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.periodo === periodoNombre)));
 
   document.getElementById("temp-toggle").style.display = variableElegida === "Temperatura" ? "flex" : "none";
   document.getElementById("campo-temp-toggle").style.display = variableElegida === "Temperatura" ? "flex" : "none";
