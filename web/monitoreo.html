@@ -992,6 +992,47 @@ function pintarLeyendaMapa(varKey, diasPeriodo, municipio) {
    Imagery)
    ------------------------------------------------------------------------ */
 let mapaLeaflet = null;
+
+/* ------------------------------------------------------------------------
+   MAPAS DE FONDO
+   "Satélite": imágenes de alta resolución de Esri (World Imagery, el mismo
+   tipo de imagen que Google Earth: más detalle a medida que se acerca), con
+   encima las vías y los nombres de lugares para ubicarse.
+   "Calles": el mapa de calles y vías de Esri.
+   Se cambia con el control de capas del mapa (arriba a la derecha).
+   ------------------------------------------------------------------------ */
+const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/";
+let fondoSatelite = true;      // qué fondo está activo (cambia el estilo de los bordes)
+let capaContextoActual = null; // municipios vecinos del mapa satelital, para re-estilizarlos
+function estiloContexto() {
+  return fondoSatelite
+    ? { color: "#FFFFFF", weight: 1.3, opacity: 0.85, fillColor: "#FFFFFF", fillOpacity: 0.04, dashArray: "4 3" }
+    : { color: "#5C5C4E", weight: 1, fillColor: "#FFFFFF", fillOpacity: 0.05, dashArray: "3 3" };
+}
+function agregarFondos(mapa) {
+  // Las vías y nombres van en un panel propio, por encima de las celdas de
+  // color, para que se sigan leyendo; no reciben clics.
+  const panelRef = mapa.createPane("referencias");
+  panelRef.style.zIndex = 395;
+  panelRef.style.pointerEvents = "none";
+  const satelite = L.layerGroup([
+    L.tileLayer(ESRI + "World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+      maxZoom: 19, attribution: "Imágenes: Esri, Maxar, Earthstar Geographics" }),
+    L.tileLayer(ESRI + "Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}", {
+      maxZoom: 19, pane: "referencias", attribution: "Vías y lugares: Esri" }),
+    L.tileLayer(ESRI + "Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", {
+      maxZoom: 19, pane: "referencias" }),
+  ]);
+  const calles = L.tileLayer(ESRI + "World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
+    maxZoom: 19, attribution: "Mapa: Esri, HERE, Garmin, OpenStreetMap" });
+  (fondoSatelite ? satelite : calles).addTo(mapa);
+  L.control.layers({ "🛰️ Satélite": satelite, "🗺️ Calles": calles }, null, { position: "topright" }).addTo(mapa);
+  mapa.on("baselayerchange", (e) => {
+    if (mapa !== mapaLeaflet) return; // solo el mapa satelital cambia el estilo de los bordes
+    fondoSatelite = e.layer === satelite;
+    if (capaContextoActual) capaContextoActual.setStyle(estiloContexto());
+  });
+}
 let capasMapaActuales = [];
 
 function crearBrujula() {
@@ -1065,11 +1106,7 @@ function pintarMapa(etiqueta, diasPeriodo, fechaObjetivo) {
 
   if (!mapaLeaflet) {
     mapaLeaflet = L.map("mapa-leaflet", { attributionControl: true, zoomControl: true });
-    // Mapa de calles y vías (Esri World Street Map), para que sea fácil ubicarse.
-    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
-      maxZoom: 18,
-      attribution: "Mapa: Esri, HERE, Garmin, OpenStreetMap",
-    }).addTo(mapaLeaflet);
+    agregarFondos(mapaLeaflet); // satélite con vías (por defecto) o calles
     mapaLeaflet.addControl(crearBrujula());
     // Panel propio para las celdas: queda debajo de los contornos (para que
     // sigan recibiendo el clic) y le da la transparencia a todas juntas.
@@ -1087,10 +1124,11 @@ function pintarMapa(etiqueta, diasPeriodo, fechaObjetivo) {
   const featuresObjetivo = fc.features.filter((f) => f.properties.target);
 
   const capaContexto = L.geoJSON({ type: "FeatureCollection", features: featuresContexto }, {
-    style: { color: "#5C5C4E", weight: 1, fillColor: "#FFFFFF", fillOpacity: 0.05, dashArray: "3 3" },
+    style: estiloContexto(), // blanco sobre satélite, gris sobre calles
   }).bindTooltip((layer) => layer.feature.properties.nombre_mun, { sticky: true });
   capaContexto.eachLayer((capa) => capa.bindTooltip(capa.feature.properties.nombre_mun, { sticky: true }));
   capaContexto.addTo(mapaLeaflet);
+  capaContextoActual = capaContexto;
   capasMapaActuales.push(capaContexto);
 
   let boundsSeleccionado = null;
@@ -1258,8 +1296,7 @@ function pintarMapaCampo(municipio, asoc) {
   }
   if (!mapaCampoLeaflet) {
     mapaCampoLeaflet = L.map("campo-mapa-leaflet", { attributionControl: true, zoomControl: true });
-    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
-      { maxZoom: 18, attribution: "Mapa: Esri, HERE, Garmin, OpenStreetMap" }).addTo(mapaCampoLeaflet);
+    agregarFondos(mapaCampoLeaflet);
   }
   mapaCampoLeaflet.invalidateSize();
   [capaCampoContorno, capaCampoMarcador].forEach((capa) => {
