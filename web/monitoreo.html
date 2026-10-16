@@ -93,11 +93,13 @@
   }
   header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 6px;
     background: linear-gradient(90deg, #4C9A2A 0%, #A6C34A 30%, #fec44f 55%, #ec7014 78%, #d7301f 100%); }
-  .header-top > div { width: 100%; max-width: 1050px; margin: 0 auto; }
+  .header-top > div { width: 100%; max-width: 1400px; margin: 0 auto; }
   .titulo-banda { background: none; padding: 0; }
-  header h1 { font-family: var(--font-body); font-weight: 700; font-size: clamp(2rem, 4.4vw, 3.3rem); line-height: 1.12;
-    letter-spacing: -0.015em; color: #FFFFFF; margin: 0; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35); }
-  header p { color: rgba(255, 255, 255, 0.9); margin: 20px 0 0; max-width: 68ch; font-size: 1.08rem; line-height: 1.65;
+  header h1 { font-family: var(--font-body); font-weight: 700; font-size: clamp(1.9rem, 3.6vw, 3.8rem); line-height: 1.12;
+    letter-spacing: -0.015em; color: #FFFFFF; margin: 0; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35); text-wrap: balance; }
+  /* En pantallas de computador el título va en una sola línea. */
+  @media (min-width: 64rem) { header h1 { white-space: nowrap; } }
+  header p { color: rgba(255, 255, 255, 0.9); margin: 20px 0 0; max-width: 105ch; font-size: 1.1rem; line-height: 1.65;
     text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35); }
 
   .header-row { margin-bottom: 20px; }
