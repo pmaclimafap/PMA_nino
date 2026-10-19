@@ -172,6 +172,20 @@
   .mapa-zoom-btn:hover { border-color: var(--color-rain); color: var(--color-ink); }
   /* Botones para cambiar el período desde el gráfico. */
   .grafico-controles { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 10px; }
+  /* Botón de información (sutil) y su letrero. */
+  .info-grafico { position: relative; }
+  .info-boton { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--color-ink-soft); background: transparent;
+    color: var(--color-ink-soft); font-family: Georgia, serif; font-style: italic; font-weight: 700; font-size: 0.9rem;
+    line-height: 1; cursor: pointer; opacity: 0.7; padding: 0; }
+  .info-boton:hover, .info-boton[aria-expanded="true"] { opacity: 1; border-color: var(--color-rain); color: var(--color-rain); }
+  .info-globo { position: absolute; top: calc(100% + 8px); left: 0; z-index: 1000; width: min(340px, 80vw);
+    padding: 14px 34px 14px 16px; background: var(--color-panel); color: var(--color-ink); border: 1px solid var(--color-line);
+    border-left: 4px solid var(--color-rain); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    font-size: 0.86rem; line-height: 1.5; }
+  .info-globo strong { display: block; margin-bottom: 4px; font-size: 0.92rem; }
+  .info-globo p { margin: 0; color: var(--color-ink-soft); }
+  .info-cerrar { position: absolute; top: 6px; right: 8px; border: 0; background: transparent; font-size: 1.2rem;
+    line-height: 1; color: var(--color-ink-soft); cursor: pointer; padding: 2px 4px; }
   .grafico-controles .temp-toggle { margin-bottom: 0; }
   .periodo-botones { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 3px; margin-left: auto;
     background: var(--color-bg); border: 1px solid var(--color-line); border-radius: 999px; }
@@ -278,6 +292,15 @@
 
     <div class="chart-panel">
       <div class="grafico-controles">
+        <!-- Botón de información: explica que los datos son estimados por satélite. -->
+        <div class="info-grafico">
+          <button type="button" class="info-boton" aria-label="Información sobre los datos" aria-expanded="false">i</button>
+          <div class="info-globo" role="dialog" hidden>
+            <button type="button" class="info-cerrar" aria-label="Cerrar">×</button>
+            <strong>Acerca de estos datos</strong>
+            <p>Los datos de este gráfico se obtienen a partir de información satelital y corresponden a una estimación para la zona. Por esta razón, pueden presentar diferencias con las condiciones observadas en cada finca.</p>
+          </div>
+        </div>
         <div class="temp-toggle" id="temp-toggle" style="display:none;">
           <label class="temp-toggle-check"><input type="checkbox" id="chk-max-temp" checked> Máxima</label>
           <label class="temp-toggle-check"><input type="checkbox" id="chk-min-temp" checked> Mínima</label>
@@ -748,6 +771,22 @@ function guardarArchivo(blob, nombre) {
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
+// Botón de información: se abre al tocarlo y se cierra con la × o al tocar fuera.
+document.addEventListener("click", (ev) => {
+  const caja = ev.target.closest(".info-grafico");
+  document.querySelectorAll(".info-grafico").forEach((c) => {
+    const globo = c.querySelector(".info-globo"), boton = c.querySelector(".info-boton");
+    let abrir = false;
+    if (c === caja && ev.target.closest(".info-boton")) abrir = globo.hidden;      // tocar el botón: alterna
+    else if (c === caja && !ev.target.closest(".info-cerrar")) abrir = !globo.hidden; // tocar dentro del letrero: sigue abierto
+    globo.hidden = !abrir;
+    boton.setAttribute("aria-expanded", String(abrir));
+  });
+});
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape") document.querySelectorAll(".info-globo").forEach((g) => { g.hidden = true; });
+});
+
 document.addEventListener("click", async (ev) => {
   const boton = ev.target.closest(".btn-grafico");
   if (!boton) return;
