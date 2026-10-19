@@ -191,6 +191,16 @@
   .btn-grafico:hover { border-color: var(--color-rain); }
   .btn-whatsapp { background: #25D366; border-color: #25D366; color: #FFFFFF; }
   .btn-whatsapp:hover { background: #1EBE5A; border-color: #1EBE5A; }
+  /* En celular: los botones de período ocupan todo el ancho en partes iguales,
+     y Descargar / WhatsApp van lado a lado con el texto corto. */
+  @media (max-width: 40rem) {
+    .grafico-controles .temp-toggle, .periodo-botones, .grafico-acciones { width: 100%; }
+    .periodo-botones { display: flex; flex-wrap: nowrap; }
+    .periodo-botones button { flex: 1 1 0; padding: 7px 4px; font-size: 0.8rem; }
+    .grafico-acciones { display: grid; grid-template-columns: 1fr 1fr; }
+    .btn-grafico { padding: 8px 6px; text-align: center; }
+    .solo-pc { display: none; }
+  }
   .mapa-leyenda { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
   /* Cuadro de color a la izquierda; nombre arriba y rango abajo, sin partirse en dos líneas. */
   .leyenda-fila { display: grid; grid-template-columns: 30px 1fr; column-gap: 10px; align-items: center; padding: 10px 12px; background: var(--color-bg); border-radius: 6px; }
@@ -202,15 +212,6 @@
   .chip-cat { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.72em; font-weight: 700; vertical-align: middle; border: 1px solid rgba(0,0,0,0.08); white-space: nowrap; }
   .mapa-nota { font-size: 0.78rem; color: var(--color-ink-soft); margin-top: 12px; }
 
-  .selector-cultivo {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding: 10px 14px;
-    background: var(--color-panel); border: 1px solid var(--color-line); border-left: 3px solid var(--color-temp);
-    border-radius: var(--radius); font-size: 0.85rem; color: var(--color-ink-soft); flex-wrap: wrap;
-  }
-  .selector-cultivo select {
-    font-family: var(--font-body); font-size: 0.88rem; padding: 5px 8px;
-    border: 1px solid var(--color-line); border-radius: 4px; background: var(--color-bg); color: var(--color-ink); min-width: 140px;
-  }
 
   .tabs {
     display: inline-flex; gap: 4px; margin-bottom: 20px; padding: 4px;
@@ -263,13 +264,11 @@
          porque el código lo usa para guardar el período elegido. -->
     <div class="field" style="display:none;"><label for="sel-periodo">Período</label><select id="sel-periodo"></select></div>
     <div class="field"><label for="sel-variable">Variable</label><select id="sel-variable"></select></div>
+    <!-- Solo se muestra con Temperatura y Humedad (los umbrales dependen del sistema). -->
+    <div class="field" id="selector-cultivo" style="display:none;"><label for="sel-sistema">Sistema productivo</label><select id="sel-sistema"></select></div>
     <div class="periodo-caja" id="periodo-caja"></div>
   </div>
 
-  <div class="selector-cultivo" id="selector-cultivo" style="display:none;">
-    <label for="sel-sistema">Seleccione el sistema productivo:</label>
-    <select id="sel-sistema"></select>
-  </div>
 
   <div class="tabs">
     <button type="button" class="tab-btn activa" data-vista="secundaria">Monitoreo satelital</button>
@@ -287,8 +286,8 @@
         </div>
         <div class="periodo-botones" id="periodo-botones" role="group" aria-label="Período"></div>
         <div class="grafico-acciones">
-          <button type="button" class="btn-grafico" data-grafico="chart" data-accion="descargar">⬇️ Descargar imagen</button>
-          <button type="button" class="btn-grafico btn-whatsapp" data-grafico="chart" data-accion="compartir">📲 Compartir por WhatsApp</button>
+          <button type="button" class="btn-grafico" data-grafico="chart" data-accion="descargar">⬇️ Descargar<span class="solo-pc"> imagen</span></button>
+          <button type="button" class="btn-grafico btn-whatsapp" data-grafico="chart" data-accion="compartir">📲 <span class="solo-pc">Compartir por </span>WhatsApp</button>
         </div>
       </div>
       <div id="chart"></div>
@@ -318,8 +317,8 @@
         </div>
         <div class="periodo-botones" id="campo-periodo-botones" role="group" aria-label="Período"></div>
         <div class="grafico-acciones">
-          <button type="button" class="btn-grafico" data-grafico="campo-chart" data-accion="descargar">⬇️ Descargar imagen</button>
-          <button type="button" class="btn-grafico btn-whatsapp" data-grafico="campo-chart" data-accion="compartir">📲 Compartir por WhatsApp</button>
+          <button type="button" class="btn-grafico" data-grafico="campo-chart" data-accion="descargar">⬇️ Descargar<span class="solo-pc"> imagen</span></button>
+          <button type="button" class="btn-grafico btn-whatsapp" data-grafico="campo-chart" data-accion="compartir">📲 <span class="solo-pc">Compartir por </span>WhatsApp</button>
         </div>
       </div>
       <div id="campo-chart"></div>
@@ -522,7 +521,7 @@ const SISTEMAS_PRODUCTIVOS = ["Aguacate", "Cacao", "Café", "Gallinas ponedoras"
 // sigue siendo el nombre, que es el que usan los umbrales).
 const EMOJI_SISTEMA = {
   Aguacate: "🥑", Cacao: "🍫", Café: "☕", "Gallinas ponedoras": "🐔", Ganadería: "🐄",
-  Maíz: "🌽", Plátano: "🍌", Porcicultura: "🐖", Yuca: "🌱",
+  Maíz: "🌽", Plátano: "🍌", Porcicultura: "🐖", Yuca: "🥔",
 };
 // Umbrales DE EJEMPLO: temperatura máxima (°C) y humedad relativa (%) por
 // encima de las cuales se cuenta un "día de calor" o "de humedad alta".
@@ -1195,8 +1194,9 @@ function pintarMapa(etiqueta, diasPeriodo, fechaObjetivo) {
   const dept = MUNICIPIO_DEPARTAMENTO[municipioSel];
   const fc = DEPARTAMENTOS_GEO[dept];
   const varKey = CLAVE_MAPA_VARIABLE[$variable.value];
-  // Acercado: el municipio elegido. Departamento completo: el departamento.
-  $mapaTitulo.textContent = `${ETIQUETA_VARIABLE[varKey]} en ${mapaZoomMunicipio ? municipioSel : dept}`;
+  // Siempre el municipio elegido: aunque se vea el departamento completo,
+  // la leyenda, las tarjetas y el gráfico son de ese municipio.
+  $mapaTitulo.textContent = `${ETIQUETA_VARIABLE[varKey]} en ${municipioSel}`;
     pintarLeyendaMapa(varKey, diasPeriodo, municipioSel);
   $btnMapaZoom.textContent = mapaZoomMunicipio ? "Ver departamento completo" : "Acercar al municipio";
 
