@@ -124,7 +124,7 @@
   .periodo-caja-nombre { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-ink-soft); }
   .periodo-caja-fechas { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--color-ink); line-height: 1.25; }
   /* En celular: cada selector ocupa todo el ancho y el recuadro de fechas
-     también, en vez de quedar corrido a la derecha. */
+     también. */
   @media (max-width: 40rem) {
     .controls .field { flex: 1 1 100%; }
     .controls select { width: 100%; min-width: 0; }
@@ -155,8 +155,6 @@
   .mapa-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 6px; }
   .mapa-header-texto { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; flex: 1; min-width: 200px; }
   .mapa-header h2 { font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; margin: 0; }
-  /* Al ensanchar el contenedor, una altura fija deja el mapa apaisado en
-     exceso. clamp lo ata a la ventana con mínimo y máximo razonables. */
   #mapa-leaflet { height: clamp(420px, 58vh, 640px); width: 100%; border-radius: var(--radius); overflow: hidden; }
   #campo-mapa-leaflet { height: 320px; width: 100%; border-radius: var(--radius); overflow: hidden; }
   #campo-mapa-leaflet .leaflet-interactive:focus { outline: none; }
@@ -172,7 +170,7 @@
     border: 1px solid var(--color-line); background: var(--color-bg); color: var(--color-ink-soft); cursor: pointer;
   }
   .mapa-zoom-btn:hover { border-color: var(--color-rain); color: var(--color-ink); }
-  /* Botones para cambiar el período desde el gráfico (mismo efecto que el selector de arriba). */
+  /* Botones para cambiar el período desde el gráfico. */
   .grafico-controles { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 10px; }
   .grafico-controles .temp-toggle { margin-bottom: 0; }
   .periodo-botones { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 3px; margin-left: auto;
@@ -202,7 +200,7 @@
     .solo-pc { display: none; }
   }
   .mapa-leyenda { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
-  /* Cuadro de color a la izquierda; nombre arriba y rango abajo, sin partirse en dos líneas. */
+  /* Cuadro de color a la izquierda; nombre arriba y rango abajo. */
   .leyenda-fila { display: grid; grid-template-columns: 30px 1fr; column-gap: 10px; align-items: center; padding: 10px 12px; background: var(--color-bg); border-radius: 6px; }
   .leyenda-fila i { grid-row: span 2; width: 30px; height: 30px; border-radius: 6px; display: inline-block; border: 1px solid rgba(0,0,0,0.15); }
   .leyenda-nombre { font-weight: 700; font-size: 1.02rem; white-space: nowrap; line-height: 1.25; }
@@ -338,26 +336,6 @@
 </div>
 
 <script>
-/* ======================================================================
-   DATOS
-   En producción, este bloque se reemplaza por:
-     const datos = await (await fetch('./data.json')).json();
-   generado por el GitHub Action que procesa MSWX/MSWEP (y, para "enso",
-   lee mensualmente la tabla del índice ONI del NOAA CPC:
-   https://origin.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/ONI_v5.php
-   — es una tabla de texto plano, fácil de parsear en el mismo script.
-   Para el texto de la categoría (Advertencia de El Niño / La Niña /
-   Neutral) se puede usar el ENSO Diagnostic Discussion, publicado el
-   segundo jueves de cada mes: https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml
-
-   Esquema esperado de data.json:
-   {
-     "generado_en": "ISO datetime",
-     "municipios": { "<nombre>": { "precip":[{date,value}], "tavg":[...], "tmin":[...], "tmax":[...], "relhum":[...] } },
-     "observaciones": [ { "municipio","fecha","variable","valor","comentario" } ],
-     "enso": { "valor": 1.9, "categoria": "El Niño fuerte", "actualizado": "10 sep 2026", "fuente_url": "..." }
-   }
-   ====================================================================== */
 
 /* ------------------------------------------------------------------------
    MONITOREO COMUNITARIO: los reportes de las asociaciones NO vienen en
@@ -445,8 +423,7 @@ async function cargarDatos() {
 
 /* ======================================================================
    GEOMETRÍA DE MUNICIPIOS (recortada de gadm41_COL_2.json, campo NAME_2/NAME_1)
-   Coordenadas redondeadas a 4 decimales (~11 m de precisión), suficiente
-   para un mapa de referencia a esta escala.
+   Coordenadas redondeadas a 4 decimales (~11 m de precisión).
    ====================================================================== */
 /* Geometrías por departamento (simplificadas con Shapely, tolerancia ~250 m,
    recortadas de gadm41_COL_2.json). Cada feature trae "target" = nombre del
@@ -515,10 +492,8 @@ const MESES_ES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","n
    se tenga el análisis agronómico real por cultivo.
    ------------------------------------------------------------------------ */
 // Sistemas productivos de los 7 municipios. Se muestran todos en cualquier
-// municipio (en orden alfabético), no solo los de cada uno.
+// municipio.
 const SISTEMAS_PRODUCTIVOS = ["Aguacate", "Cacao", "Café", "Gallinas ponedoras", "Ganadería", "Maíz", "Plátano", "Porcicultura", "Yuca"];
-// Emoji que acompaña a cada sistema en el selector (solo decorativo: el valor
-// sigue siendo el nombre, que es el que usan los umbrales).
 const EMOJI_SISTEMA = {
   Aguacate: "🥑", Cacao: "🍫", Café: "☕", "Gallinas ponedoras": "🐔", Ganadería: "🐄",
   Maíz: "🌽", Plátano: "🍌", Porcicultura: "🐖", Yuca: "🥔",
@@ -721,8 +696,6 @@ function mostrarIndicadores(vars, diasPeriodo, etiqueta, variableElegida, fechaO
     if (ind.relhum_no_disponible) {
       contenedor.append(tarjeta(`Humedad relativa`, "No disponible", "El dato de este día aún no se ha publicado", "--color-relhum", "💧"));
     } else if (ind.relhum_promedio !== undefined) {
-      // Los reportes comunitarios traen HR máxima y mínima diarias: si están,
-      // los extremos salen de ellas y no del promedio.
       const hrMax = vars.relhum_max && vars.relhum_max.length ? extremos(vars.relhum_max.slice(-diasPeriodo)).max : ind.relhum_max;
       const hrMin = vars.relhum_min && vars.relhum_min.length ? extremos(vars.relhum_min.slice(-diasPeriodo)).min : ind.relhum_min;
       const detalle = `Máx: ${hrMax.value.toFixed(0)}% (${fechaEs(hrMax.date)})  Mín: ${hrMin.value.toFixed(0)}% (${fechaEs(hrMin.date)})`;
@@ -793,6 +766,13 @@ document.addEventListener("click", async (ev) => {
   window.open("https://wa.me/?text=" + encodeURIComponent(texto + " (adjunte la imagen que se acaba de descargar)"), "_blank", "noopener");
 });
 
+// Piso del eje de humedad: 40 % salvo que haya datos más bajos.
+function pisoHumedad(traces) {
+  const valores = traces.flatMap((tr) => tr.y).filter((v) => typeof v === "number" && isFinite(v));
+  const minimo = valores.length ? Math.min(...valores) : 40;
+  return minimo >= 40 ? 40 : Math.max(0, Math.floor(minimo / 10) * 10);
+}
+
 function graficarPeriodo(vars, diasPeriodo, etiqueta, municipio, variableElegida, targetId = "chart") {
   const asocCampo = targetId === "campo-chart" && $asociacion.value ? $asociacion.value.split("|")[1] : "";
   INFO_GRAFICO[targetId] = {
@@ -839,8 +819,10 @@ function graficarPeriodo(vars, diasPeriodo, etiqueta, municipio, variableElegida
       ];
     }
     Plotly.newPlot(targetId, traces, {
-      // Rango fijo de 40 a 100 %: así un cambio pequeño no se ve como un pico.
-      ...layoutBase, yaxis: { fixedrange: true, title: { text: "<b>% de Humedad Relativa</b>", font: { size: 15 } }, range: [40, 100], dtick: 10 },
+      // Rango fijo de 40 a 100 %, para que un cambio pequeño no se vea como un
+      // pico. Solo si algún valor baja de 40 % el eje baja hasta incluirlo
+      // (a la decena de abajo, p. ej. 33 % -> eje desde 30 %).
+      ...layoutBase, yaxis: { fixedrange: true, title: { text: "<b>% de Humedad Relativa</b>", font: { size: 15 } }, range: [pisoHumedad(traces), 100], dtick: 10 },
       title: { text: "<b>Humedad relativa diaria</b>", font: { size: 18 } },
     }, { displayModeBar: false, responsive: true, doubleClick: false, scrollZoom: false });
   }
@@ -1091,8 +1073,7 @@ let mapaLeaflet = null;
    encima las vías y los nombres de lugares para ubicarse.
    "Mapa" (el que sale por defecto): OpenStreetMap, un mapa de vías al
    estilo de Google Maps que muestra más vías, veredas y nombres a medida que
-   se acerca. (Google Maps no se puede usar directamente: sus condiciones
-   exigen la API de pago con una clave, que quedaría expuesta en el código.)
+   se acerca.
    Se cambia con el control de capas del mapa (arriba a la derecha).
    ------------------------------------------------------------------------ */
 const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/";
