@@ -109,6 +109,9 @@
   .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; padding: 16px;
     background: var(--color-panel); border: 1px solid var(--color-line); border-radius: var(--radius); margin-bottom: 24px; }
   .field { display: flex; flex-direction: column; gap: 5px; }
+  /* Los selectores que quedan se reparten el ancho; el recuadro de fechas va a la derecha. */
+  .controls .field { flex: 1 1 240px; max-width: 380px; }
+  .controls select { width: 100%; }
   .field label { font-size: 0.78rem; color: var(--color-ink-soft); }
   select { font-family: var(--font-body); font-size: 0.92rem; padding: 8px 10px;
     border: 1px solid var(--color-line); border-radius: 4px; background: var(--color-bg); color: var(--color-ink); min-width: 200px; }
@@ -179,6 +182,15 @@
   .periodo-botones button:hover { color: var(--color-ink); }
   .periodo-botones button[aria-pressed="true"] { background: var(--color-rain); color: #FFFFFF; }
   @media (max-width: 40rem) { .periodo-botones { margin-left: 0; } }
+  /* En el comunitario no existe "1 día" (los reportes se ven por semana o más). */
+  #campo-periodo-botones button[data-periodo="Última fecha"] { display: none; }
+  /* Botones para descargar y compartir el gráfico. */
+  .grafico-acciones { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+  .btn-grafico { font-family: var(--font-body); font-size: 0.82rem; font-weight: 600; padding: 7px 14px; border-radius: 999px;
+    border: 1px solid var(--color-line); background: var(--color-bg); color: var(--color-ink); cursor: pointer; }
+  .btn-grafico:hover { border-color: var(--color-rain); }
+  .btn-whatsapp { background: #25D366; border-color: #25D366; color: #FFFFFF; }
+  .btn-whatsapp:hover { background: #1EBE5A; border-color: #1EBE5A; }
   .mapa-leyenda { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
   /* Cuadro de color a la izquierda; nombre arriba y rango abajo, sin partirse en dos líneas. */
   .leyenda-fila { display: grid; grid-template-columns: 30px 1fr; column-gap: 10px; align-items: center; padding: 10px 12px; background: var(--color-bg); border-radius: 6px; }
@@ -247,7 +259,9 @@
   <div class="controls">
     <div class="field"><label for="sel-municipio">Municipio</label><select id="sel-municipio"></select></div>
     <div class="field" id="campo-asociacion-field" style="display:none;"><label for="sel-asociacion">Asociación</label><select id="sel-asociacion"></select></div>
-    <div class="field"><label for="sel-periodo">Período</label><select id="sel-periodo"></select></div>
+    <!-- El período se elige con los botones del gráfico; este selector queda oculto
+         porque el código lo usa para guardar el período elegido. -->
+    <div class="field" style="display:none;"><label for="sel-periodo">Período</label><select id="sel-periodo"></select></div>
     <div class="field"><label for="sel-variable">Variable</label><select id="sel-variable"></select></div>
     <div class="periodo-caja" id="periodo-caja"></div>
   </div>
@@ -272,6 +286,10 @@
           <label class="temp-toggle-check"><input type="checkbox" id="chk-min-temp" checked> Mínima</label>
         </div>
         <div class="periodo-botones" id="periodo-botones" role="group" aria-label="Período"></div>
+        <div class="grafico-acciones">
+          <button type="button" class="btn-grafico" data-grafico="chart" data-accion="descargar">⬇️ Descargar imagen</button>
+          <button type="button" class="btn-grafico btn-whatsapp" data-grafico="chart" data-accion="compartir">📲 Compartir por WhatsApp</button>
+        </div>
       </div>
       <div id="chart"></div>
     </div>
@@ -293,9 +311,16 @@
     <div class="campo-estado" id="campo-estado"></div>
     <div class="cards" id="campo-cards"></div>
     <div class="chart-panel">
-      <div class="temp-toggle" id="campo-temp-toggle" style="display:none;">
-        <label class="temp-toggle-check"><input type="checkbox" id="chk-max-temp-campo" checked> Máxima</label>
-        <label class="temp-toggle-check"><input type="checkbox" id="chk-min-temp-campo" checked> Mínima</label>
+      <div class="grafico-controles">
+        <div class="temp-toggle" id="campo-temp-toggle" style="display:none;">
+          <label class="temp-toggle-check"><input type="checkbox" id="chk-max-temp-campo" checked> Máxima</label>
+          <label class="temp-toggle-check"><input type="checkbox" id="chk-min-temp-campo" checked> Mínima</label>
+        </div>
+        <div class="periodo-botones" id="campo-periodo-botones" role="group" aria-label="Período"></div>
+        <div class="grafico-acciones">
+          <button type="button" class="btn-grafico" data-grafico="campo-chart" data-accion="descargar">⬇️ Descargar imagen</button>
+          <button type="button" class="btn-grafico btn-whatsapp" data-grafico="campo-chart" data-accion="compartir">📲 Compartir por WhatsApp</button>
+        </div>
       </div>
       <div id="campo-chart"></div>
       <div class="campo-vacio" id="campo-vacio" style="display:none;"></div>
@@ -633,15 +658,17 @@ Object.keys(PERIODOS).forEach((p) => $periodo.add(new Option(p, p)));
 // Botones de período sobre el gráfico: cambian el mismo selector de arriba y
 // redibujan todo, así tarjetas, gráfico y mapa siempre muestran el mismo período.
 const NOMBRE_CORTO_PERIODO = { "Última fecha": "1 día", "Última semana": "1 semana", "Últimas 2 semanas": "2 semanas", "Último mes": "1 mes" };
-const $periodoBotones = document.getElementById("periodo-botones");
-Object.keys(PERIODOS).forEach((p) => {
-  const boton = document.createElement("button");
-  boton.type = "button";
-  boton.dataset.periodo = p;
-  boton.textContent = NOMBRE_CORTO_PERIODO[p] || p;
-  boton.title = p;
-  boton.addEventListener("click", () => { $periodo.value = p; panel(); });
-  $periodoBotones.appendChild(boton);
+// Hay un grupo de botones en cada pestaña (satelital y comunitaria).
+document.querySelectorAll(".periodo-botones").forEach((contenedor) => {
+  Object.keys(PERIODOS).forEach((p) => {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.dataset.periodo = p;
+    boton.textContent = NOMBRE_CORTO_PERIODO[p] || p;
+    boton.title = p;
+    boton.addEventListener("click", () => { $periodo.value = p; panel(); });
+    contenedor.appendChild(boton);
+  });
 });
 VARIABLES_VISTA.forEach((v) => $variable.add(new Option(ETIQUETA_CON_UNIDAD[v], v)));
 $periodo.value = "Última semana";
@@ -689,7 +716,7 @@ function mostrarIndicadores(vars, diasPeriodo, etiqueta, variableElegida, fechaO
       contenedor.append(tarjeta(`Temperatura`, `${ind.temp_promedio.toFixed(1)} °C promedio ${cat(ind.temp_promedio, "tavg", diasPeriodo)}`, detalle, "--color-temp", "🌡️"));
     }
     if (ind.dias_tmax_sobre_umbral !== undefined) {
-      contenedor.append(tarjeta(`Temperaturas por encima de ${umbralTmax}°C`, `${ind.dias_tmax_sobre_umbral} de ${dias(ind.dias_tmax_total)}`, `Superaron el umbral para ${sistemaProductivo}`, "--color-temp", "🔥"));
+      contenedor.append(tarjeta(`Temperaturas por encima de ${umbralTmax}°C`, `${ind.dias_tmax_sobre_umbral} de ${dias(ind.dias_tmax_total)}`, `Superaron el umbral para ${sistemaProductivo}`, "--color-temp", "🌡️"));
     }
   } else if (variableElegida === "Humedad relativa") {
     if (ind.relhum_no_disponible) {
@@ -713,7 +740,66 @@ function estiloEjeFecha() { return { tickformat: "%d-%b", tickfont: { size: 11 }
 
 let mostrarMaxTemp = true, mostrarMinTemp = true; // qué líneas se ven en el gráfico de temperatura
 
+/* ------------------------------------------------------------------------
+   DESCARGAR Y COMPARTIR LOS GRÁFICOS
+   La imagen sale con fondo blanco, el municipio y el período en el título y
+   la fuente al pie, para que se entienda sola al mandarla por WhatsApp.
+   En celular, "Compartir" abre el menú del teléfono con la imagen ya
+   adjunta (ahí se elige WhatsApp). En computador, donde ese menú no
+   recibe imágenes, se descarga la imagen y se abre WhatsApp Web con el
+   texto, para adjuntarla.
+   ------------------------------------------------------------------------ */
+const INFO_GRAFICO = {}; // id del gráfico -> { subtitulo, fuente }
+async function imagenGrafico(idGrafico) {
+  const gd = document.getElementById(idGrafico);
+  if (!gd || !gd.data || !gd.data.length) return null;
+  const titulo = ((gd.layout.title && gd.layout.title.text) || "Gráfico").replace(/<[^>]+>/g, "");
+  const info = INFO_GRAFICO[idGrafico] || {};
+  const layout = {
+    ...gd.layout, width: 1000, height: 540,
+    paper_bgcolor: "#FFFFFF", plot_bgcolor: "#FFFFFF",
+    font: { ...(gd.layout.font || {}), color: "#2B2B23" },
+    title: { text: `<b>${titulo}</b><br><span style="font-size:14px">${info.subtitulo || ""}</span>`, font: { size: 20 } },
+    margin: { ...(gd.layout.margin || {}), t: 90, b: 100 },
+    legend: { ...(gd.layout.legend || {}), y: -0.12 },
+    annotations: [...(gd.layout.annotations || []), {
+      text: `${info.fuente || "Fuente: MSWX / MSWEP (GloH2O)"} · pmaclimafap.github.io/PMA_nino`,
+      xref: "paper", yref: "paper", x: 0, y: -0.24, xanchor: "left", showarrow: false, font: { size: 12, color: "#5C5C4E" } }],
+  };
+  const url = await Plotly.toImage({ data: gd.data, layout }, { format: "png", width: 1000, height: 540, scale: 2 });
+  const blob = await (await fetch(url)).blob();
+  return { blob, titulo, subtitulo: info.subtitulo || "", nombre: `${slug(titulo + " " + (info.subtitulo || "")).replace(/-+/g, "-").replace(/^-|-$/g, "")}.png` };
+}
+function guardarArchivo(blob, nombre) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = nombre;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+document.addEventListener("click", async (ev) => {
+  const boton = ev.target.closest(".btn-grafico");
+  if (!boton) return;
+  const img = await imagenGrafico(boton.dataset.grafico);
+  if (!img) { alert("No hay gráfico para descargar. Elija un período de una semana o más."); return; }
+  if (boton.dataset.accion === "descargar") { guardarArchivo(img.blob, img.nombre); return; }
+  const enlace = location.href.split("#")[0];
+  const texto = `${img.titulo} — ${img.subtitulo}. Más información: ${enlace}`;
+  const archivo = new File([img.blob], img.nombre, { type: "image/png" });
+  if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+    try { await navigator.share({ files: [archivo], title: img.titulo, text: texto }); }
+    catch (e) { if (e.name !== "AbortError") console.error("No se pudo compartir:", e); }
+    return;
+  }
+  guardarArchivo(img.blob, img.nombre);
+  window.open("https://wa.me/?text=" + encodeURIComponent(texto + " (adjunte la imagen que se acaba de descargar)"), "_blank", "noopener");
+});
+
 function graficarPeriodo(vars, diasPeriodo, etiqueta, municipio, variableElegida, targetId = "chart") {
+  const asocCampo = targetId === "campo-chart" && $asociacion.value ? $asociacion.value.split("|")[1] : "";
+  INFO_GRAFICO[targetId] = {
+    subtitulo: `${asocCampo ? asocCampo + " · " : ""}${municipio} · ${etiqueta}`,
+    fuente: asocCampo ? `Fuente: monitoreo comunitario (${asocCampo})` : "Fuente: MSWX / MSWEP (GloH2O)",
+  };
   const layoutBase = {
     margin: { t: 46, r: 20, b: 40, l: 60 }, paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
     font: { family: "Work Sans, sans-serif", color: getComputedStyle(document.body).getPropertyValue("--color-ink") },
@@ -754,8 +840,8 @@ function graficarPeriodo(vars, diasPeriodo, etiqueta, municipio, variableElegida
       ];
     }
     Plotly.newPlot(targetId, traces, {
-      // Rango fijo de 30 a 100 %: así un cambio pequeño no se ve como un pico.
-      ...layoutBase, yaxis: { fixedrange: true, title: { text: "<b>% de Humedad Relativa</b>", font: { size: 15 } }, range: [30, 100], dtick: 10 },
+      // Rango fijo de 40 a 100 %: así un cambio pequeño no se ve como un pico.
+      ...layoutBase, yaxis: { fixedrange: true, title: { text: "<b>% de Humedad Relativa</b>", font: { size: 15 } }, range: [40, 100], dtick: 10 },
       title: { text: "<b>Humedad relativa diaria</b>", font: { size: 18 } },
     }, { displayModeBar: false, responsive: true, doubleClick: false, scrollZoom: false });
   }
@@ -815,13 +901,13 @@ $btnMapaZoom.addEventListener("click", () => { mapaZoomMunicipio = !mapaZoomMuni
    al arrancar (cargarCategorias, más abajo).
 
    Cada valor se compara con lo normal EN ESE MISMO PIXEL:
-     Muy bajo  = el 10 % más bajo de 1991–2020        (por debajo de corte 1)
-     Bajo      = siguiente 26,7 %                      (corte 1 – corte 2)
-     Medio     = 26,7 % del centro                     (corte 2 – corte 3)
-     Alto      = siguiente 26,7 %                      (corte 3 – corte 4)
-     Muy alto  = el 10 % más alto                      (desde corte 4)
-   En lluvia hay además "Sin lluvia" (< 1 mm); las otras 5 se calcularon solo
+     Bajo   = el 20 % más bajo de 1991–2020   (por debajo de corte 1 = P20)
+     Medio  = el 60 % del centro              (corte 1 – corte 2)
+     Alto   = el 20 % más alto                (desde corte 2 = P80)
+   En lluvia hay además "Sin lluvia" (< 1 mm); las otras 3 se calcularon solo
    con las ventanas que sí tuvieron lluvia.
+   El número de categorías sale de ETIQUETAS_CATEGORIA: el CSV debe traer
+   una columna de corte menos (corte_1 y corte_2 para 3 categorías).
 
    periodo_dias = ventana de 1, 7, 14 o 30 días (suma en lluvia, promedio en
    lo demás). punto_tablero = "sí" marca el pixel del punto del municipio: el
@@ -832,18 +918,18 @@ const ETIQUETA_VARIABLE = { precip: "Lluvia", tavg: "Temperatura", relhum: "Hume
 const UNIDAD_VARIABLE = { precip: "mm", tavg: "°C", tmax: "°C", tmin: "°C", relhum: "%" };
 
 const UMBRAL_SIN_LLUVIA_MM = 1.0;
-const ETIQUETAS_CATEGORIA = ["Muy bajo", "Bajo", "Medio", "Alto", "Muy alto"];
+const ETIQUETAS_CATEGORIA = ["Bajo", "Medio", "Alto"];
 const COLORES_CATEGORIA = {
-  //                  Muy bajo   Bajo       Medio      Alto       Muy alto
-  precip: { sinLluvia: "#7f0000", colores: ["#d7301f", "#ec7014", "#fec44f", "#6baed6", "#08306b"] },
-  tavg:   { colores: ["#ffffcc", "#fed976", "#fd8d3c", "#e31a1c", "#800026"] },
-  relhum: { colores: ["#fff7fb", "#a6bddb", "#2b8cbe", "#045a8d", "#023858"] },
+  //                                         Bajo       Medio      Alto
+  precip: { sinLluvia: "#7f0000", colores: ["#fec44f", "#6baed6", "#08306b"] },
+  tavg:   { colores: ["#fed976", "#fd8d3c", "#e31a1c"] },
+  relhum: { colores: ["#a6bddb", "#2b8cbe", "#045a8d"] },
 };
 COLORES_CATEGORIA.tmax = COLORES_CATEGORIA.tavg;
 COLORES_CATEGORIA.tmin = COLORES_CATEGORIA.tavg;
 
 // Se llena al arrancar leyendo Categorias_1991-2020.csv (ver cargarCategorias).
-// Estructura: { municipio: { precip: [ {lat, lon, d1:[4 cortes], d7, d14, d30, tablero}, ... ], tavg, tmax, tmin, relhum } }
+// Estructura: { municipio: { precip: [ {lat, lon, d1:[cortes], d7, d14, d30, tablero}, ... ], tavg, tmax, tmin, relhum } }
 let CATEGORIAS_HISTORICAS = {};
 let categoriasError = "";
 
@@ -852,7 +938,7 @@ let categoriasError = "";
    Para actualizar las categorías basta con reemplazar el archivo
    web/Categorias_1991-2020.csv por el que genera percentiles_historicos.ipynb
    (o editarlo en Excel). Columnas que se usan: municipio, lat, lon,
-   punto_tablero, variable, periodo_dias, corte_1, corte_2, corte_3, corte_4.
+   punto_tablero, variable, periodo_dias y las columnas corte_1, corte_2, …
    Las demás se ignoran.
    Acepta separador "," con punto decimal (como sale del notebook) o ";" con
    coma decimal (como lo guarda Excel en español), y UTF-8 o Windows-1252.
@@ -889,7 +975,12 @@ function leerCsvCategorias(texto) {
   const col = (n) => { const i = cab.indexOf(n); if (i < 0) throw new Error(`falta la columna "${n}"`); return i; };
   const iMun = col("municipio"), iLat = col("lat"), iLon = col("lon"), iPunto = col("punto_tablero"),
         iVar = col("variable"), iDias = col("periodo_dias"),
-        iCortes = ["corte_1", "corte_2", "corte_3", "corte_4"].map(col);
+        iCortes = cab.map((n, i) => (/^corte_\d+$/.test(n) ? i : -1)).filter((i) => i >= 0);
+  // Tiene que haber un corte menos que categorías (2 cortes para Bajo/Medio/Alto).
+  if (iCortes.length !== ETIQUETAS_CATEGORIA.length - 1) {
+    throw new Error(`el archivo trae ${iCortes.length} cortes y el tablero espera ${ETIQUETAS_CATEGORIA.length - 1} ` +
+      `(${ETIQUETAS_CATEGORIA.join(", ")}); hay que generar de nuevo el CSV con el notebook`);
+  }
   const salida = {}, pixeles = {};
   let filas = 0;
   lineas.slice(1).forEach((linea) => {
@@ -954,7 +1045,7 @@ function categoriaHistorica(valor, varKey, cortes) {
   if (!cortes || typeof valor !== "number" || !isFinite(valor)) return null;
   const paleta = COLORES_CATEGORIA[varKey];
   if (varKey === "precip" && valor < UMBRAL_SIN_LLUVIA_MM) return { etiqueta: "Sin lluvia", color: paleta.sinLluvia };
-  const i = cortes.filter((c) => valor >= c).length; // 0 a 4
+  const i = cortes.filter((c) => valor >= c).length; // 0 = Bajo … último = Alto
   return { etiqueta: ETIQUETAS_CATEGORIA[i], color: paleta.colores[i] };
 }
 
@@ -973,8 +1064,9 @@ function pintarLeyendaMapa(varKey, diasPeriodo, municipio) {
   const unidad = UNIDAD_VARIABLE[varKey];
   const c = cortesPixel(municipio, varKey, diasPeriodo);
   const r = (x) => x.toFixed(1);
-  const rangos = c ? [`< ${r(c[0])}`, `${r(c[0])} – ${r(c[1])}`, `${r(c[1])} – ${r(c[2])}`, `${r(c[2])} – ${r(c[3])}`, `≥ ${r(c[3])}`]
-                   : ["", "", "", "", ""];
+  // Rango de cada categoría: "< c1", "c1 – c2", …, "≥ último corte".
+  const rangos = ETIQUETAS_CATEGORIA.map((_, i) => !c ? ""
+    : i === 0 ? `< ${r(c[0])}` : i === c.length ? `≥ ${r(c[c.length - 1])}` : `${r(c[i - 1])} – ${r(c[i])}`);
   if (c && varKey === "precip") rangos[0] = `${r(UMBRAL_SIN_LLUVIA_MM)} – ${r(c[0])}`;
   const filas = ETIQUETAS_CATEGORIA.map((et, i) => ({ et, color: paleta.colores[i], rango: rangos[i] }));
   if (varKey === "precip") filas.unshift({ et: "Sin lluvia", color: paleta.sinLluvia, rango: c ? `< ${r(UMBRAL_SIN_LLUVIA_MM)}` : "" });
@@ -1084,7 +1176,7 @@ function interpolarPixeles(indice, lon, lat) {
   const fx = (lon - indice.lon0) / indice.lonStep, fy = (lat - indice.lat0) / indice.latStep;
   const ix = Math.floor(fx), iy = Math.floor(fy), tx = fx - ix, ty = fy - iy;
   let sumaV = 0, pesoV = 0, pesoC = 0;
-  const sumaC = [0, 0, 0, 0];
+  const sumaC = new Array(ETIQUETAS_CATEGORIA.length - 1).fill(0); // uno por corte
   [[0, 0, (1 - tx) * (1 - ty)], [1, 0, tx * (1 - ty)], [0, 1, (1 - tx) * ty], [1, 1, tx * ty]].forEach(([dx, dy, w]) => {
     const p = indice.porPosicion[`${ix + dx},${iy + dy}`];
     if (!p || w === 0) return;
@@ -1103,7 +1195,8 @@ function pintarMapa(etiqueta, diasPeriodo, fechaObjetivo) {
   const dept = MUNICIPIO_DEPARTAMENTO[municipioSel];
   const fc = DEPARTAMENTOS_GEO[dept];
   const varKey = CLAVE_MAPA_VARIABLE[$variable.value];
-  $mapaTitulo.textContent = `${ETIQUETA_VARIABLE[varKey]} en ${dept}`;
+  // Acercado: el municipio elegido. Departamento completo: el departamento.
+  $mapaTitulo.textContent = `${ETIQUETA_VARIABLE[varKey]} en ${mapaZoomMunicipio ? municipioSel : dept}`;
     pintarLeyendaMapa(varKey, diasPeriodo, municipioSel);
   $btnMapaZoom.textContent = mapaZoomMunicipio ? "Ver departamento completo" : "Acercar al municipio";
 
@@ -1463,7 +1556,7 @@ function panel() {
   const variableElegida = $variable.value;
   const diasPeriodo = PERIODOS[periodoNombre];
   const vars = datos.municipios[municipio];
-  $periodoBotones.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.periodo === periodoNombre)));
+  document.querySelectorAll(".periodo-botones button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.periodo === periodoNombre)));
 
   document.getElementById("temp-toggle").style.display = variableElegida === "Temperatura" ? "flex" : "none";
   document.getElementById("campo-temp-toggle").style.display = variableElegida === "Temperatura" ? "flex" : "none";
