@@ -999,10 +999,6 @@ function pintarAlertas(args) {
         <div class="al-ic" aria-hidden="true">${ICONO_GRUPO[r.u.grupo] || "⚠️"}</div>
         <div><b>${escaparHtml(r.u.titulo)}</b><span>${escaparHtml(r.u.quePasa)}</span></div></div>`).join("")}</div>` : ""}
       ${otras.length > visibles.length ? `<p class="al-mas">Y ${otras.length - visibles.length} más en el detalle.</p>` : ""}`;
-    // Grupos sin ningún problema
-    const grupos = [...new Set(resultados.map((r) => r.u.grupo))].filter((g) => resultados.filter((r) => r.u.grupo === g).every((r) => r.nivel === 0));
-    if (grupos.length) cuerpo += `<div class="al-bien"><span>Sin problemas por</span>${grupos.map((g) =>
-      `<span class="al-chip">${ICONO_GRUPO[g] || ""} ${NOMBRE_GRUPO[g] || g}</span>`).join("")}</div>`;
   }
 
   const detalle = resultados.length ? `<details class="al-pie"><summary><span>Calculado con datos satelitales para la zona.</span>Ver detalle</summary>
