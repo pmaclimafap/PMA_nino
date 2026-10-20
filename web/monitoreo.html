@@ -247,6 +247,8 @@
   .al-rangos { display: flex; flex-wrap: wrap; gap: 4px; }
   .al-rangos span { padding: 1px 7px; border-radius: 6px; font-size: 0.74rem; white-space: nowrap;
     background: color-mix(in srgb, var(--c) 16%, var(--color-panel)); border-left: 3px solid var(--c); }
+  .al-explica { font-size: 0.8rem; color: var(--color-ink-soft); line-height: 1.4; }
+  .al-nota { margin: 10px 0 0; }
   .al-prov { display: inline-block; margin-left: 6px; font-size: 0.7rem; padding: 0 7px; border: 1px dashed var(--color-ink-soft);
     border-radius: 999px; color: var(--color-ink-soft); font-weight: 400; }
   .al-aviso { padding: 18px 24px; font-size: 0.9rem; color: var(--color-ink-soft); }
@@ -789,6 +791,8 @@ actualizarOpcionesSistema();
      racha_cond     días seguidos que cumplen las condiciones
    La variable "ith" es el índice de temperatura y humedad (NRC, 1971),
    calculado con la temperatura máxima y la humedad media del día.
+   Para el productor no se muestra el número del índice, sino la
+   temperatura y la humedad del día en que fue más alto.
    ====================================================================== */
 const ARCHIVO_UMBRALES = "./Umbrales.csv";
 let UMBRALES = [];
@@ -912,16 +916,19 @@ function evaluarUmbral(u, s, fin, diasPeriodo) {
   }
   if (valor === null || !isFinite(valor)) return null;
   const nivel = u.sentido === "alto" ? u.lims.filter((l) => valor >= l).length : u.lims.filter((l) => valor < l).length;
-  return { u, valor, fecha, nivel };
+  // El índice de calor y humedad no se muestra como número: se muestran la temperatura y la humedad de ese día.
+  const dia = u.variable === "ith" && fecha ? { T: val("tmax", fecha), H: val("relhum", fecha) } : null;
+  return { u, valor, fecha, nivel, dia };
 }
 
-function formatoValor(u, v) {
+function formatoValor(u, v, dia = null) {
   if (v === null) return "—";
+  if (u.variable === "ith") return dia ? `${dia.T.toFixed(1).replace(".", ",")} °C con ${Math.round(dia.H)} % de humedad` : "—";
   if (u.unidad === "°C") return `${v.toFixed(1).replace(".", ",")} °C`;
   if (u.unidad === "%") return `${Math.round(v)} %`;
   if (u.unidad === "mm") return `${Math.round(v)} mm`;
   if (u.unidad === "días") return `${Math.round(v)} ${Math.round(v) === 1 ? "día" : "días"}`;
-  return `ITH ${Math.round(v)}`;
+  return `${Math.round(v)}`;
 }
 
 function pintarAlertas(args) {
@@ -986,7 +993,7 @@ function pintarAlertas(args) {
         ${!etapa && p.u.etapa !== "Todas" ? `<div class="al-etiqueta-etapa">${esPecuario ? "" : "Etapa: "}${escaparHtml(p.u.etapa)}</div>` : ""}
         <h3>${escaparHtml(p.u.titulo)}</h3>
         <p>${escaparHtml(p.u.quePasa)}</p>
-        <div class="al-dato"><b>${formatoValor(p.u, p.valor)}</b><span>${escaparHtml(p.u.comoSeMide)}${cuando}</span></div>
+        <div class="al-dato"><b>${formatoValor(p.u, p.valor, p.dia)}</b><span>${escaparHtml(p.u.comoSeMide)}${cuando}</span></div>
         ${p.u.recomendacion ? `<div class="al-hacer"><i>✓</i><span>${escaparHtml(p.u.recomendacion)}</span></div>` : ""}</div></div>
       ${visibles.length ? `<div class="al-otras">${visibles.map((r) => `<div class="al-otra" style="--al-nivel:${NIVELES[r.nivel].color}">
         <div class="al-ic" aria-hidden="true">${ICONO_GRUPO[r.u.grupo] || "⚠️"}</div>
@@ -1002,10 +1009,10 @@ function pintarAlertas(args) {
       <table class="al-tabla"><thead><tr><th>Indicador</th><th>Valor</th><th>Nivel</th><th>Rangos</th></tr></thead><tbody>
       ${resultados.map((r) => `<tr><td><b>${escaparHtml(r.u.titulo)}</b>${r.u.provisional ? '<span class="al-prov">provisional</span>' : ""}
           <small>${escaparHtml(r.u.comoSeMide)}${r.u.etapa !== "Todas" ? " · " + escaparHtml(r.u.etapa) : ""}</small></td>
-        <td>${formatoValor(r.u, r.valor)}${r.fecha ? `<small>${fechaLarga(r.fecha, false)}</small>` : ""}</td>
+        <td>${formatoValor(r.u, r.valor, r.dia)}${r.fecha ? `<small>${fechaLarga(r.fecha, false)}</small>` : ""}</td>
         <td><span class="al-pill" style="background:${NIVELES[r.nivel].color}${r.nivel === 1 ? ";color:#2B2B23" : ""}">${NIVELES[r.nivel].nombre}</span></td>
-        <td><div class="al-rangos">${r.u.rangos.map((x, i) => `<span style="--c:${NIVELES[i].color}">${NIVELES[i].nombre}: ${escaparHtml(x)}</span>`).join("")}</div></td></tr>`).join("")}
-      </tbody></table></details>` : "";
+        <td>${r.u.variable === "ith" ? `<span class="al-explica">Depende de la temperatura y la humedad juntas.*</span>` : `<div class="al-rangos">${r.u.rangos.map((x, i) => `<span style="--c:${NIVELES[i].color}">${NIVELES[i].nombre}: ${escaparHtml(x)}</span>`).join("")}</div>`}</td></tr>`).join("")}
+      </tbody></table>${resultados.some((r) => r.u.variable === "ith") ? '<p class="al-explica al-nota">* Con el aire húmedo, los animales se refrescan menos, por eso el mismo calor les afecta más. El nivel se calcula con la temperatura más alta y la humedad de ese día.</p>' : ""}</details>` : "";
 
   const nivelResumen = resultados.length ? peor : null;
   const resumen = nivelResumen === null ? "" : `<span class="al-resumen" style="--al-nivel:${NIVELES[nivelResumen].color}${nivelResumen === 1 ? ";--al-texto:#2B2B23" : ""}">${NIVELES[nivelResumen].nombre}</span>`;
