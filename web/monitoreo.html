@@ -178,7 +178,22 @@
   .al { --al-optimo: #2E7D4F; --al-vigilar: #E3B11B; --al-alerta: #E07B1A; --al-grave: #C0392B;
     background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 18px; overflow: hidden; margin-bottom: 20px; }
   .al:empty { display: none; }
-  .al-cab { display: flex; align-items: center; gap: 14px; padding: 20px 24px 18px; }
+  .al-cab { display: flex; align-items: center; gap: 14px; padding: 18px 24px; width: 100%; border: 0; background: none; color: inherit;
+    font: inherit; text-align: left; cursor: pointer; }
+  .al-cab:hover { background: color-mix(in srgb, var(--color-ink) 3%, transparent); }
+  .al-cab:focus-visible { outline: 2px solid var(--color-rain); outline-offset: -2px; }
+  .al-resumen { flex: none; padding: 5px 14px; border-radius: 999px; font-size: 0.85rem; font-weight: 700;
+    background: var(--al-nivel); color: var(--al-texto, #FFFFFF); }
+  .al-ver { flex: none; font-size: 0.88rem; font-weight: 600; color: var(--color-rain); }
+  .al-flecha { order: 9; flex: none; width: 10px; height: 10px; border-right: 2px solid var(--color-rain); border-bottom: 2px solid var(--color-rain);
+    transform: rotate(45deg); margin: -4px 4px 0 -4px; transition: transform .2s; }
+  .al-cab[aria-expanded="true"] .al-flecha { transform: rotate(-135deg); margin-top: 4px; }
+  .al-ver { order: 8; }
+  .al-cuerpo[hidden] { display: none; }
+  .al-cuerpo { border-top: 1px solid var(--color-line); padding-top: 16px; }
+  .al-barra { display: flex; justify-content: flex-end; padding: 0 24px 14px; }
+  .al-elegir { cursor: pointer; }
+  .al-elegir h2 { font-size: 1.3rem; }
   .al-cultivo { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 1.7rem; flex: none;
     background: color-mix(in srgb, var(--color-temp) 14%, var(--color-panel)); }
   .al-cab h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.55rem; line-height: 1.15; margin: 0; flex: 1; }
@@ -236,8 +251,9 @@
     border-radius: 999px; color: var(--color-ink-soft); font-weight: 400; }
   .al-aviso { padding: 18px 24px; font-size: 0.9rem; color: var(--color-ink-soft); }
   @media (max-width: 40rem) {
-    .al-cab { flex-wrap: wrap; padding: 18px 16px 14px; } .al-cab h2 { font-size: 1.3rem; }
-    .al-etapa { width: 100%; } .al-etapa select { width: 100%; }
+    .al-cab { flex-wrap: wrap; padding: 16px; gap: 10px 12px; } .al-cab h2 { font-size: 1.2rem; flex-basis: calc(100% - 64px); }
+    .al-resumen { margin-left: 64px; } .al-ver { margin-left: auto; }
+    .al-barra { padding: 0 16px 14px; } .al-etapa { width: 100%; } .al-etapa select { width: 100%; }
     .al-principal { grid-template-columns: 1fr; gap: 16px; margin: 0 12px; padding: 18px; }
     .al-escalera { flex-direction: row; width: 100%; } .al-escalon { flex: 1; height: 28px; } .al-escalon.on { transform: scale(1.06); }
     .al-principal h3 { font-size: 1.5rem; }
@@ -694,21 +710,14 @@ function actualizarOpcionesSistema() {
   const opciones = SISTEMAS_PRODUCTIVOS; // la misma lista para todos los municipios
   const actual = $sistema.value;
   $sistema.innerHTML = "";
+  // Primera opción vacía: no hay sistema por defecto, el usuario debe elegirlo.
+  const vacia = new Option("Seleccione…", "");
+  vacia.disabled = true;
+  $sistema.add(vacia);
   opciones.forEach((c) => $sistema.add(new Option(`${EMOJI_SISTEMA[c] ? EMOJI_SISTEMA[c] + " " : ""}${c}`, c)));
-  // Al cambiar de municipio se elige su sistema principal; el usuario puede cambiarlo.
-  const preferido = SISTEMA_POR_MUNICIPIO[$municipio.value];
-  $sistema.value = preferido || (opciones.includes(actual) ? actual : opciones[0]);
+  // Se conserva lo que el usuario ya eligió al cambiar de municipio.
+  $sistema.value = opciones.includes(actual) ? actual : "";
 }
-// Sistema principal de cada municipio (hoja "Municipios" del Excel de umbrales).
-const SISTEMA_POR_MUNICIPIO = {
-  "Los Palmitos (Sucre)": "Porcicultura",
-  "San José de Toluviejo (Sucre)": "Yuca",
-  "Icononzo (Tolima)": "Café",
-  "Planadas (Tolima)": "Café",
-  "Fonseca (La Guajira)": "Café",
-  "Manaure (Cesar)": "Porcicultura",
-  "El Paso (Cesar)": "Gallinas ponedoras",
-};
 $municipio.addEventListener("change", actualizarOpcionesSistema);
 
 const $asociacion = document.getElementById("sel-asociacion");
@@ -798,6 +807,7 @@ const PARA_QUIEN = { "Café": "su café", "Aguacate": "su aguacate", "Maíz": "s
 const SISTEMAS_PECUARIOS = ["Porcicultura", "Gallinas ponedoras", "Ganadería"];
 const ETAPA_ELEGIDA = {}; // sistema -> etapa elegida ("" = todas)
 let ultimoPanelAlertas = null;
+let alertasAbiertas = false; // el panel empieza recogido; se despliega al hacer clic
 
 function leerCsvUmbrales(texto) {
   const lineas = texto.replace(/^﻿/, "").split(/\r?\n/).filter((l) => l.trim());
@@ -920,6 +930,12 @@ function pintarAlertas(args) {
   if (!args) return;
   const { municipio, vars, periodoNombre, diasPeriodo, fin } = args;
   const sistema = $sistema.value;
+  if (!sistema) {
+    $al.innerHTML = `<button type="button" class="al-cab al-elegir" id="al-elegir"><div class="al-cultivo" aria-hidden="true">🌱</div>
+      <h2>¿Cómo estuvo el clima para su finca?<small>Seleccione arriba el sistema productivo para ver las alertas.</small></h2></button>`;
+    document.getElementById("al-elegir").addEventListener("click", () => { $sistema.focus(); $sistema.showPicker?.(); });
+    return;
+  }
   if (umbralesError) { $al.innerHTML = `<p class="al-aviso">${escaparHtml(umbralesError)}</p>`; return; }
   const delSistema = UMBRALES.filter((u) => u.sistema === sistema);
   if (!delSistema.length) { $al.innerHTML = ""; return; }
@@ -941,8 +957,6 @@ function pintarAlertas(args) {
   const selector = etapas.length ? `<label class="al-etapa">${esPecuario ? "Tipo de animal" : "Etapa del cultivo"}
       <select id="al-sel-etapa"><option value="">${esPecuario ? "Todos" : "Todas las etapas"}</option>
       ${etapas.map((e) => `<option value="${escaparHtml(e)}"${e === etapa ? " selected" : ""}>${escaparHtml(e)}</option>`).join("")}</select></label>` : "";
-  const cab = `<div class="al-cab"><div class="al-cultivo" aria-hidden="true">${emoji}</div>
-      <h2>Así estuvo el clima para ${quien}<small>${escaparHtml(municipio)}, ${fin === inicio ? "el " : "del "}${rangoLargo(inicio, fin)}</small></h2>${selector}</div>`;
 
   const escalera = (nivel) => `<div class="al-escalera" aria-label="Nivel: ${NIVELES[nivel].nombre}">${NIVELES.map((n, i) =>
       `<div class="al-escalon${i === nivel ? " on" : ""}">${n.nombre}</div>`).join("")}</div>`;
@@ -993,7 +1007,14 @@ function pintarAlertas(args) {
         <td><div class="al-rangos">${r.u.rangos.map((x, i) => `<span style="--c:${NIVELES[i].color}">${NIVELES[i].nombre}: ${escaparHtml(x)}</span>`).join("")}</div></td></tr>`).join("")}
       </tbody></table></details>` : "";
 
-  $al.innerHTML = cab + cuerpo + detalle;
+  const nivelResumen = resultados.length ? peor : null;
+  const resumen = nivelResumen === null ? "" : `<span class="al-resumen" style="--al-nivel:${NIVELES[nivelResumen].color}${nivelResumen === 1 ? ";--al-texto:#2B2B23" : ""}">${NIVELES[nivelResumen].nombre}</span>`;
+  const cab = `<button type="button" class="al-cab" id="al-cab" aria-expanded="${alertasAbiertas}" aria-controls="al-cuerpo">
+      <div class="al-cultivo" aria-hidden="true">${emoji}</div>
+      <h2>Así estuvo el clima para ${quien}<small>${escaparHtml(municipio)}, ${fin === inicio ? "el " : "del "}${rangoLargo(inicio, fin)}</small></h2>
+      ${resumen}<span class="al-flecha" aria-hidden="true"></span><span class="al-ver">${alertasAbiertas ? "Ocultar" : "Ver alertas"}</span></button>`;
+  $al.innerHTML = cab + `<div class="al-cuerpo" id="al-cuerpo"${alertasAbiertas ? "" : " hidden"}>${selector ? `<div class="al-barra">${selector}</div>` : ""}${cuerpo}${detalle}</div>`;
+  document.getElementById("al-cab").addEventListener("click", () => { alertasAbiertas = !alertasAbiertas; pintarAlertas(); });
   const $sel = document.getElementById("al-sel-etapa");
   if ($sel) $sel.addEventListener("change", () => { ETAPA_ELEGIDA[sistema] = $sel.value; pintarAlertas(); });
 }
