@@ -222,7 +222,15 @@
   .al-hacer { margin-top: 14px; display: flex; gap: 10px; align-items: flex-start; font-size: 0.95rem; line-height: 1.45; }
   .al-hacer i { font-style: normal; flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--al-nivel); color: #FFFFFF;
     display: grid; place-items: center; font-size: 0.9rem; }
-  .al-otras { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; padding: 6px 24px 0; margin-top: 14px; }
+  .al-otras-tit { margin: 22px 24px 2px; font-size: 0.8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--color-ink-soft); }
+  .al-otras { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; padding: 0 24px 6px; }
+  .al-otra-tit { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-bottom: 2px; }
+  .al-otra-tit b { margin: 0 !important; }
+  .al-otra small { display: block; margin-top: 4px; font-size: 0.8rem; color: var(--color-ink-soft); }
+  .al-junta { display: inline-block; margin: 0 0 8px; padding: 2px 10px; border-radius: 999px; font-size: 0.78rem;
+    background: color-mix(in srgb, var(--color-ink) 7%, transparent); color: var(--color-ink-soft); }
+  .al-otra .al-junta { margin: 6px 0 0; font-size: 0.78rem; }
+  .al-otra .al-pill { color: #FFFFFF; font-size: 0.74rem; }
   .al-otra { display: flex; gap: 12px; align-items: flex-start; padding: 14px 0; }
   .al-otra .al-ic { flex: none; width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 1.2rem;
     background: color-mix(in srgb, var(--al-nivel) 16%, var(--color-panel)); box-shadow: inset 0 -3px 0 var(--al-nivel); }
@@ -233,7 +241,7 @@
   .al-bien > span:first-child { font-size: 0.88rem; color: var(--color-ink-soft); margin-right: 4px; }
   .al-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
     background: color-mix(in srgb, var(--al-optimo) 13%, var(--color-panel)); color: var(--al-optimo); }
-  .al-pie { padding: 12px 24px 16px; font-size: 0.82rem; color: var(--color-ink-soft); background: color-mix(in srgb, var(--color-bg) 50%, var(--color-panel));
+  .al-pie { margin: 14px 0 0; padding: 12px 24px 14px; font-size: 0.82rem; color: var(--color-ink-soft); background: color-mix(in srgb, var(--color-bg) 50%, var(--color-panel));
     border-top: 1px solid var(--color-line); }
   .al-pie summary { cursor: pointer; color: var(--color-rain); font-weight: 600; font-size: 0.88rem; list-style: none; display: flex;
     justify-content: space-between; gap: 10px; flex-wrap: wrap; }
@@ -259,7 +267,7 @@
     .al-principal { grid-template-columns: 1fr; gap: 16px; margin: 0 12px; padding: 18px; }
     .al-escalera { flex-direction: row; width: 100%; } .al-escalon { flex: 1; height: 28px; } .al-escalon.on { transform: scale(1.06); }
     .al-principal h3 { font-size: 1.5rem; }
-    .al-otras { grid-template-columns: 1fr; padding: 6px 16px 0; }
+    .al-otras { grid-template-columns: 1fr; padding: 0 16px 6px; } .al-otras-tit { margin-left: 16px; }
     .al-bien, .al-pie, .al-mas { padding-left: 16px; padding-right: 16px; }
     .al-tabla thead { display: none; } .al-tabla tr { display: block; border-bottom: 1px solid var(--color-line); padding: 6px 0; }
     .al-tabla td { display: block; border: 0; padding: 3px 0; }
@@ -931,11 +939,28 @@ function formatoValor(u, v, dia = null) {
   return `${Math.round(v)}`;
 }
 
+// Variable del tablero a la que pertenece cada dato de los umbrales.
+const VARIABLE_DE = { precip: "Lluvia", tavg: "Temperatura", tmax: "Temperatura", tmin: "Temperatura", relhum: "Humedad relativa", ith: ["Temperatura", "Humedad relativa"] };
+const ICONO_VARIABLE = { "Lluvia": "🌧️", "Temperatura": "🌡️", "Humedad relativa": "💧" };
+const NOMBRE_VARIABLE = { "Lluvia": "lluvia", "Temperatura": "temperatura", "Humedad relativa": "humedad" };
+const ORDEN_VARIABLES = ["Temperatura", "Lluvia", "Humedad relativa"];
+// Variables de las que depende un indicador (la suya y las de sus condiciones).
+function variablesDe(u) {
+  const vs = new Set();
+  [u.variable, ...u.condiciones.map((c) => c.v)].forEach((v) => [].concat(VARIABLE_DE[v] || []).forEach((x) => vs.add(x)));
+  return ORDEN_VARIABLES.filter((x) => vs.has(x));
+}
+// Etiqueta para los indicadores que dependen de varias variables a la vez.
+function etiquetaJunta(u) {
+  const vs = variablesDe(u);
+  return vs.length > 1 ? `<span class="al-junta">Depende de ${vs.map((v) => `${ICONO_VARIABLE[v]} ${NOMBRE_VARIABLE[v]}`).join(" + ")}</span>` : "";
+}
+
 function pintarAlertas(args) {
   if (args) ultimoPanelAlertas = args; else args = ultimoPanelAlertas;
   const $al = document.getElementById("alertas");
   if (!args) return;
-  const { municipio, vars, periodoNombre, diasPeriodo, fin } = args;
+  const { municipio, vars, periodoNombre, diasPeriodo, fin, variable } = args;
   const sistema = $sistema.value;
   if (!sistema) {
     $al.innerHTML = `<button type="button" class="al-cab al-elegir" id="al-elegir"><div class="al-cultivo" aria-hidden="true">🌱</div>
@@ -947,11 +972,15 @@ function pintarAlertas(args) {
   const delSistema = UMBRALES.filter((u) => u.sistema === sistema);
   if (!delSistema.length) { $al.innerHTML = ""; return; }
 
-  // Etapas o tipos de animal disponibles para el sistema
-  const etapas = [...new Set(delSistema.map((u) => u.etapa).filter((e) => e !== "Todas"))];
+  // Solo los indicadores de la variable elegida (incluye los que la combinan con otra).
+  const deVariable = delSistema.filter((u) => variablesDe(u).includes(variable));
+  // Si el sistema no tiene umbrales para esta variable, el panel no se muestra.
+  if (!deVariable.length) { $al.innerHTML = ""; return; }
+  // Etapas o tipos de animal disponibles para el sistema y la variable
+  const etapas = [...new Set(deVariable.map((u) => u.etapa).filter((e) => e !== "Todas"))];
   const etapa = etapas.includes(ETAPA_ELEGIDA[sistema]) ? ETAPA_ELEGIDA[sistema] : "";
   const esPecuario = SISTEMAS_PECUARIOS.includes(sistema);
-  const aplican = delSistema.filter((u) => !etapa || u.etapa === etapa || u.etapa === "Todas");
+  const aplican = deVariable.filter((u) => !etapa || u.etapa === etapa || u.etapa === "Todas");
 
   const s = seriesPorFecha(vars);
   const resultados = aplican.map((u) => evaluarUmbral(u, s, fin, diasPeriodo)).filter(Boolean)
@@ -959,6 +988,7 @@ function pintarAlertas(args) {
   const inicio = s.fechas[Math.max(0, s.fechas.lastIndexOf(fin) - diasPeriodo + 1)] || fin;
   const quien = PARA_QUIEN[sistema] || "su sistema productivo";
   const emoji = EMOJI_SISTEMA[sistema] || "🌱";
+  const nombreVar = NOMBRE_VARIABLE[variable] || "el clima";
   const textoPeriodo = { "Última fecha": "El último día", "Última semana": "Esta semana", "Últimas 2 semanas": "En las últimas dos semanas", "Último mes": "En el último mes" }[periodoNombre] || "En este período";
 
   const selector = etapas.length ? `<label class="al-etapa">${esPecuario ? "Tipo de animal" : "Etapa del cultivo"}
@@ -967,56 +997,54 @@ function pintarAlertas(args) {
 
   const escalera = (nivel) => `<div class="al-escalera" aria-label="Nivel: ${NIVELES[nivel].nombre}">${NIVELES.map((n, i) =>
       `<div class="al-escalon${i === nivel ? " on" : ""}">${n.nombre}</div>`).join("")}</div>`;
+  const pill = (nivel) => `<span class="al-pill" style="background:${NIVELES[nivel].color}${nivel === 1 ? ";color:#2B2B23" : ""}">${NIVELES[nivel].nombre}</span>`;
+  const etiquetaEtapa = (u) => !etapa && u.etapa !== "Todas" ? `${esPecuario ? "" : "Etapa: "}${escaparHtml(u.etapa)}` : "";
   const peor = resultados.length ? resultados[0].nivel : 0;
   let cuerpo;
   if (!resultados.length) {
     cuerpo = `<p class="al-aviso">No hay datos suficientes para evaluar las alertas en este período.</p>`;
   } else if (peor === 0) {
+    // Estado óptimo: solo el valor de la variable elegida.
     const xs = (k) => { const i = s.fechas.lastIndexOf(fin); return s.fechas.slice(Math.max(0, i - diasPeriodo + 1), i + 1).map((f) => s.mapa[k][f]).filter((x) => x !== undefined); };
-    const tmax = xs("tmax"), lluvia = xs("precip"), hr = xs("relhum");
-    const valores = [
-      tmax.length ? `<div><span>🌡️ Máxima</span><b>${Math.max(...tmax).toFixed(1).replace(".", ",")} °C</b></div>` : "",
-      lluvia.length ? `<div><span>🌧️ Lluvia</span><b>${Math.round(lluvia.reduce((a, b) => a + b, 0))} mm</b></div>` : "",
-      hr.length ? `<div><span>💧 Humedad</span><b>${Math.round(hr.reduce((a, b) => a + b, 0) / hr.length)} %</b></div>` : "",
-    ].join("");
+    let valor = "";
+    if (variable === "Temperatura") { const v = xs("tmax"); if (v.length) valor = `<div><span>🌡️ Temperatura máxima</span><b>${Math.max(...v).toFixed(1).replace(".", ",")} °C</b></div>`; }
+    if (variable === "Lluvia") { const v = xs("precip"); if (v.length) valor = `<div><span>🌧️ Lluvia acumulada</span><b>${Math.round(v.reduce((a, b) => a + b, 0))} mm</b></div>`; }
+    if (variable === "Humedad relativa") { const v = xs("relhum"); if (v.length) valor = `<div><span>💧 Humedad promedio</span><b>${Math.round(v.reduce((a, b) => a + b, 0) / v.length)} %</b></div>`; }
+    const titulo = { "Lluvia": "Lluvia adecuada", "Temperatura": "Temperatura adecuada", "Humedad relativa": "Humedad adecuada" }[variable] || "Clima adecuado";
     cuerpo = `<div class="al-principal" style="--al-nivel:var(--al-optimo)">${escalera(0)}<div>
-        <h3>Clima óptimo para ${quien}</h3>
-        <p>${textoPeriodo} la temperatura, la lluvia y la humedad estuvieron dentro de lo adecuado${etapa ? ` para la etapa de ${escaparHtml(etapa.toLowerCase())}` : ""}.</p>
-        <div class="al-valores">${valores}</div>
+        <h3>${titulo} para ${quien}</h3>
+        <p>${textoPeriodo} la ${nombreVar} estuvo dentro de lo adecuado${etapa ? ` para la etapa de ${escaparHtml(etapa.toLowerCase())}` : ""}. No hay alertas.</p>
+        ${valor ? `<div class="al-valores">${valor}</div>` : ""}
         <div class="al-hacer"><i>✓</i><span>Continúe con el manejo habitual.</span></div></div></div>`;
   } else {
     const p = resultados[0], col = NIVELES[p.nivel].color;
     const cuando = p.fecha ? `: ${fechaLarga(p.fecha, false)}` : "";
     const otras = resultados.slice(1).filter((r) => r.nivel > 0);
-    const visibles = otras.slice(0, 4);
     cuerpo = `<div class="al-principal" style="--al-nivel:${col}">${escalera(p.nivel)}<div>
-        ${!etapa && p.u.etapa !== "Todas" ? `<div class="al-etiqueta-etapa">${esPecuario ? "" : "Etapa: "}${escaparHtml(p.u.etapa)}</div>` : ""}
+        ${etiquetaEtapa(p.u) ? `<div class="al-etiqueta-etapa">${etiquetaEtapa(p.u)}</div>` : ""}
         <h3>${escaparHtml(p.u.titulo)}</h3>
+        ${etiquetaJunta(p.u)}
         <p>${escaparHtml(p.u.quePasa)}</p>
         <div class="al-dato"><b>${formatoValor(p.u, p.valor, p.dia)}</b><span>${escaparHtml(p.u.comoSeMide)}${cuando}</span></div>
-        ${p.u.recomendacion ? `<div class="al-hacer"><i>✓</i><span>${escaparHtml(p.u.recomendacion)}</span></div>` : ""}</div></div>
-      ${visibles.length ? `<div class="al-otras">${visibles.map((r) => `<div class="al-otra" style="--al-nivel:${NIVELES[r.nivel].color}">
+        ${p.u.recomendacion ? `<div class="al-hacer"><i>✓</i><span>${escaparHtml(p.u.recomendacion)}</span></div>` : ""}</div></div>`;
+    // Todas las demás alertas (Vigilar o más), de la más grave a la más leve.
+    if (otras.length) cuerpo += `<div class="al-otras-tit">${otras.length === 1 ? "Otra alerta" : `Otras ${otras.length} alertas`}</div>
+      <div class="al-otras">${otras.map((r) => `<div class="al-otra" style="--al-nivel:${NIVELES[r.nivel].color}">
         <div class="al-ic" aria-hidden="true">${ICONO_GRUPO[r.u.grupo] || "⚠️"}</div>
-        <div><b>${escaparHtml(r.u.titulo)}</b><span>${escaparHtml(r.u.quePasa)}</span></div></div>`).join("")}</div>` : ""}
-      ${otras.length > visibles.length ? `<p class="al-mas">Y ${otras.length - visibles.length} más en el detalle.</p>` : ""}`;
+        <div><div class="al-otra-tit"><b>${escaparHtml(r.u.titulo)}</b>${pill(r.nivel)}</div>
+          <span>${escaparHtml(r.u.quePasa)}</span>
+          <small>${formatoValor(r.u, r.valor, r.dia)} · ${escaparHtml(r.u.comoSeMide)}${r.fecha ? `: ${fechaLarga(r.fecha, false)}` : ""}${etiquetaEtapa(r.u) ? ` · ${etiquetaEtapa(r.u)}` : ""}</small>
+          ${etiquetaJunta(r.u)}</div></div>`).join("")}</div>`;
   }
-
-  const detalle = resultados.length ? `<details class="al-pie"><summary><span>Calculado con datos satelitales para la zona.</span>Ver detalle</summary>
-      <table class="al-tabla"><thead><tr><th>Indicador</th><th>Valor</th><th>Nivel</th><th>Rangos</th></tr></thead><tbody>
-      ${resultados.map((r) => `<tr><td><b>${escaparHtml(r.u.titulo)}</b>${r.u.provisional ? '<span class="al-prov">provisional</span>' : ""}
-          <small>${escaparHtml(r.u.comoSeMide)}${r.u.etapa !== "Todas" ? " · " + escaparHtml(r.u.etapa) : ""}</small></td>
-        <td>${formatoValor(r.u, r.valor, r.dia)}${r.fecha ? `<small>${fechaLarga(r.fecha, false)}</small>` : ""}</td>
-        <td><span class="al-pill" style="background:${NIVELES[r.nivel].color}${r.nivel === 1 ? ";color:#2B2B23" : ""}">${NIVELES[r.nivel].nombre}</span></td>
-        <td>${r.u.variable === "ith" ? `<span class="al-explica">Depende de la temperatura y la humedad juntas.*</span>` : `<div class="al-rangos">${r.u.rangos.map((x, i) => `<span style="--c:${NIVELES[i].color}">${NIVELES[i].nombre}: ${escaparHtml(x)}</span>`).join("")}</div>`}</td></tr>`).join("")}
-      </tbody></table>${resultados.some((r) => r.u.variable === "ith") ? '<p class="al-explica al-nota">* Con el aire húmedo, los animales se refrescan menos, por eso el mismo calor les afecta más. El nivel se calcula con la temperatura más alta y la humedad de ese día.</p>' : ""}</details>` : "";
 
   const nivelResumen = resultados.length ? peor : null;
   const resumen = nivelResumen === null ? "" : `<span class="al-resumen" style="--al-nivel:${NIVELES[nivelResumen].color}${nivelResumen === 1 ? ";--al-texto:#2B2B23" : ""}">${NIVELES[nivelResumen].nombre}</span>`;
   const cab = `<button type="button" class="al-cab" id="al-cab" aria-expanded="${alertasAbiertas}" aria-controls="al-cuerpo">
       <div class="al-cultivo" aria-hidden="true">${emoji}</div>
-      <h2>Así estuvo el clima para ${quien}<small>${escaparHtml(municipio)}, ${fin === inicio ? "el " : "del "}${rangoLargo(inicio, fin)}</small></h2>
+      <h2>Así estuvo la ${nombreVar} para ${quien}<small>${escaparHtml(municipio)}, ${fin === inicio ? "el " : "del "}${rangoLargo(inicio, fin)}</small></h2>
       ${resumen}<span class="al-flecha" aria-hidden="true"></span><span class="al-ver">${alertasAbiertas ? "Ocultar" : "Ver alertas"}</span></button>`;
-  $al.innerHTML = cab + `<div class="al-cuerpo" id="al-cuerpo"${alertasAbiertas ? "" : " hidden"}>${selector ? `<div class="al-barra">${selector}</div>` : ""}${cuerpo}${detalle}</div>`;
+  $al.innerHTML = cab + `<div class="al-cuerpo" id="al-cuerpo"${alertasAbiertas ? "" : " hidden"}>${selector ? `<div class="al-barra">${selector}</div>` : ""}${cuerpo}
+    <p class="al-pie">Calculado con datos satelitales para la zona.</p></div>`;
   document.getElementById("al-cab").addEventListener("click", () => { alertasAbiertas = !alertasAbiertas; pintarAlertas(); });
   const $sel = document.getElementById("al-sel-etapa");
   if ($sel) $sel.addEventListener("change", () => { ETAPA_ELEGIDA[sistema] = $sel.value; pintarAlertas(); });
@@ -1938,7 +1966,7 @@ function panel() {
     fechaObjetivo || sumarDias(ultimaFecha, -(diasPeriodo - 1)), fechaObjetivo || ultimaFecha);
 
   try {
-    pintarAlertas({ municipio, vars, periodoNombre, diasPeriodo, fin: fechaObjetivo || ultimaFecha });
+    pintarAlertas({ municipio, vars, periodoNombre, diasPeriodo, fin: fechaObjetivo || ultimaFecha, variable: variableElegida });
   } catch (e) {
     console.error("No se pudo dibujar el panel de alertas:", e);
   }
