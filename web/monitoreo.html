@@ -171,6 +171,81 @@
   }
   .mapa-zoom-btn:hover { border-color: var(--color-rain); color: var(--color-ink); }
   /* Botones para cambiar el período desde el gráfico. */
+
+  /* ---------------------------------------------------------------------
+     PANEL DE ALERTAS POR SISTEMA PRODUCTIVO
+     --------------------------------------------------------------------- */
+  .al { --al-optimo: #2E7D4F; --al-vigilar: #E3B11B; --al-alerta: #E07B1A; --al-grave: #C0392B;
+    background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 18px; overflow: hidden; margin-bottom: 20px; }
+  .al:empty { display: none; }
+  .al-cab { display: flex; align-items: center; gap: 14px; padding: 20px 24px 18px; }
+  .al-cultivo { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 1.7rem; flex: none;
+    background: color-mix(in srgb, var(--color-temp) 14%, var(--color-panel)); }
+  .al-cab h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.55rem; line-height: 1.15; margin: 0; flex: 1; }
+  .al-cab h2 small { display: block; font-family: var(--font-body); font-weight: 400; font-size: 0.88rem; color: var(--color-ink-soft); margin-top: 3px; }
+  .al-etapa { display: flex; flex-direction: column; gap: 3px; font-size: 0.75rem; color: var(--color-ink-soft); }
+  .al-etapa select { border-radius: 999px; min-width: 190px; }
+  .al-principal { display: grid; grid-template-columns: auto 1fr; gap: 26px; margin: 0 24px; padding: 24px 26px; border-radius: 14px;
+    background: color-mix(in srgb, var(--al-nivel) 15%, var(--color-panel)); }
+  .al-escalera { display: flex; flex-direction: column-reverse; gap: 6px; width: 92px; }
+  .al-escalon { height: 30px; border-radius: 8px; background: color-mix(in srgb, var(--color-ink) 7%, transparent); display: flex; align-items: center;
+    justify-content: center; font-size: 0.72rem; font-weight: 600; color: color-mix(in srgb, var(--color-ink) 38%, transparent); }
+  .al-escalon.on { background: var(--al-nivel); color: #FFFFFF; font-size: 0.82rem; font-weight: 700; transform: scale(1.08);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--al-nivel) 40%, transparent); }
+  .al-etiqueta-etapa { font-size: 0.82rem; color: var(--color-ink-soft); margin-bottom: 2px; }
+  .al-principal h3 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; line-height: 1.1; margin: 2px 0 10px;
+    color: color-mix(in srgb, var(--al-nivel) 65%, var(--color-ink)); }
+  .al-principal p { margin: 0; font-size: 1.02rem; line-height: 1.55; max-width: 62ch; }
+  .al-dato { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 6px 8px; margin: 14px 0 0; padding: 8px 14px;
+    background: var(--color-panel); border-radius: 10px; }
+  .al-dato b { white-space: nowrap; font-family: var(--font-display); font-size: 1.6rem; color: var(--al-nivel); }
+  .al-dato span { font-size: 0.85rem; color: var(--color-ink-soft); }
+  .al-valores { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .al-valores div { background: var(--color-panel); border-radius: 10px; padding: 8px 14px; display: flex; flex-direction: column; }
+  .al-valores span { font-size: 0.8rem; color: var(--color-ink-soft); }
+  .al-valores b { font-family: var(--font-display); font-size: 1.35rem; color: var(--al-optimo); white-space: nowrap; }
+  .al-hacer { margin-top: 14px; display: flex; gap: 10px; align-items: flex-start; font-size: 0.95rem; line-height: 1.45; }
+  .al-hacer i { font-style: normal; flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--al-nivel); color: #FFFFFF;
+    display: grid; place-items: center; font-size: 0.9rem; }
+  .al-otras { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; padding: 6px 24px 0; margin-top: 14px; }
+  .al-otra { display: flex; gap: 12px; align-items: flex-start; padding: 14px 0; }
+  .al-otra .al-ic { flex: none; width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 1.2rem;
+    background: color-mix(in srgb, var(--al-nivel) 16%, var(--color-panel)); box-shadow: inset 0 -3px 0 var(--al-nivel); }
+  .al-otra b { display: block; font-size: 0.98rem; margin-bottom: 2px; }
+  .al-otra span { font-size: 0.9rem; color: var(--color-ink-soft); line-height: 1.45; }
+  .al-mas { padding: 0 24px 6px; font-size: 0.85rem; color: var(--color-ink-soft); }
+  .al-bien { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 14px 24px; margin-top: 6px; border-top: 1px solid var(--color-line); }
+  .al-bien > span:first-child { font-size: 0.88rem; color: var(--color-ink-soft); margin-right: 4px; }
+  .al-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
+    background: color-mix(in srgb, var(--al-optimo) 13%, var(--color-panel)); color: var(--al-optimo); }
+  .al-pie { padding: 12px 24px 16px; font-size: 0.82rem; color: var(--color-ink-soft); background: color-mix(in srgb, var(--color-bg) 50%, var(--color-panel));
+    border-top: 1px solid var(--color-line); }
+  .al-pie summary { cursor: pointer; color: var(--color-rain); font-weight: 600; font-size: 0.88rem; list-style: none; display: flex;
+    justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .al-pie summary::-webkit-details-marker { display: none; }
+  .al-pie summary span { color: var(--color-ink-soft); font-weight: 400; font-size: 0.82rem; }
+  .al-tabla { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.84rem; color: var(--color-ink); }
+  .al-tabla th { text-align: left; font-weight: 600; color: var(--color-ink-soft); padding: 6px 8px; border-bottom: 1px solid var(--color-line); }
+  .al-tabla td { padding: 8px; border-bottom: 1px solid var(--color-line); vertical-align: top; }
+  .al-tabla td small { display: block; color: var(--color-ink-soft); }
+  .al-pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.76rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; }
+  .al-rangos { display: flex; flex-wrap: wrap; gap: 4px; }
+  .al-rangos span { padding: 1px 7px; border-radius: 6px; font-size: 0.74rem; white-space: nowrap;
+    background: color-mix(in srgb, var(--c) 16%, var(--color-panel)); border-left: 3px solid var(--c); }
+  .al-prov { display: inline-block; margin-left: 6px; font-size: 0.7rem; padding: 0 7px; border: 1px dashed var(--color-ink-soft);
+    border-radius: 999px; color: var(--color-ink-soft); font-weight: 400; }
+  .al-aviso { padding: 18px 24px; font-size: 0.9rem; color: var(--color-ink-soft); }
+  @media (max-width: 40rem) {
+    .al-cab { flex-wrap: wrap; padding: 18px 16px 14px; } .al-cab h2 { font-size: 1.3rem; }
+    .al-etapa { width: 100%; } .al-etapa select { width: 100%; }
+    .al-principal { grid-template-columns: 1fr; gap: 16px; margin: 0 12px; padding: 18px; }
+    .al-escalera { flex-direction: row; width: 100%; } .al-escalon { flex: 1; height: 28px; } .al-escalon.on { transform: scale(1.06); }
+    .al-principal h3 { font-size: 1.5rem; }
+    .al-otras { grid-template-columns: 1fr; padding: 6px 16px 0; }
+    .al-bien, .al-pie, .al-mas { padding-left: 16px; padding-right: 16px; }
+    .al-tabla thead { display: none; } .al-tabla tr { display: block; border-bottom: 1px solid var(--color-line); padding: 6px 0; }
+    .al-tabla td { display: block; border: 0; padding: 3px 0; }
+  }
   .grafico-controles { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 10px; }
   /* Botón de información (sutil) y su letrero. */
   .info-grafico { position: relative; }
@@ -288,6 +363,8 @@
   </div>
 
   <div id="vista-secundaria">
+    <!-- Panel de alertas por sistema productivo (lo llena pintarAlertas). -->
+    <section class="al" id="alertas" aria-live="polite"></section>
     <div class="cards" id="cards"></div>
 
     <div class="chart-panel">
@@ -297,7 +374,7 @@
           <button type="button" class="info-boton" aria-label="Información sobre los datos" aria-expanded="false">i</button>
           <div class="info-globo" role="dialog" hidden>
             <button type="button" class="info-cerrar" aria-label="Cerrar">×</button>
-            <strong>Acerca de estos datos</strong>
+            <strong>Información estimada</strong>
             <p>Los datos de este gráfico se obtienen a partir de información satelital y corresponden a una estimación para la zona. Por esta razón, pueden presentar diferencias con las condiciones observadas en cada finca.</p>
           </div>
         </div>
@@ -618,8 +695,20 @@ function actualizarOpcionesSistema() {
   const actual = $sistema.value;
   $sistema.innerHTML = "";
   opciones.forEach((c) => $sistema.add(new Option(`${EMOJI_SISTEMA[c] ? EMOJI_SISTEMA[c] + " " : ""}${c}`, c)));
-  $sistema.value = opciones.includes(actual) ? actual : opciones[0];
+  // Al cambiar de municipio se elige su sistema principal; el usuario puede cambiarlo.
+  const preferido = SISTEMA_POR_MUNICIPIO[$municipio.value];
+  $sistema.value = preferido || (opciones.includes(actual) ? actual : opciones[0]);
 }
+// Sistema principal de cada municipio (hoja "Municipios" del Excel de umbrales).
+const SISTEMA_POR_MUNICIPIO = {
+  "Los Palmitos (Sucre)": "Porcicultura",
+  "San José de Toluviejo (Sucre)": "Yuca",
+  "Icononzo (Tolima)": "Café",
+  "Planadas (Tolima)": "Café",
+  "Fonseca (La Guajira)": "Café",
+  "Manaure (Cesar)": "Porcicultura",
+  "El Paso (Cesar)": "Gallinas ponedoras",
+};
 $municipio.addEventListener("change", actualizarOpcionesSistema);
 
 const $asociacion = document.getElementById("sel-asociacion");
@@ -672,6 +761,243 @@ $periodo.value = "Última semana";
 $variable.value = "Lluvia";
 actualizarOpcionesSistema();
 
+
+/* ======================================================================
+   ALERTAS POR SISTEMA PRODUCTIVO
+   Lee web/Umbrales.csv (sale del Excel "Umbrales_criticos_SAT_ElNino_Colombia")
+   y compara los umbrales con los datos satelitales del punto del municipio.
+   Cada indicador queda en un nivel: 0 Óptimo, 1 Vigilar, 2 Alerta, 3 Grave.
+     sentido "alto": el nivel sube cuando el valor alcanza cada límite (>=)
+     sentido "bajo": el nivel sube cuando el valor queda por debajo (<)
+   Indicadores (columna "indicador"):
+     max / min      valor más alto o más bajo del período (con su fecha)
+     media / suma   promedio o acumulado de los últimos N días ("ventana")
+     dsc            racha más larga de días con menos de 1 mm
+     max_suma3      lluvia máxima acumulada en 3 días seguidos
+     sostenido3     valor que se mantuvo al menos 3 días seguidos
+     dias_cond      días de los últimos N que cumplen las "condiciones"
+     max_cond       valor más alto en los días que cumplen las condiciones
+     racha_cond     días seguidos que cumplen las condiciones
+   La variable "ith" es el índice de temperatura y humedad (NRC, 1971),
+   calculado con la temperatura máxima y la humedad media del día.
+   ====================================================================== */
+const ARCHIVO_UMBRALES = "./Umbrales.csv";
+let UMBRALES = [];
+let umbralesError = "";
+const NIVELES = [
+  { nombre: "Óptimo", color: "var(--al-optimo)" },
+  { nombre: "Vigilar", color: "var(--al-vigilar)" },
+  { nombre: "Alerta", color: "var(--al-alerta)" },
+  { nombre: "Grave", color: "var(--al-grave)" },
+];
+const ICONO_GRUPO = { calor: "🌡️", frio: "❄️", sin_lluvia: "💧", aguaceros: "⛈️", enfermedades: "🍂", plagas: "🐛", seco: "🏜️", humedad: "💦" };
+const NOMBRE_GRUPO = { calor: "calor", frio: "frío", sin_lluvia: "falta de lluvia", aguaceros: "aguaceros fuertes",
+  enfermedades: "enfermedades", plagas: "plagas", seco: "ambiente seco", humedad: "exceso de humedad" };
+const PARA_QUIEN = { "Café": "su café", "Aguacate": "su aguacate", "Maíz": "su maíz", "Yuca": "su yuca", "Plátano": "su plátano",
+  "Cacao": "su cacao", "Porcicultura": "sus cerdos", "Gallinas ponedoras": "sus gallinas", "Ganadería": "su ganado" };
+const SISTEMAS_PECUARIOS = ["Porcicultura", "Gallinas ponedoras", "Ganadería"];
+const ETAPA_ELEGIDA = {}; // sistema -> etapa elegida ("" = todas)
+let ultimoPanelAlertas = null;
+
+function leerCsvUmbrales(texto) {
+  const lineas = texto.replace(/^﻿/, "").split(/\r?\n/).filter((l) => l.trim());
+  if (lineas.length < 2) throw new Error("el archivo está vacío");
+  const sep = (lineas[0].match(/;/g) || []).length > (lineas[0].match(/,/g) || []).length ? ";" : ",";
+  const num = (s) => { const x = (s || "").trim(); if (!x) return null; const n = Number(sep === ";" ? x.replace(/\./g, "").replace(",", ".") : x); return isFinite(n) ? n : null; };
+  const cab = separarCsv(lineas[0], sep).map(normalizarTexto);
+  const filas = [];
+  lineas.slice(1).forEach((linea) => {
+    const c = separarCsv(linea, sep); const g = (n) => (c[cab.indexOf(n)] || "").trim();
+    const lims = [num(g("lim_vigilar")), num(g("lim_alerta")), num(g("lim_grave"))];
+    if (!g("sistema") || !g("indicador") || lims.some((l) => l === null)) return; // fila incompleta
+    filas.push({
+      sistema: g("sistema"), etapa: g("etapa") || "Todas", titulo: g("titulo"), grupo: g("grupo"),
+      indicador: g("indicador"), variable: g("variable"), ventana: num(g("ventana")),
+      condiciones: g("condiciones").split(";").filter(Boolean).map((t) => {
+        const m = t.trim().match(/^(\w+)\s*(>=|<=|>|<)\s*(-?[\d.,]+)$/);
+        return m ? { v: m[1], op: m[2], n: Number(m[3].replace(",", ".")) } : null;
+      }).filter(Boolean),
+      sentido: g("sentido") === "bajo" ? "bajo" : "alto", lims, unidad: g("unidad"),
+      rangos: [g("rango_optimo"), g("rango_vigilar"), g("rango_alerta"), g("rango_grave")],
+      quePasa: g("que_pasa"), recomendacion: g("recomendacion"), comoSeMide: g("como_se_mide"),
+      provisional: normalizarTexto(g("confianza")) === "baja",
+    });
+  });
+  if (!filas.length) throw new Error("no se encontró ninguna fila válida");
+  return filas;
+}
+async function cargarUmbrales() {
+  try {
+    const resp = await fetch(ARCHIVO_UMBRALES, { cache: "no-store" });
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const bytes = await resp.arrayBuffer();
+    let texto;
+    try { texto = new TextDecoder("utf-8", { fatal: true }).decode(bytes); }
+    catch (e) { texto = new TextDecoder("windows-1252").decode(bytes); }
+    UMBRALES = leerCsvUmbrales(texto);
+  } catch (e) {
+    UMBRALES = [];
+    umbralesError = `No se pudo leer ${ARCHIVO_UMBRALES.slice(2)} (${e.message}).`;
+    console.error(umbralesError);
+  }
+}
+
+// Series diarias del punto del municipio, por fecha.
+function seriesPorFecha(vars) {
+  const fechas = (vars.precip && vars.precip.length ? vars.precip : vars.tavg || []).map((p) => p.date);
+  const mapa = {};
+  ["precip", "tavg", "tmax", "tmin", "relhum"].forEach((k) => {
+    mapa[k] = {};
+    (vars[k] || []).forEach((p) => { if (typeof p.value === "number" && isFinite(p.value)) mapa[k][p.date] = p.value; });
+  });
+  mapa.ith = {};
+  fechas.forEach((f) => {
+    const T = mapa.tmax[f], H = mapa.relhum[f];
+    if (T !== undefined && H !== undefined) mapa.ith[f] = (1.8 * T + 32) - (0.55 - 0.0055 * H) * (1.8 * T - 26);
+  });
+  return { fechas, mapa };
+}
+
+function evaluarUmbral(u, s, fin, diasPeriodo) {
+  const iFin = s.fechas.lastIndexOf(fin);
+  if (iFin < 0) return null;
+  const tramo = (n) => s.fechas.slice(Math.max(0, iFin - n + 1), iFin + 1);
+  const periodo = tramo(diasPeriodo);
+  const val = (v, f) => s.mapa[v] ? s.mapa[v][f] : undefined;
+  const cumple = (f) => u.condiciones.every((c) => {
+    const x = val(c.v, f); if (x === undefined) return false;
+    return c.op === ">=" ? x >= c.n : c.op === "<=" ? x <= c.n : c.op === ">" ? x > c.n : x < c.n;
+  });
+  const racha = (fs, prueba) => { let mejor = 0, act = 0; fs.forEach((f) => { act = prueba(f) ? act + 1 : 0; mejor = Math.max(mejor, act); }); return mejor; };
+  const ventana = (f, n) => { const i = s.fechas.indexOf(f); return i - n + 1 < 0 ? null : s.fechas.slice(i - n + 1, i + 1); };
+  let valor = null, fecha = null;
+  switch (u.indicador) {
+    case "max": case "min": {
+      periodo.forEach((f) => { const x = val(u.variable, f); if (x === undefined) return;
+        if (valor === null || (u.indicador === "max" ? x > valor : x < valor)) { valor = x; fecha = f; } });
+      break;
+    }
+    case "media": case "suma": {
+      const xs = tramo(u.ventana || diasPeriodo).map((f) => val(u.variable, f)).filter((x) => x !== undefined);
+      if (xs.length < Math.ceil((u.ventana || diasPeriodo) * 0.8)) return null; // faltan demasiados días
+      valor = xs.reduce((a, b) => a + b, 0) / (u.indicador === "media" ? xs.length : 1);
+      break;
+    }
+    case "dsc": valor = racha(periodo, (f) => val("precip", f) !== undefined && val("precip", f) < 1); break;
+    case "max_suma3": case "sostenido3": {
+      periodo.forEach((f) => { const fs = ventana(f, 3); if (!fs) return;
+        const xs = fs.map((g) => val(u.variable, g)); if (xs.some((x) => x === undefined)) return;
+        const x = u.indicador === "max_suma3" ? xs.reduce((a, b) => a + b, 0) : Math.min(...xs);
+        if (valor === null || x > valor) { valor = x; fecha = f; } });
+      break;
+    }
+    case "dias_cond": valor = tramo(u.ventana || 7).filter(cumple).length; break;
+    case "max_cond": {
+      periodo.filter(cumple).forEach((f) => { const x = val(u.variable, f); if (x !== undefined && (valor === null || x > valor)) { valor = x; fecha = f; } });
+      if (valor === null) return { u, valor: null, fecha: null, nivel: 0 }; // ningún día cumplió la condición
+      break;
+    }
+    case "racha_cond": valor = racha(periodo, cumple); break;
+    default: return null;
+  }
+  if (valor === null || !isFinite(valor)) return null;
+  const nivel = u.sentido === "alto" ? u.lims.filter((l) => valor >= l).length : u.lims.filter((l) => valor < l).length;
+  return { u, valor, fecha, nivel };
+}
+
+function formatoValor(u, v) {
+  if (v === null) return "—";
+  if (u.unidad === "°C") return `${v.toFixed(1).replace(".", ",")} °C`;
+  if (u.unidad === "%") return `${Math.round(v)} %`;
+  if (u.unidad === "mm") return `${Math.round(v)} mm`;
+  if (u.unidad === "días") return `${Math.round(v)} ${Math.round(v) === 1 ? "día" : "días"}`;
+  return `ITH ${Math.round(v)}`;
+}
+
+function pintarAlertas(args) {
+  if (args) ultimoPanelAlertas = args; else args = ultimoPanelAlertas;
+  const $al = document.getElementById("alertas");
+  if (!args) return;
+  const { municipio, vars, periodoNombre, diasPeriodo, fin } = args;
+  const sistema = $sistema.value;
+  if (umbralesError) { $al.innerHTML = `<p class="al-aviso">${escaparHtml(umbralesError)}</p>`; return; }
+  const delSistema = UMBRALES.filter((u) => u.sistema === sistema);
+  if (!delSistema.length) { $al.innerHTML = ""; return; }
+
+  // Etapas o tipos de animal disponibles para el sistema
+  const etapas = [...new Set(delSistema.map((u) => u.etapa).filter((e) => e !== "Todas"))];
+  const etapa = etapas.includes(ETAPA_ELEGIDA[sistema]) ? ETAPA_ELEGIDA[sistema] : "";
+  const esPecuario = SISTEMAS_PECUARIOS.includes(sistema);
+  const aplican = delSistema.filter((u) => !etapa || u.etapa === etapa || u.etapa === "Todas");
+
+  const s = seriesPorFecha(vars);
+  const resultados = aplican.map((u) => evaluarUmbral(u, s, fin, diasPeriodo)).filter(Boolean)
+    .sort((a, b) => b.nivel - a.nivel || (a.u.provisional - b.u.provisional));
+  const inicio = s.fechas[Math.max(0, s.fechas.lastIndexOf(fin) - diasPeriodo + 1)] || fin;
+  const quien = PARA_QUIEN[sistema] || "su sistema productivo";
+  const emoji = EMOJI_SISTEMA[sistema] || "🌱";
+  const textoPeriodo = { "Última fecha": "El último día", "Última semana": "Esta semana", "Últimas 2 semanas": "En las últimas dos semanas", "Último mes": "En el último mes" }[periodoNombre] || "En este período";
+
+  const selector = etapas.length ? `<label class="al-etapa">${esPecuario ? "Tipo de animal" : "Etapa del cultivo"}
+      <select id="al-sel-etapa"><option value="">${esPecuario ? "Todos" : "Todas las etapas"}</option>
+      ${etapas.map((e) => `<option value="${escaparHtml(e)}"${e === etapa ? " selected" : ""}>${escaparHtml(e)}</option>`).join("")}</select></label>` : "";
+  const cab = `<div class="al-cab"><div class="al-cultivo" aria-hidden="true">${emoji}</div>
+      <h2>Así estuvo el clima para ${quien}<small>${escaparHtml(municipio)}, ${fin === inicio ? "el " : "del "}${rangoLargo(inicio, fin)}</small></h2>${selector}</div>`;
+
+  const escalera = (nivel) => `<div class="al-escalera" aria-label="Nivel: ${NIVELES[nivel].nombre}">${NIVELES.map((n, i) =>
+      `<div class="al-escalon${i === nivel ? " on" : ""}">${n.nombre}</div>`).join("")}</div>`;
+  const peor = resultados.length ? resultados[0].nivel : 0;
+  let cuerpo;
+  if (!resultados.length) {
+    cuerpo = `<p class="al-aviso">No hay datos suficientes para evaluar las alertas en este período.</p>`;
+  } else if (peor === 0) {
+    const xs = (k) => { const i = s.fechas.lastIndexOf(fin); return s.fechas.slice(Math.max(0, i - diasPeriodo + 1), i + 1).map((f) => s.mapa[k][f]).filter((x) => x !== undefined); };
+    const tmax = xs("tmax"), lluvia = xs("precip"), hr = xs("relhum");
+    const valores = [
+      tmax.length ? `<div><span>🌡️ Máxima</span><b>${Math.max(...tmax).toFixed(1).replace(".", ",")} °C</b></div>` : "",
+      lluvia.length ? `<div><span>🌧️ Lluvia</span><b>${Math.round(lluvia.reduce((a, b) => a + b, 0))} mm</b></div>` : "",
+      hr.length ? `<div><span>💧 Humedad</span><b>${Math.round(hr.reduce((a, b) => a + b, 0) / hr.length)} %</b></div>` : "",
+    ].join("");
+    cuerpo = `<div class="al-principal" style="--al-nivel:var(--al-optimo)">${escalera(0)}<div>
+        <h3>Clima óptimo para ${quien}</h3>
+        <p>${textoPeriodo} la temperatura, la lluvia y la humedad estuvieron dentro de lo adecuado${etapa ? ` para la etapa de ${escaparHtml(etapa.toLowerCase())}` : ""}.</p>
+        <div class="al-valores">${valores}</div>
+        <div class="al-hacer"><i>✓</i><span>Continúe con el manejo habitual.</span></div></div></div>`;
+  } else {
+    const p = resultados[0], col = NIVELES[p.nivel].color;
+    const cuando = p.fecha ? `: ${fechaLarga(p.fecha, false)}` : "";
+    const otras = resultados.slice(1).filter((r) => r.nivel > 0);
+    const visibles = otras.slice(0, 4);
+    cuerpo = `<div class="al-principal" style="--al-nivel:${col}">${escalera(p.nivel)}<div>
+        ${!etapa && p.u.etapa !== "Todas" ? `<div class="al-etiqueta-etapa">${esPecuario ? "" : "Etapa: "}${escaparHtml(p.u.etapa)}</div>` : ""}
+        <h3>${escaparHtml(p.u.titulo)}</h3>
+        <p>${escaparHtml(p.u.quePasa)}</p>
+        <div class="al-dato"><b>${formatoValor(p.u, p.valor)}</b><span>${escaparHtml(p.u.comoSeMide)}${cuando}</span></div>
+        ${p.u.recomendacion ? `<div class="al-hacer"><i>✓</i><span>${escaparHtml(p.u.recomendacion)}</span></div>` : ""}</div></div>
+      ${visibles.length ? `<div class="al-otras">${visibles.map((r) => `<div class="al-otra" style="--al-nivel:${NIVELES[r.nivel].color}">
+        <div class="al-ic" aria-hidden="true">${ICONO_GRUPO[r.u.grupo] || "⚠️"}</div>
+        <div><b>${escaparHtml(r.u.titulo)}</b><span>${escaparHtml(r.u.quePasa)}</span></div></div>`).join("")}</div>` : ""}
+      ${otras.length > visibles.length ? `<p class="al-mas">Y ${otras.length - visibles.length} más en el detalle.</p>` : ""}`;
+    // Grupos sin ningún problema
+    const grupos = [...new Set(resultados.map((r) => r.u.grupo))].filter((g) => resultados.filter((r) => r.u.grupo === g).every((r) => r.nivel === 0));
+    if (grupos.length) cuerpo += `<div class="al-bien"><span>Sin problemas por</span>${grupos.map((g) =>
+      `<span class="al-chip">${ICONO_GRUPO[g] || ""} ${NOMBRE_GRUPO[g] || g}</span>`).join("")}</div>`;
+  }
+
+  const detalle = resultados.length ? `<details class="al-pie"><summary><span>Calculado con datos satelitales para la zona.</span>Ver detalle</summary>
+      <table class="al-tabla"><thead><tr><th>Indicador</th><th>Valor</th><th>Nivel</th><th>Rangos</th></tr></thead><tbody>
+      ${resultados.map((r) => `<tr><td><b>${escaparHtml(r.u.titulo)}</b>${r.u.provisional ? '<span class="al-prov">provisional</span>' : ""}
+          <small>${escaparHtml(r.u.comoSeMide)}${r.u.etapa !== "Todas" ? " · " + escaparHtml(r.u.etapa) : ""}</small></td>
+        <td>${formatoValor(r.u, r.valor)}${r.fecha ? `<small>${fechaLarga(r.fecha, false)}</small>` : ""}</td>
+        <td><span class="al-pill" style="background:${NIVELES[r.nivel].color}${r.nivel === 1 ? ";color:#2B2B23" : ""}">${NIVELES[r.nivel].nombre}</span></td>
+        <td><div class="al-rangos">${r.u.rangos.map((x, i) => `<span style="--c:${NIVELES[i].color}">${NIVELES[i].nombre}: ${escaparHtml(x)}</span>`).join("")}</div></td></tr>`).join("")}
+      </tbody></table></details>` : "";
+
+  $al.innerHTML = cab + cuerpo + detalle;
+  const $sel = document.getElementById("al-sel-etapa");
+  if ($sel) $sel.addEventListener("change", () => { ETAPA_ELEGIDA[sistema] = $sel.value; pintarAlertas(); });
+}
+
 function tarjeta(label, value, detail, accentVar, icono = "") {
   const div = document.createElement("div");
   div.className = "card";
@@ -712,9 +1038,6 @@ function mostrarIndicadores(vars, diasPeriodo, etiqueta, variableElegida, fechaO
       if (ind.temp_min) detalle += `Mín: ${ind.temp_min.value.toFixed(1)}°C (${fechaEs(ind.temp_min.date)}) ${cat(ind.temp_min.value, "tmin", 1)}`;
       contenedor.append(tarjeta(`Temperatura`, `${ind.temp_promedio.toFixed(1)} °C promedio ${cat(ind.temp_promedio, "tavg", diasPeriodo)}`, detalle, "--color-temp", "🌡️"));
     }
-    if (ind.dias_tmax_sobre_umbral !== undefined) {
-      contenedor.append(tarjeta(`Temperaturas por encima de ${umbralTmax}°C`, `${ind.dias_tmax_sobre_umbral} de ${dias(ind.dias_tmax_total)}`, `Superaron el umbral para ${sistemaProductivo}`, "--color-temp", "🌡️"));
-    }
   } else if (variableElegida === "Humedad relativa") {
     if (ind.relhum_no_disponible) {
       contenedor.append(tarjeta(`Humedad relativa`, "No disponible", "El dato de este día aún no se ha publicado", "--color-relhum", "💧"));
@@ -723,9 +1046,6 @@ function mostrarIndicadores(vars, diasPeriodo, etiqueta, variableElegida, fechaO
       const hrMin = vars.relhum_min && vars.relhum_min.length ? extremos(vars.relhum_min.slice(-diasPeriodo)).min : ind.relhum_min;
       const detalle = `Máx: ${hrMax.value.toFixed(0)}% (${fechaEs(hrMax.date)})  Mín: ${hrMin.value.toFixed(0)}% (${fechaEs(hrMin.date)})`;
       contenedor.append(tarjeta(`Humedad relativa`, `${ind.relhum_promedio.toFixed(0)} % promedio ${cat(ind.relhum_promedio, "relhum", diasPeriodo)}`, detalle, "--color-relhum", "💧"));
-      if (ind.dias_hr_sobre_umbral !== undefined) {
-        contenedor.append(tarjeta(`Humedad por encima de ${umbralHr}%`, `${ind.dias_hr_sobre_umbral} de ${dias(ind.dias_hr_total)}`, `Superaron el umbral para ${sistemaProductivo}`, "--color-relhum", "💦"));
-      }
     }
   }
 }
@@ -1580,8 +1900,8 @@ function panel() {
 
   document.getElementById("temp-toggle").style.display = variableElegida === "Temperatura" ? "flex" : "none";
   document.getElementById("campo-temp-toggle").style.display = variableElegida === "Temperatura" ? "flex" : "none";
-  document.getElementById("selector-cultivo").style.display =
-    (variableElegida === "Temperatura" || variableElegida === "Humedad relativa") ? "flex" : "none";
+  // Siempre visible: el panel de alertas lo usa con cualquier variable.
+  document.getElementById("selector-cultivo").style.display = "flex";
   const ultimaFecha = vars.precip.slice(-1)[0].date;
 
   let fechaObjetivo = null;
@@ -1593,6 +1913,11 @@ function panel() {
   pintarCajaPeriodo("periodo-caja", periodoNombre,
     fechaObjetivo || sumarDias(ultimaFecha, -(diasPeriodo - 1)), fechaObjetivo || ultimaFecha);
 
+  try {
+    pintarAlertas({ municipio, vars, periodoNombre, diasPeriodo, fin: fechaObjetivo || ultimaFecha });
+  } catch (e) {
+    console.error("No se pudo dibujar el panel de alertas:", e);
+  }
   mostrarIndicadores(vars, diasPeriodo, etiqueta, variableElegida, fechaObjetivo, $cards, $sistema.value, municipio);
 
   if (periodoNombre === "Última fecha") {
@@ -1624,9 +1949,11 @@ async function iniciar() {
   });
   actualizarOpcionesAsociacion();
   const categoriasListas = cargarCategorias();
+  const umbralesListos = cargarUmbrales();
   try {
     await cargarDatos();
     await categoriasListas;
+    await umbralesListos;
   } catch (e) {
     console.error("No se pudieron cargar los datos:", e);
     mostrarSinDatos(e.message);
