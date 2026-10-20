@@ -202,6 +202,9 @@
   .al-etapa select { border-radius: 999px; min-width: 190px; }
   .al-principal { display: grid; grid-template-columns: auto 1fr; gap: 26px; margin: 0 24px; padding: 24px 26px; border-radius: 14px;
     background: color-mix(in srgb, var(--al-nivel) 15%, var(--color-panel)); }
+  .al-izq { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+  .al-grande { width: 68px; height: 68px; border-radius: 50%; display: grid; place-items: center; font-size: 2.1rem;
+    background: var(--color-panel); box-shadow: 0 0 0 4px color-mix(in srgb, var(--al-nivel) 35%, transparent); }
   .al-escalera { display: flex; flex-direction: column-reverse; gap: 6px; width: 92px; }
   .al-escalon { height: 30px; border-radius: 8px; background: color-mix(in srgb, var(--color-ink) 7%, transparent); display: flex; align-items: center;
     justify-content: center; font-size: 0.72rem; font-weight: 600; color: color-mix(in srgb, var(--color-ink) 38%, transparent); }
@@ -265,6 +268,7 @@
     .al-resumen { margin-left: 64px; } .al-ver { margin-left: auto; }
     .al-barra { padding: 0 16px 14px; } .al-etapa { width: 100%; } .al-etapa select { width: 100%; }
     .al-principal { grid-template-columns: 1fr; gap: 16px; margin: 0 12px; padding: 18px; }
+    .al-izq { flex-direction: row; gap: 12px; } .al-grande { width: 44px; height: 44px; font-size: 1.4rem; flex: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--al-nivel) 35%, transparent); }
     .al-escalera { flex-direction: row; width: 100%; } .al-escalon { flex: 1; height: 28px; } .al-escalon.on { transform: scale(1.06); }
     .al-principal h3 { font-size: 1.5rem; }
     .al-otras { grid-template-columns: 1fr; padding: 0 16px 6px; } .al-otras-tit { margin-left: 16px; }
@@ -622,7 +626,7 @@ const MESES_ES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","n
 const SISTEMAS_PRODUCTIVOS = ["Aguacate", "Cacao", "Café", "Gallinas ponedoras", "Ganadería", "Maíz", "Plátano", "Porcicultura", "Yuca"];
 const EMOJI_SISTEMA = {
   Aguacate: "🥑", Cacao: "🍫", Café: "☕", "Gallinas ponedoras": "🐔", Ganadería: "🐄",
-  Maíz: "🌽", Plátano: "🍌", Porcicultura: "🐖", Yuca: "🥔",
+  Maíz: "🌽", Plátano: "🍌", Porcicultura: "🐖", Yuca: "🌱",
 };
 // Umbrales DE EJEMPLO: temperatura máxima (°C) y humedad relativa (%) por
 // encima de las cuales se cuenta un "día de calor" o "de humedad alta".
@@ -811,7 +815,7 @@ const NIVELES = [
   { nombre: "Alerta", color: "var(--al-alerta)" },
   { nombre: "Grave", color: "var(--al-grave)" },
 ];
-const ICONO_GRUPO = { calor: "🌡️", frio: "❄️", sin_lluvia: "💧", aguaceros: "⛈️", enfermedades: "🍂", plagas: "🐛", seco: "🏜️", humedad: "💦" };
+const ICONO_GRUPO = { calor: "🌡️", frio: "❄️", sin_lluvia: "🏜️", aguaceros: "⛈️", enfermedades: "🍂", plagas: "🐛", seco: "🌵", humedad: "💦" };
 const NOMBRE_GRUPO = { calor: "calor", frio: "frío", sin_lluvia: "falta de lluvia", aguaceros: "aguaceros fuertes",
   enfermedades: "enfermedades", plagas: "plagas", seco: "ambiente seco", humedad: "exceso de humedad" };
 const PARA_QUIEN = { "Café": "su café", "Aguacate": "su aguacate", "Maíz": "su maíz", "Yuca": "su yuca", "Plátano": "su plátano",
@@ -997,6 +1001,8 @@ function pintarAlertas(args) {
 
   const escalera = (nivel) => `<div class="al-escalera" aria-label="Nivel: ${NIVELES[nivel].nombre}">${NIVELES.map((n, i) =>
       `<div class="al-escalon${i === nivel ? " on" : ""}">${n.nombre}</div>`).join("")}</div>`;
+  // Columna izquierda de la tarjeta principal: ícono del tipo de alerta y escalera de niveles.
+  const columnaNivel = (icono, nivel) => `<div class="al-izq"><div class="al-grande" aria-hidden="true">${icono}</div>${escalera(nivel)}</div>`;
   const pill = (nivel) => `<span class="al-pill" style="background:${NIVELES[nivel].color}${nivel === 1 ? ";color:#2B2B23" : ""}">${NIVELES[nivel].nombre}</span>`;
   const etiquetaEtapa = (u) => !etapa && u.etapa !== "Todas" ? `${esPecuario ? "" : "Etapa: "}${escaparHtml(u.etapa)}` : "";
   const peor = resultados.length ? resultados[0].nivel : 0;
@@ -1011,7 +1017,7 @@ function pintarAlertas(args) {
     if (variable === "Lluvia") { const v = xs("precip"); if (v.length) valor = `<div><span>🌧️ Lluvia acumulada</span><b>${Math.round(v.reduce((a, b) => a + b, 0))} mm</b></div>`; }
     if (variable === "Humedad relativa") { const v = xs("relhum"); if (v.length) valor = `<div><span>💧 Humedad promedio</span><b>${Math.round(v.reduce((a, b) => a + b, 0) / v.length)} %</b></div>`; }
     const titulo = { "Lluvia": "Lluvia adecuada", "Temperatura": "Temperatura adecuada", "Humedad relativa": "Humedad adecuada" }[variable] || "Clima adecuado";
-    cuerpo = `<div class="al-principal" style="--al-nivel:var(--al-optimo)">${escalera(0)}<div>
+    cuerpo = `<div class="al-principal" style="--al-nivel:var(--al-optimo)">${columnaNivel(ICONO_VARIABLE[variable] || "✓", 0)}<div>
         <h3>${titulo} para ${quien}</h3>
         <p>${textoPeriodo} la ${nombreVar} estuvo dentro de lo adecuado${etapa ? ` para la etapa de ${escaparHtml(etapa.toLowerCase())}` : ""}. No hay alertas.</p>
         ${valor ? `<div class="al-valores">${valor}</div>` : ""}
@@ -1020,13 +1026,13 @@ function pintarAlertas(args) {
     const p = resultados[0], col = NIVELES[p.nivel].color;
     const cuando = p.fecha ? `: ${fechaLarga(p.fecha, false)}` : "";
     const otras = resultados.slice(1).filter((r) => r.nivel > 0);
-    cuerpo = `<div class="al-principal" style="--al-nivel:${col}">${escalera(p.nivel)}<div>
+    cuerpo = `<div class="al-principal" style="--al-nivel:${col}">${columnaNivel(ICONO_GRUPO[p.u.grupo] || "⚠️", p.nivel)}<div>
         ${etiquetaEtapa(p.u) ? `<div class="al-etiqueta-etapa">${etiquetaEtapa(p.u)}</div>` : ""}
         <h3>${escaparHtml(p.u.titulo)}</h3>
         ${etiquetaJunta(p.u)}
         <p>${escaparHtml(p.u.quePasa)}</p>
         <div class="al-dato"><b>${formatoValor(p.u, p.valor, p.dia)}</b><span>${escaparHtml(p.u.comoSeMide)}${cuando}</span></div>
-        ${p.u.recomendacion ? `<div class="al-hacer"><i>✓</i><span>${escaparHtml(p.u.recomendacion)}</span></div>` : ""}</div></div>`;
+      </div></div>`;
     // Todas las demás alertas (Vigilar o más), de la más grave a la más leve.
     if (otras.length) cuerpo += `<div class="al-otras-tit">${otras.length === 1 ? "Otra alerta" : `Otras ${otras.length} alertas`}</div>
       <div class="al-otras">${otras.map((r) => `<div class="al-otra" style="--al-nivel:${NIVELES[r.nivel].color}">
