@@ -219,7 +219,8 @@
   .ciclo-paso:last-child .ciclo-eje::before { right: 50%; }
   .ciclo-paso:only-child .ciclo-eje::before { display: none; }
   .ciclo-paso { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .ciclo-paso svg { display: block; width: 100%; max-width: 84px; height: auto; }
+  .ciclo-paso svg { display: block; width: 100%; min-width: 0; max-width: 84px; height: auto; }
+  .ciclo, .ciclo-fila { min-width: 0; max-width: 100%; }
   .ciclo-dib { opacity: .42; filter: grayscale(.85); }
   .ciclo-paso.on .ciclo-dib, .ciclo-fila.todas .ciclo-dib { opacity: 1; filter: none; }
   .ciclo-punto { position: relative; width: 12px; height: 12px; border-radius: 50%; background: #D8CDB8; border: 2px solid var(--color-panel); }
@@ -308,10 +309,12 @@
     .al-cab { flex-wrap: wrap; padding: 16px; gap: 10px 12px; } .al-cab h2 { font-size: 1.2rem; flex-basis: calc(100% - 64px); }
     .al-resumen { margin-left: 64px; } .al-ver { margin-left: auto; }
     .al-barra { padding: 0 16px 14px; }
-    .al-principal:has(.al-der) { grid-template-columns: 1fr; }
+    .al-principal, .al-principal:has(.al-der) { grid-template-columns: minmax(0, 1fr); }
+    .al-principal > * { min-width: 0; }
+    .al-dato { max-width: 100%; box-sizing: border-box; } .al-dato b { white-space: normal; }
     .al-der { display: contents; } .al-etapa-tarjeta { order: -1; width: 100%; } .ciclo { order: 5; }
     .al-foco { font-size: 0.84rem; border-radius: 14px; } .al-etapa { width: 100%; } .al-etapa select { width: 100%; }
-    .al-principal { grid-template-columns: 1fr; gap: 16px; margin: 0 12px; padding: 18px; }
+    .al-principal { grid-template-columns: minmax(0, 1fr); gap: 16px; margin: 0 12px; padding: 18px; }
     .al-izq { flex-direction: row; gap: 12px; } .al-grande { width: 44px; height: 44px; font-size: 1.4rem; flex: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--al-nivel) 35%, transparent); }
     .al-escalera { flex-direction: row; width: 100%; } .al-escalon { flex: 1; height: 28px; } .al-escalon.on { transform: scale(1.06); }
     .al-principal h3 { font-size: 1.5rem; }
@@ -350,6 +353,8 @@
   .btn-grafico { font-family: var(--font-body); font-size: 0.82rem; font-weight: 600; padding: 7px 14px; border-radius: 999px;
     border: 1px solid var(--color-line); background: var(--color-bg); color: var(--color-ink); cursor: pointer; }
   .btn-grafico:hover { border-color: var(--color-rain); }
+  .btn-copiar { display: inline-flex; align-items: center; justify-content: center; padding: 5px 12px; line-height: 1; }
+  .ic-copiar { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .btn-whatsapp { background: #25D366; border-color: #25D366; color: #FFFFFF; }
   .btn-whatsapp:hover { background: #1EBE5A; border-color: #1EBE5A; }
   /* En celular: los botones de período ocupan todo el ancho en partes iguales,
@@ -358,7 +363,7 @@
     .grafico-controles .temp-toggle, .periodo-botones, .grafico-acciones { width: 100%; }
     .periodo-botones { display: flex; flex-wrap: nowrap; }
     .periodo-botones button { flex: 1 1 0; padding: 7px 4px; font-size: 0.8rem; }
-    .grafico-acciones { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+    .grafico-acciones { display: grid; grid-template-columns: 1fr auto 1fr; }
     .btn-grafico { padding: 8px 6px; text-align: center; }
     .solo-pc { display: none; }
   }
@@ -458,7 +463,7 @@
         <div class="periodo-botones" id="periodo-botones" role="group" aria-label="Período"></div>
         <div class="grafico-acciones">
           <button type="button" class="btn-grafico" data-grafico="chart" data-accion="descargar">⬇️ Descargar<span class="solo-pc"> imagen</span></button>
-          <button type="button" class="btn-grafico" data-grafico="chart" data-accion="copiar">📋 Copiar<span class="solo-pc"> imagen</span></button>
+          <button type="button" class="btn-grafico btn-copiar" data-grafico="chart" data-accion="copiar" title="Copiar imagen" aria-label="Copiar imagen"><svg class="ic-copiar" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="12" height="15" rx="2.5"/><path d="M5 7.5v10A2.5 2.5 0 0 0 7.5 20h8"/></svg></button>
           <button type="button" class="btn-grafico btn-whatsapp" data-grafico="chart" data-accion="compartir">📲 <span class="solo-pc">Compartir por </span>WhatsApp</button>
         </div>
       </div>
@@ -490,7 +495,7 @@
         <div class="periodo-botones" id="campo-periodo-botones" role="group" aria-label="Período"></div>
         <div class="grafico-acciones">
           <button type="button" class="btn-grafico" data-grafico="campo-chart" data-accion="descargar">⬇️ Descargar<span class="solo-pc"> imagen</span></button>
-          <button type="button" class="btn-grafico" data-grafico="campo-chart" data-accion="copiar">📋 Copiar<span class="solo-pc"> imagen</span></button>
+          <button type="button" class="btn-grafico btn-copiar" data-grafico="campo-chart" data-accion="copiar" title="Copiar imagen" aria-label="Copiar imagen"><svg class="ic-copiar" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="12" height="15" rx="2.5"/><path d="M5 7.5v10A2.5 2.5 0 0 0 7.5 20h8"/></svg></button>
           <button type="button" class="btn-grafico btn-whatsapp" data-grafico="campo-chart" data-accion="compartir">📲 <span class="solo-pc">Compartir por </span>WhatsApp</button>
         </div>
       </div>
@@ -1439,7 +1444,7 @@ async function copiarGrafico(boton) {
       return img.blob;
     });
     await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-    avisar("✅ Copiada");
+    avisar('<svg class="ic-copiar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>');
   } catch (e) {
     console.error("No se pudo copiar la imagen:", e);
     alert(e.message === "sin gráfico" ? "No hay gráfico para copiar. Elija un período de una semana o más."
