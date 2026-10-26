@@ -326,7 +326,7 @@
     .al-tabla td { display: block; border: 0; padding: 3px 0; }
   }
   .grafico-controles { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 10px; }
-  /* Botón de información y su letrero. */
+  /* Botón de información (sutil) y su letrero. */
   .info-grafico { position: relative; }
   .info-boton { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--color-ink-soft); background: transparent;
     color: var(--color-ink-soft); font-family: Georgia, serif; font-style: italic; font-weight: 700; font-size: 0.9rem;
@@ -419,7 +419,7 @@
       <div class="header-top">
         <div>
           <div class="titulo-banda"><h1>Monitoreo climático comunitario y satelital</h1></div>
-          <p id="header-descripcion">Acá encontrará cómo ha estado la lluvia, la temperatura y la humedad relativa en los últimos días en siete municipios de cuatro departamentos: Los Palmitos y San José de Toluviejo, en Sucre; Icononzo y Planadas, en Tolima; Fonseca, en La Guajira; y Manaure y El Paso, en Cesar. La información proviene de satélites (MSWX y MSWEP). Puede consultar un mapa por variable, gráficos día a día y cuántos días el calor o la humedad superaron el umbral de su sistema productivo.</p>
+          <p id="header-descripcion">Acá encontrará cómo han estado la lluvia, la temperatura y la humedad relativa en los últimos días en siete municipios de cuatro departamentos: Los Palmitos y San José de Toluviejo, en Sucre; Icononzo y Planadas, en Tolima; Fonseca, en La Guajira; y Manaure y El Paso, en Cesar. La información proviene de satélites (MSWX y MSWEP). Puede consultar un mapa por variable, gráficos día a día y cuántos días el calor o la humedad superaron el umbral de su sistema productivo.</p>
         </div>
       </div>
     </header>
@@ -431,6 +431,7 @@
     <!-- Ventana de tiempo: se elige aquí o con los botones sobre el gráfico (los dos están sincronizados). -->
     <div class="field"><label for="sel-periodo">Período</label><select id="sel-periodo"></select></div>
     <div class="field"><label for="sel-variable">Variable</label><select id="sel-variable"></select></div>
+    <!-- Solo se muestra con Temperatura y Humedad (los umbrales dependen del sistema). -->
     <div class="field" id="selector-cultivo" style="display:none;"><label for="sel-sistema">Sistema productivo</label><select id="sel-sistema"></select></div>
     <div class="periodo-caja" id="periodo-caja"></div>
   </div>
@@ -671,6 +672,8 @@ const MESES_ES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","n
 /* ------------------------------------------------------------------------
    SISTEMA PRODUCTIVO: los umbrales de "días de calor" / "días de humedad
    alta" dependen del cultivo.
+   Los umbrales de abajo son de ejemplo por ahora — se reemplazan cuando
+   se tenga el análisis agronómico real por cultivo.
    ------------------------------------------------------------------------ */
 // Sistemas productivos de los 7 municipios. Se muestran todos en cualquier
 // municipio.
@@ -679,6 +682,8 @@ const EMOJI_SISTEMA = {
   Aguacate: "🥑", Cacao: "🍫", Café: "☕", "Gallinas ponedoras": "🐔", Ganadería: "🐄",
   Maíz: "🌽", Plátano: "🍌", Porcicultura: "🐖", Yuca: "🌱",
 };
+// Umbrales DE EJEMPLO: temperatura máxima (°C) y humedad relativa (%) por
+// encima de las cuales se cuenta un "día de calor" o "de humedad alta".
 const UMBRAL_TMAX_POR_CULTIVO = {
   Aguacate: 32, Cacao: 33, Café: 28, "Gallinas ponedoras": 30,
   Ganadería: 33, Maíz: 33, Plátano: 34, Porcicultura: 30, Yuca: 34,
@@ -844,7 +849,7 @@ actualizarOpcionesSistema();
    Indicadores (columna "indicador"):
      max / min      valor más alto o más bajo del período (con su fecha)
      media / suma   promedio o acumulado de los últimos N días ("ventana")
-     dsc            racha más larga de días con menos de 1 mm (días secos consecutivos)
+     dsc            racha más larga de días con menos de 1 mm
      max_suma3      lluvia máxima acumulada en 3 días seguidos
      sostenido3     valor que se mantuvo al menos 3 días seguidos
      dias_cond      días de los últimos N que cumplen las "condiciones"
@@ -1193,7 +1198,7 @@ function graficoCiclo(sistema, activa, marca, titulo) {
 }
 
 // Texto que acompaña al valor. En los conteos de días el texto continúa la frase
-// ("3 días" + "de la última semana con…").
+// ("3 días" + "de la última semana con…"), por eso va en minúscula y sin repetir "días".
 function textoMedida(r) {
   let texto = r.u.comoSeMide;
   if (r.u.unidad === "días" && Math.round(r.valor) === 1) texto = texto.replace(/^seguidos/, "seguido");
@@ -1293,8 +1298,10 @@ function pintarAlertas(args, idPanel = "alertas") {
         <p>${textoPeriodo} la ${nombreVar} estuvo dentro de lo adecuado${etapa ? (esPecuario ? ` para ${escaparHtml(nombreEtapa(etapa).toLowerCase())}` : ` para la etapa de ${escaparHtml(etapa.toLowerCase())}`) : ""}. No hay alertas.</p>
         ${valor ? `<div class="al-valores">${valor}</div>` : ""}
       </div>
-        ${columnaDerecha(etapa, esPecuario ? "Grupo elegido" : "Etapa elegida",
-            etapa ? (esPecuario ? "Grupo de animales elegido" : "Etapa del cultivo elegida") : "")}</div>`;
+        ${columnaDerecha(etapa,
+            etapa ? (esPecuario ? "Grupo elegido" : "Etapa elegida")
+              : (esPecuario ? "Ningún grupo tiene alertas en este período" : "Ninguna etapa tiene alertas en este período"),
+            esPecuario ? "¿Qué grupo de animales está en alerta?" : "¿En qué etapa del cultivo es la alerta?")}</div>`;
   } else {
     const p = resultados[0], col = NIVELES[p.nivel].color;
     const cuando = p.fecha ? `: ${fechaLarga(p.fecha, false)}` : "";
@@ -1396,7 +1403,7 @@ let mostrarMaxTemp = true, mostrarMinTemp = true; // qué líneas se ven en el g
 /* ------------------------------------------------------------------------
    DESCARGAR Y COMPARTIR LOS GRÁFICOS
    La imagen sale con fondo blanco, el municipio y el período en el título y
-   la fuente al pie.
+   la fuente al pie, para que se entienda sola al mandarla por WhatsApp.
    En celular, "Compartir" abre el menú del teléfono con la imagen ya
    adjunta (ahí se elige WhatsApp). En computador, donde ese menú no
    recibe imágenes, se descarga la imagen y se abre WhatsApp Web con el
@@ -1465,6 +1472,7 @@ document.addEventListener("click", async (ev) => {
 });
 
 // Copia la imagen del gráfico al portapapeles para pegarla en un chat o una presentación.
+// La promesa se pasa directo a ClipboardItem para que funcione también en Safari.
 async function copiarGrafico(boton) {
   const original = boton.innerHTML;
   const avisar = (texto) => { boton.innerHTML = texto; setTimeout(() => { boton.innerHTML = original; }, 2200); };
@@ -1677,6 +1685,7 @@ function leerCsvCategorias(texto) {
   const iMun = col("municipio"), iLat = col("lat"), iLon = col("lon"), iPunto = col("punto_tablero"),
         iVar = col("variable"), iDias = col("periodo_dias"),
         iCortes = cab.map((n, i) => (/^corte_\d+$/.test(n) ? i : -1)).filter((i) => i >= 0);
+  // Tiene que haber un corte menos que categorías (2 cortes para Bajo/Medio/Alto).
   if (iCortes.length !== ETIQUETAS_CATEGORIA.length - 1) {
     throw new Error(`el archivo trae ${iCortes.length} cortes y el tablero espera ${ETIQUETAS_CATEGORIA.length - 1} ` +
       `(${ETIQUETAS_CATEGORIA.join(", ")}); hay que generar de nuevo el CSV con el notebook`);
@@ -1780,7 +1789,7 @@ function pintarLeyendaMapa(varKey, diasPeriodo, municipio) {
 }
   
 /* ------------------------------------------------------------------------
-   MAPA: Leaflet, con imágenes satelitales de fondo (Esri World
+   MAPA: Leaflet real, con imágenes satelitales de fondo (Esri World
    Imagery)
    ------------------------------------------------------------------------ */
 let mapaLeaflet = null;
@@ -1797,7 +1806,7 @@ let mapaLeaflet = null;
    ------------------------------------------------------------------------ */
 const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/";
 let fondoSatelite = false;     // qué fondo está activo (cambia el estilo de los bordes)
-let capaContextoActual = null; // municipios vecinos del mapa satelital
+let capaContextoActual = null; // municipios vecinos del mapa satelital, para re-estilizarlos
 function estiloContexto() {
   return fondoSatelite
     ? { color: "#FFFFFF", weight: 1.3, opacity: 0.85, fillColor: "#FFFFFF", fillOpacity: 0.04, dashArray: "4 3" }
