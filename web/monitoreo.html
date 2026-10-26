@@ -110,7 +110,7 @@
     background: var(--color-panel); border: 1px solid var(--color-line); border-radius: var(--radius); margin-bottom: 24px; }
   .field { display: flex; flex-direction: column; gap: 5px; }
   /* Los selectores que quedan se reparten el ancho; el recuadro de fechas va a la derecha. */
-  .controls .field { flex: 1 1 240px; max-width: 380px; }
+  .controls .field { flex: 1 1 170px; max-width: 320px; }
   .controls select { width: 100%; }
   .field label { font-size: 0.78rem; color: var(--color-ink-soft); }
   select { font-family: var(--font-body); font-size: 0.92rem; padding: 8px 10px;
@@ -198,8 +198,40 @@
   .al-sin-btn { border: 1px solid var(--color-line); background: var(--color-panel); color: var(--color-rain); font: inherit; font-size: 0.88rem;
     font-weight: 600; padding: 6px 14px; border-radius: 999px; cursor: pointer; }
   .al-sin-btn:hover { background: color-mix(in srgb, var(--color-rain) 8%, var(--color-panel)); }
-  .al-etapa-tarjeta { float: right; margin: -6px 0 10px 20px; }
-  .al-etapa-tarjeta select { background: var(--color-panel); }
+  .al-principal:has(.al-der) { grid-template-columns: auto minmax(0, 1fr) minmax(280px, 420px); }
+  .al-der { display: flex; flex-direction: column; gap: 12px; }
+  .al-etapa-tarjeta { align-self: flex-end; width: 240px; max-width: 100%; }
+  .al-etapa-tarjeta .al-etapa select { width: 100%; min-width: 0; background: var(--color-panel); }
+  .al-cab h2 small b { font-weight: 600; color: var(--color-ink); }
+  .al-foco { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 5px 14px 5px 6px; margin-bottom: 10px; border-radius: 999px;
+    background: var(--color-panel); border: 1.5px solid var(--al-nivel); font-size: 0.88rem; line-height: 1.3; }
+  .al-foco > i { font-style: normal; flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--al-nivel); color: #FFFFFF;
+    display: grid; place-items: center; font-size: 0.8rem; font-weight: 700; }
+  .al-foco > span > span { color: var(--color-ink-soft); }
+  .al-otra small b { font-weight: 600; color: var(--color-ink); }
+  /* Gráfico del ciclo del cultivo o de los tipos de producción */
+  .ciclo { background: var(--color-panel); border-radius: 12px; padding: 12px 12px 10px; }
+  .ciclo-tit { font-size: 0.75rem; color: var(--color-ink-soft); margin: 0 4px 4px; }
+  .ciclo-fila { display: flex; align-items: flex-start; }
+  .ciclo-eje { position: relative; align-self: stretch; display: flex; justify-content: center; }
+  .ciclo-eje::before { content: ""; position: absolute; top: 50%; left: 0; right: 0; height: 3px; transform: translateY(-50%); background: #D8CDB8; }
+  .ciclo-paso:first-child .ciclo-eje::before { left: 50%; }
+  .ciclo-paso:last-child .ciclo-eje::before { right: 50%; }
+  .ciclo-paso:only-child .ciclo-eje::before { display: none; }
+  .ciclo-paso { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .ciclo-paso svg { display: block; width: 100%; max-width: 84px; height: auto; }
+  .ciclo-dib { opacity: .42; filter: grayscale(.85); }
+  .ciclo-paso.on .ciclo-dib, .ciclo-fila.todas .ciclo-dib { opacity: 1; filter: none; }
+  .ciclo-punto { position: relative; width: 12px; height: 12px; border-radius: 50%; background: #D8CDB8; border: 2px solid var(--color-panel); }
+  .ciclo-paso.on .ciclo-punto, .ciclo-fila.todas .ciclo-punto { background: var(--al-nivel); }
+  .ciclo-paso.on .ciclo-punto { width: 16px; height: 16px; box-shadow: 0 0 0 4px color-mix(in srgb, var(--al-nivel) 25%, transparent); }
+  .ciclo-nom { font-size: 0.72rem; text-align: center; color: var(--color-ink-soft); line-height: 1.2; min-height: 2.4em; }
+  .ciclo-paso.on .ciclo-nom { color: var(--color-ink); font-weight: 700; }
+  .ciclo-marca { font-size: 0.66rem; font-weight: 700; color: #FFFFFF; background: var(--al-nivel); padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .ciclo-marca.oculta { visibility: hidden; }
+  .ciclo-fila.todas .ciclo-marca { display: none; }
+  .ciclo-todas { text-align: center; font-size: 0.75rem; font-weight: 600; color: var(--color-ink-soft); margin-top: 6px; }
+  .ciclo-todas:empty { display: none; }
   .al-barra { display: flex; justify-content: flex-end; padding: 0 24px 14px; }
   .al-elegir { cursor: pointer; }
   .al-elegir h2 { font-size: 1.3rem; }
@@ -275,7 +307,10 @@
   @media (max-width: 40rem) {
     .al-cab { flex-wrap: wrap; padding: 16px; gap: 10px 12px; } .al-cab h2 { font-size: 1.2rem; flex-basis: calc(100% - 64px); }
     .al-resumen { margin-left: 64px; } .al-ver { margin-left: auto; }
-    .al-barra { padding: 0 16px 14px; } .al-etapa-tarjeta { float: none; margin: 0 0 14px; } .al-etapa { width: 100%; } .al-etapa select { width: 100%; }
+    .al-barra { padding: 0 16px 14px; }
+    .al-principal:has(.al-der) { grid-template-columns: 1fr; }
+    .al-der { display: contents; } .al-etapa-tarjeta { order: -1; width: 100%; } .ciclo { order: 5; }
+    .al-foco { font-size: 0.84rem; border-radius: 14px; } .al-etapa { width: 100%; } .al-etapa select { width: 100%; }
     .al-principal { grid-template-columns: 1fr; gap: 16px; margin: 0 12px; padding: 18px; }
     .al-izq { flex-direction: row; gap: 12px; } .al-grande { width: 44px; height: 44px; font-size: 1.4rem; flex: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--al-nivel) 35%, transparent); }
     .al-escalera { flex-direction: row; width: 100%; } .al-escalon { flex: 1; height: 28px; } .al-escalon.on { transform: scale(1.06); }
@@ -310,6 +345,9 @@
   @media (max-width: 40rem) { .periodo-botones { margin-left: 0; } }
   /* En el comunitario no existe "1 día" (los reportes se ven por semana o más). */
   #campo-periodo-botones button[data-periodo="Última fecha"] { display: none; }
+  /* El período se elige arriba; los botones sobre los gráficos quedan ocultos.
+     Para volver a mostrarlos, borre esta línea. */
+  .periodo-botones { display: none !important; }
   /* Botones para descargar y compartir el gráfico. */
   .grafico-acciones { display: inline-flex; flex-wrap: wrap; gap: 6px; }
   .btn-grafico { font-family: var(--font-body); font-size: 0.82rem; font-weight: 600; padding: 7px 14px; border-radius: 999px;
@@ -323,7 +361,7 @@
     .grafico-controles .temp-toggle, .periodo-botones, .grafico-acciones { width: 100%; }
     .periodo-botones { display: flex; flex-wrap: nowrap; }
     .periodo-botones button { flex: 1 1 0; padding: 7px 4px; font-size: 0.8rem; }
-    .grafico-acciones { display: grid; grid-template-columns: 1fr 1fr; }
+    .grafico-acciones { display: grid; grid-template-columns: 1fr 1fr 1fr; }
     .btn-grafico { padding: 8px 6px; text-align: center; }
     .solo-pc { display: none; }
   }
@@ -386,9 +424,8 @@
   <div class="controls">
     <div class="field"><label for="sel-municipio">Municipio</label><select id="sel-municipio"></select></div>
     <div class="field" id="campo-asociacion-field" style="display:none;"><label for="sel-asociacion">Asociación</label><select id="sel-asociacion"></select></div>
-    <!-- El período se elige con los botones del gráfico; este selector queda oculto
-         porque el código lo usa para guardar el período elegido. -->
-    <div class="field" style="display:none;"><label for="sel-periodo">Período</label><select id="sel-periodo"></select></div>
+    <!-- Ventana de tiempo: se elige aquí, junto a municipio y variable. -->
+    <div class="field"><label for="sel-periodo">Período</label><select id="sel-periodo"></select></div>
     <div class="field"><label for="sel-variable">Variable</label><select id="sel-variable"></select></div>
     <!-- Solo se muestra con Temperatura y Humedad (los umbrales dependen del sistema). -->
     <div class="field" id="selector-cultivo" style="display:none;"><label for="sel-sistema">Sistema productivo</label><select id="sel-sistema"></select></div>
@@ -424,6 +461,7 @@
         <div class="periodo-botones" id="periodo-botones" role="group" aria-label="Período"></div>
         <div class="grafico-acciones">
           <button type="button" class="btn-grafico" data-grafico="chart" data-accion="descargar">⬇️ Descargar<span class="solo-pc"> imagen</span></button>
+          <button type="button" class="btn-grafico" data-grafico="chart" data-accion="copiar">📋 Copiar<span class="solo-pc"> imagen</span></button>
           <button type="button" class="btn-grafico btn-whatsapp" data-grafico="chart" data-accion="compartir">📲 <span class="solo-pc">Compartir por </span>WhatsApp</button>
         </div>
       </div>
@@ -455,6 +493,7 @@
         <div class="periodo-botones" id="campo-periodo-botones" role="group" aria-label="Período"></div>
         <div class="grafico-acciones">
           <button type="button" class="btn-grafico" data-grafico="campo-chart" data-accion="descargar">⬇️ Descargar<span class="solo-pc"> imagen</span></button>
+          <button type="button" class="btn-grafico" data-grafico="campo-chart" data-accion="copiar">📋 Copiar<span class="solo-pc"> imagen</span></button>
           <button type="button" class="btn-grafico btn-whatsapp" data-grafico="campo-chart" data-accion="compartir">📲 <span class="solo-pc">Compartir por </span>WhatsApp</button>
         </div>
       </div>
@@ -827,8 +866,9 @@ const NIVELES = [
 const ICONO_GRUPO = { calor: "🌡️", frio: "❄️", sin_lluvia: "🏜️", aguaceros: "⛈️", enfermedades: "🍂", plagas: "🐛", seco: "🌵", humedad: "💦" };
 const NOMBRE_GRUPO = { calor: "calor", frio: "frío", sin_lluvia: "falta de lluvia", aguaceros: "aguaceros fuertes",
   enfermedades: "enfermedades", plagas: "plagas", seco: "ambiente seco", humedad: "exceso de humedad" };
-const PARA_QUIEN = { "Café": "su café", "Aguacate": "su aguacate", "Maíz": "su maíz", "Yuca": "su yuca", "Plátano": "su plátano",
-  "Cacao": "su cacao", "Porcicultura": "sus cerdos", "Gallinas ponedoras": "sus gallinas", "Ganadería": "su ganado" };
+const PARA_QUIEN = { "Café": "su cultivo de café", "Aguacate": "su cultivo de aguacate", "Maíz": "su cultivo de maíz", "Yuca": "su cultivo de yuca",
+  "Plátano": "su cultivo de plátano", "Cacao": "su cultivo de cacao", "Porcicultura": "sus cerdos", "Gallinas ponedoras": "sus gallinas", "Ganadería": "su ganado" };
+const NOMBRE_PERIODO = { "Última fecha": "Último día", "Última semana": "Última semana", "Últimas 2 semanas": "Últimas 2 semanas", "Último mes": "Último mes" };
 const SISTEMAS_PECUARIOS = ["Porcicultura", "Gallinas ponedoras", "Ganadería"];
 const ETAPA_ELEGIDA = {}; // sistema -> etapa elegida ("" = todas)
 let ultimoPanelAlertas = null;
@@ -969,6 +1009,174 @@ function etiquetaJunta(u) {
   return vs.length > 1 ? `<span class="al-junta">Depende de ${vs.map((v) => `${ICONO_VARIABLE[v]} ${NOMBRE_VARIABLE[v]}`).join(" + ")}</span>` : "";
 }
 
+
+/* ----------------------------------------------------------------------
+   DIBUJOS DE LAS ETAPAS (gráfico del ciclo en la tarjeta de alerta)
+   Cada dibujo es un SVG de 80 × 100. El orden de cada lista es el orden
+   del ciclo; los nombres deben coincidir con la columna "etapa" del CSV.
+   ---------------------------------------------------------------------- */
+const D_SUELO = `<path d="M4 92 H76" stroke="#A9825A" stroke-width="3" stroke-linecap="round"/><ellipse cx="40" cy="94" rx="30" ry="3" fill="#E8DCC6"/>`;
+const dHoja = (x, y, dx, dy, c = "#3E8E41") => `<path d="M${x} ${y} q ${dx * 0.6} ${dy - 6} ${dx} ${dy}" stroke="${c}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+// Arbusto o árbol con hojas ovaladas (café, aguacate, cacao)
+const dHojaOval = (x, y, ang, c = "#2F7A3A", tam = 1) => `<ellipse cx="${x}" cy="${y}" rx="${5.5 * tam}" ry="${2.6 * tam}" transform="rotate(${ang} ${x} ${y})" fill="${c}"/>`;
+function dCafeto(extra = "", escala = 1) {
+  // Arbusto redondeado: ramas que salen del tallo y caen un poco, con hojas brillantes.
+  let s = `<path d="M40 92 V22" stroke="#7A4E2D" stroke-width="3" stroke-linecap="round"/>`;
+  for (let y = 30; y <= 80; y += 7) {
+    const w = 6 + 18 * Math.sin(Math.PI * (y - 22) / 66);
+    [-1, 1].forEach((lado) => {
+      const xf = 40 + lado * w, yf = y + 6;
+      s += `<path d="M40 ${y} q${lado * w * 0.5} -3 ${lado * w} 6" stroke="#7A4E2D" stroke-width="1.5" fill="none"/>`;
+      s += dHojaOval(40 + lado * w * 0.45, y - 1.5, lado * 15, "#2F7A3A", 1.05) + dHojaOval(xf, yf, lado * 40, "#3C8C45", 1.05);
+    });
+  }
+  s += dHojaOval(37, 22, -55, "#3C8C45") + dHojaOval(43, 22, 55, "#3C8C45");
+  return `${D_SUELO}<g transform="translate(40 92) scale(${escala}) translate(-40 -92)">${s}${extra}</g>`;
+}
+const dPuntos = (lista, c, r) => lista.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/>`).join("");
+const PUNTOS_CAFE = [[31, 80], [49, 80], [27, 66], [53, 66], [29, 52], [51, 52], [33, 40], [47, 40], [36, 72], [44, 58]];
+function dArbol(extra = "", copa = "#3E8E41") {
+  return `${D_SUELO}<path d="M40 92 V52 M40 66 l-10 -10 M40 62 l9 -9" stroke="#7A4E2D" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="40" cy="36" r="20" fill="${copa}"/><circle cx="24" cy="46" r="12" fill="${copa}"/><circle cx="56" cy="46" r="12" fill="${copa}"/>
+    <circle cx="32" cy="26" r="11" fill="#4E9C4A"/><circle cx="50" cy="28" r="10" fill="#4E9C4A"/>${extra}`;
+}
+const dAguacate = (x, y) => `<path d="M${x} ${y - 7} v-4" stroke="#5B3A1E" stroke-width="1.2"/><path d="M${x} ${y - 7} c4 0 5 6 4 9 c-1 3 -7 3 -8 0 c-1 -3 0 -9 4 -9 z" fill="#2E5E2A" stroke="#1F3F1C" stroke-width=".8"/>`;
+function dCacao(extra = "") {
+  return `${D_SUELO}<path d="M40 92 V30" stroke="#6B4226" stroke-width="7" stroke-linecap="round"/>
+    <path d="M40 40 l-14 -10 M40 36 l13 -12" stroke="#6B4226" stroke-width="3" stroke-linecap="round"/>
+    ${dHojaOval(22, 26, -30, "#2F7A3A", 1.6)}${dHojaOval(30, 18, -60, "#3E8E41", 1.6)}${dHojaOval(40, 14, 90, "#2F7A3A", 1.6)}
+    ${dHojaOval(50, 18, 60, "#3E8E41", 1.6)}${dHojaOval(58, 24, 30, "#2F7A3A", 1.6)}${extra}`;
+}
+const dMazorca = (x, y, c, t = 1) => `<g transform="translate(${x} ${y}) scale(${t})"><path d="M0 -9 c6 0 7 7 6 11 c-1 5 -11 5 -12 0 c-1 -4 0 -11 6 -11 z" fill="${c}"/>
+    <path d="M-2 -7 v14 M2 -7 v14" stroke="rgba(0,0,0,.15)" stroke-width="1"/></g>`;
+const dFlorCacao = (x, y) => `<circle cx="${x}" cy="${y}" r="1.8" fill="#F6D7E0"/><circle cx="${x}" cy="${y}" r=".7" fill="#C2185B"/>`;
+function dPlatano(alto, extra = "") {
+  const y0 = 92 - alto;
+  return `${D_SUELO}<path d="M37 92 L38 ${y0} M43 92 L42 ${y0}" stroke="#7FA34A" stroke-width="4"/><rect x="37" y="${y0}" width="6" height="${alto}" fill="#8DB55A"/>
+    <path d="M40 ${y0} q-14 -6 -30 2" stroke="#3E8E41" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <path d="M40 ${y0} q14 -8 30 0" stroke="#4E9C4A" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <path d="M40 ${y0} q-6 -14 -18 -16" stroke="#4E9C4A" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M40 ${y0} q6 -14 18 -18" stroke="#3E8E41" stroke-width="6" fill="none" stroke-linecap="round"/>${extra}`;
+}
+const dBellota = (x, y) => `<path d="M40 ${y - 14} q6 4 ${x - 40} 14" stroke="#7FA34A" stroke-width="2" fill="none"/><path d="M${x} ${y} c4 0 5 8 0 12 c-5 -4 -4 -12 0 -12 z" fill="#7B2C5C"/>`;
+const dRacimo = (x, y) => `<path d="M40 ${y - 16} q6 2 ${x - 40} 4" stroke="#7FA34A" stroke-width="2" fill="none"/>` +
+  [0, 6, 12].map((dy) => [-6, 0, 6].map((dx) => `<path d="M${x + dx - 2} ${y + dy} q2 6 6 6" stroke="#9BC44A" stroke-width="3" fill="none" stroke-linecap="round"/>`).join("")).join("");
+// Yuca: se ve la parte de arriba y las raíces bajo tierra
+const D_TIERRA = `<rect x="2" y="64" width="76" height="34" rx="4" fill="#EAD9BE"/><path d="M2 64 H78" stroke="#A9825A" stroke-width="3" stroke-linecap="round"/>`;
+function dHojaYuca(cx, cy, r, ang = 0, c = "#3E8E41") {
+  return `<g transform="translate(${cx} ${cy}) rotate(${ang})">${[-60, -30, 0, 30, 60].map((a) =>
+    `<ellipse cx="0" cy="${-r / 2}" rx="${r * 0.16}" ry="${r / 2}" transform="rotate(${a})" fill="${c}"/>`).join("")}<circle r="1.5" fill="#7A4E2D"/></g>`;
+}
+const dTalloYuca = (y1, y2) => `<path d="M40 ${y1} V${y2}" stroke="#8B5E3C" stroke-width="3.5" stroke-linecap="round"/>`;
+// Animales
+function dCerdo(x, y, s, c = "#F3A6B4") {
+  return `<g transform="translate(${x} ${y}) scale(${s})">
+   <rect x="-16" y="4" width="5" height="11" rx="2" fill="${c}"/><rect x="8" y="4" width="5" height="11" rx="2" fill="${c}"/>
+   <ellipse cx="0" cy="0" rx="20" ry="12" fill="${c}"/>
+   <circle cx="19" cy="-4" r="9" fill="${c}"/><path d="M15 -12 l4 -6 l3 6 z" fill="#E58A9C"/>
+   <ellipse cx="27" cy="-2" rx="4" ry="3.4" fill="#E58A9C"/><circle cx="20" cy="-6" r="1.3" fill="#3B2B2B"/>
+   <path d="M-20 -2 q-6 -2 -4 -7" stroke="#E58A9C" stroke-width="1.8" fill="none"/></g>`;
+}
+function dGallina(x, y, s, c = "#B5642F") {
+  return `<g transform="translate(${x} ${y}) scale(${s})">
+   <path d="M-4 10 v9 M4 10 v9 M-4 19 h-4 M4 19 h4" stroke="#E0A02A" stroke-width="2" stroke-linecap="round"/>
+   <path d="M-18 -6 q-6 -12 2 -14 q2 8 8 10 z" fill="#5A2E14"/>
+   <ellipse cx="0" cy="0" rx="17" ry="12" fill="${c}"/><path d="M-10 -2 q8 8 18 0" stroke="rgba(0,0,0,.18)" stroke-width="2" fill="none"/>
+   <circle cx="14" cy="-12" r="7" fill="${c}"/><path d="M11 -19 q2 -5 4 0 q2 -5 4 1" fill="#D62828"/>
+   <path d="M20 -12 l6 2 l-6 2 z" fill="#E0A02A"/><path d="M18 -7 q1 4 -1 6" stroke="#D62828" stroke-width="2.4" fill="none"/>
+   <circle cx="16" cy="-13" r="1.2" fill="#222"/></g>`;
+}
+const dHuevo = (x, y) => `<ellipse cx="${x}" cy="${y}" rx="4" ry="5.2" fill="#F4E3C8" stroke="#D9C3A0" stroke-width=".8"/>`;
+function dVaca(x, y, s, c = "#FFFFFF", manchas = "#3A2E2A", ubre = false) {
+  return `<g transform="translate(${x} ${y}) scale(${s})">
+   <rect x="-20" y="6" width="5" height="14" rx="2" fill="${c}" stroke="#555" stroke-width=".6"/><rect x="12" y="6" width="5" height="14" rx="2" fill="${c}" stroke="#555" stroke-width=".6"/>
+   <rect x="-24" y="-10" width="44" height="22" rx="10" fill="${c}" stroke="#555" stroke-width=".8"/>
+   ${manchas ? `<ellipse cx="-10" cy="-2" rx="7" ry="5" fill="${manchas}"/><ellipse cx="8" cy="4" rx="5" ry="4" fill="${manchas}"/>` : ""}
+   ${ubre ? `<ellipse cx="2" cy="13" rx="6" ry="4" fill="#F3A6B4"/>` : ""}
+   <path d="M-24 -6 q-6 2 -5 12" stroke="#555" stroke-width="1.5" fill="none"/>
+   <rect x="18" y="-16" width="13" height="15" rx="5" fill="${c}" stroke="#555" stroke-width=".8"/><rect x="24" y="-6" width="8" height="6" rx="3" fill="#F3A6B4"/>
+   <path d="M19 -16 l-3 -5 M30 -16 l3 -5" stroke="#C9B79C" stroke-width="2.2" stroke-linecap="round"/><circle cx="24" cy="-11" r="1.2" fill="#222"/></g>`;
+}
+const dCorazon = (x, y) => `<path d="M${x} ${y + 6} l-6 -6 a3.4 3.4 0 0 1 6 -4 a3.4 3.4 0 0 1 6 4 z" fill="#C0392B"/>`;
+const dCantina = (x, y) => `<path d="M${x - 5} ${y} h10 l-1 14 h-8 z" fill="#C9D3DA" stroke="#7D8A93" stroke-width=".8"/><rect x="${x - 3}" y="${y - 3}" width="6" height="3" fill="#7D8A93"/>`;
+
+const ETAPAS_DIBUJO = {
+  "Café": {
+    "Vegetativa": () => dCafeto("", 0.7),
+    "Floración": () => dCafeto(dPuntos(PUNTOS_CAFE, "#C9C3B0", 3.4) + dPuntos(PUNTOS_CAFE, "#FFFFFF", 2.8) + dPuntos(PUNTOS_CAFE, "#E0B43A", 0.9)),
+    "Crecimiento del fruto": () => dCafeto(dPuntos(PUNTOS_CAFE, "#7CB342", 2.6)),
+    "Llenado del grano": () => dCafeto(dPuntos(PUNTOS_CAFE, "#C62828", 2.8)),
+  },
+  "Aguacate": {
+    "Floración": () => dArbol(dPuntos([[26, 40], [38, 30], [52, 36], [46, 48], [30, 52], [58, 50], [42, 22]], "#F3EBB0", 2.2)),
+    "Crecimiento del fruto": () => dArbol(dAguacate(28, 58) + dAguacate(46, 56) + dAguacate(58, 52) + dAguacate(36, 46)),
+  },
+  "Maíz": {
+    "Siembra y emergencia": () => `${D_SUELO}<path d="M40 92 V78" stroke="#3E8E41" stroke-width="3.5"/>${dHoja(40, 82, -10, -6, "#5DAA4E")}${dHoja(40, 79, 9, -7, "#5DAA4E")}`,
+    "Vegetativa": () => `${D_SUELO}<path d="M40 92 V44" stroke="#3E8E41" stroke-width="4"/>${dHoja(40, 80, -20, 4)}${dHoja(40, 70, 19, 2)}${dHoja(40, 60, -17, -2)}${dHoja(40, 51, 15, -6)}${dHoja(40, 46, -8, -10, "#5DAA4E")}`,
+    "Floración": () => `${D_SUELO}<path d="M40 92 V20" stroke="#3E8E41" stroke-width="4"/>${dHoja(40, 82, -22, 5)}${dHoja(40, 72, 21, 4)}${dHoja(40, 62, -20, 1)}${dHoja(40, 52, 19, -2)}${dHoja(40, 42, -15, -4)}
+       <path d="M40 22 V6 M40 14 l-7 -6 M40 14 l7 -6 M40 18 l-9 -3 M40 18 l9 -3" stroke="#D9A521" stroke-width="2.4" stroke-linecap="round"/>
+       <path d="M43 58 q7 -2 9 -9" stroke="#C9A08A" stroke-width="1.6" fill="none"/>`,
+    "Llenado del grano": () => `${D_SUELO}<path d="M40 92 V20" stroke="#4C8A3A" stroke-width="4"/>${dHoja(40, 82, -22, 5, "#5E9440")}${dHoja(40, 72, 21, 4, "#5E9440")}${dHoja(40, 62, -20, 1, "#5E9440")}${dHoja(40, 42, -15, -4, "#5E9440")}
+       <path d="M40 22 V6 M40 14 l-7 -6 M40 14 l7 -6" stroke="#B9873A" stroke-width="2.4" stroke-linecap="round"/>
+       <ellipse cx="51" cy="56" rx="6.5" ry="13" transform="rotate(22 51 56)" fill="#F2C230"/>
+       <path d="M41 66 q3 -16 14 -22 M41 66 q12 -4 16 -18" stroke="#6FA24A" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+  },
+  "Yuca": {
+    "Establecimiento": () => `${D_TIERRA}<rect x="37" y="56" width="6" height="22" rx="2" fill="#8B5E3C"/>
+       <path d="M40 58 q-6 -6 -8 -12 M40 58 q6 -6 8 -12" stroke="#5DAA4E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+       ${dHojaYuca(31, 46, 9, -30, "#5DAA4E")}${dHojaYuca(49, 46, 9, 30, "#5DAA4E")}
+       <path d="M40 78 l-5 7 M40 78 l5 6 M40 78 v8" stroke="#C9A27A" stroke-width="1.4" fill="none"/>`,
+    "Desarrollo de hojas y raíces": () => `${D_TIERRA}${dTalloYuca(64, 30)}<path d="M40 44 l-12 -6 M40 38 l12 -6" stroke="#8B5E3C" stroke-width="2.5" stroke-linecap="round"/>
+       ${dHojaYuca(26, 37, 14, -40)}${dHojaYuca(54, 31, 14, 40)}${dHojaYuca(40, 24, 15, 0)}
+       <path d="M40 64 q-8 8 -14 16 M40 64 q1 10 0 20 M40 64 q8 8 14 14" stroke="#C9A27A" stroke-width="2.2" fill="none" stroke-linecap="round"/>`,
+    "Engrosamiento de raíces": () => `${D_TIERRA}${dTalloYuca(64, 18)}<path d="M40 40 l-14 -8 M40 30 l14 -8" stroke="#8B5E3C" stroke-width="2.5" stroke-linecap="round"/>
+       ${dHojaYuca(24, 30, 15, -40)}${dHojaYuca(56, 21, 15, 40)}${dHojaYuca(40, 12, 15, 0)}${dHojaYuca(28, 46, 11, -70, "#5E9440")}
+       <path d="M38 66 q-14 6 -20 24 M40 66 q1 14 -1 28 M42 66 q13 5 19 22" stroke="#7A4E2D" stroke-width="8.5" fill="none" stroke-linecap="round"/>
+       <path d="M38 66 q-14 6 -20 24 M40 66 q1 14 -1 28 M42 66 q13 5 19 22" stroke="#9C6B45" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+  },
+  "Plátano": {
+    "Establecimiento": () => `${D_SUELO}<rect x="38" y="74" width="4" height="18" fill="#8DB55A"/>
+       <path d="M40 76 q-8 -8 -16 -6 M40 76 q8 -10 16 -10" stroke="#4E9C4A" stroke-width="5" fill="none" stroke-linecap="round"/>`,
+    "Crecimiento y floración": () => dPlatano(52, dBellota(54, 56)),
+    "Llenado del racimo": () => dPlatano(52, dRacimo(52, 46) + `<path d="M${55} 64 c3 0 4 6 0 9 c-4 -3 -3 -9 0 -9 z" fill="#7B2C5C"/>`),
+  },
+  "Cacao": {
+    "Floración": () => dCacao(dFlorCacao(37, 60) + dFlorCacao(43, 66) + dFlorCacao(36, 74) + dFlorCacao(44, 52) + dFlorCacao(38, 82)),
+    "Floración y mazorca": () => dCacao(dFlorCacao(37, 60) + dFlorCacao(43, 52) + dFlorCacao(37, 80) + dMazorca(47, 70, "#8BC34A", 0.7)),
+    "Mazorca": () => dCacao(dMazorca(31, 64, "#E8A317") + dMazorca(49, 72, "#D35400") + dMazorca(32, 82, "#E8A317", 0.8)),
+  },
+  "Porcicultura": {
+    "Precebo": () => `${D_SUELO}${dCerdo(36, 80, 0.75)}`,
+    "Levante y ceba": () => `${D_SUELO}${dCerdo(36, 72, 1.25)}`,
+    "Cerdas gestantes y verracos": () => `${D_SUELO}${dCerdo(30, 70, 1.3, "#EE97A8")}${dCorazon(60, 40)}`,
+    "Cerdas lactantes": () => `${D_SUELO}${dCerdo(34, 68, 1.25, "#EE97A8")}${dCerdo(22, 86, 0.42)}${dCerdo(44, 86, 0.42)}${dCerdo(62, 86, 0.42)}`,
+  },
+  "Gallinas ponedoras": {
+    "Levante": () => `${D_SUELO}${dGallina(38, 72, 0.8, "#C98A4B")}`,
+    "Producción": () => `${D_SUELO}${dGallina(34, 64, 1.15)}${dHuevo(58, 86)}${dHuevo(67, 87)}${dHuevo(62, 79)}`,
+  },
+  "Ganadería": {
+    "Ceba y levante": () => `${D_SUELO}${dVaca(36, 66, 1.05, "#A0522D", "")}`,
+    "Vacas en servicio": () => `${D_SUELO}${dVaca(34, 66, 1.05)}${dCorazon(62, 32)}`,
+    "Vacas en lactancia": () => `${D_SUELO}${dVaca(32, 66, 1.05, "#FFFFFF", "#3A2E2A", true)}${dCantina(66, 76)}`,
+  },
+};
+const TITULO_CICLO = { "Café": "Etapas del café", "Aguacate": "Etapas del aguacate", "Maíz": "Etapas del maíz", "Yuca": "Etapas de la yuca",
+  "Plátano": "Etapas del plátano", "Cacao": "Etapas del cacao", "Porcicultura": "Tipos de producción", "Gallinas ponedoras": "Tipos de producción", "Ganadería": "Tipos de producción" };
+
+// Gráfico del ciclo. "activa" es la etapa a resaltar ("" = todas a color).
+function graficoCiclo(sistema, activa, marca) {
+  const dibujos = ETAPAS_DIBUJO[sistema];
+  if (!dibujos) return "";
+  return `<div class="ciclo" aria-label="${escaparHtml(TITULO_CICLO[sistema] || "Etapas")}"><div class="ciclo-tit">${TITULO_CICLO[sistema] || "Etapas"}</div>
+    <div class="ciclo-fila${activa ? "" : " todas"}">${Object.entries(dibujos).map(([nombre, f]) =>
+      `<div class="ciclo-paso${nombre === activa ? " on" : ""}"><span class="ciclo-marca${nombre === activa ? "" : " oculta"}">${marca}</span>
+        <svg viewBox="0 0 80 100" aria-hidden="true"><g class="ciclo-dib">${f()}</g></svg>
+        <div class="ciclo-eje"><div class="ciclo-punto"></div></div><div class="ciclo-nom">${escaparHtml(nombre)}</div></div>`).join("")}</div>
+    ${activa ? "" : `<div class="ciclo-todas">${marca}</div>`}</div>`;
+}
+
 function pintarAlertas(args) {
   if (args) ultimoPanelAlertas = args; else args = ultimoPanelAlertas;
   const $al = document.getElementById("alertas");
@@ -1024,10 +1232,20 @@ function pintarAlertas(args) {
       `<div class="al-escalon${i === nivel ? " on" : ""}">${n.nombre}</div>`).join("")}</div>`;
   // Columna izquierda de la tarjeta principal: ícono del tipo de alerta y escalera de niveles.
   // El selector de etapa va dentro de la tarjeta principal, arriba a la derecha.
-  const selectorTarjeta = selector ? `<div class="al-etapa-tarjeta">${selector}</div>` : "";
+  // Columna derecha de la tarjeta: selector de etapa y gráfico del ciclo.
+  const columnaDerecha = (activa, marca) => {
+    const ciclo = graficoCiclo(sistema, activa, marca);
+    return selector || ciclo ? `<div class="al-der">${selector ? `<div class="al-etapa-tarjeta">${selector}</div>` : ""}${ciclo}</div>` : "";
+  };
+  // Etiqueta visible con la etapa o el tipo de animal al que apunta la alerta.
+  const foco = (u) => {
+    const todas = u.etapa === "Todas";
+    const nombre = todas ? (esPecuario ? "Todos" : "Todas las etapas") : u.etapa;
+    return `<div class="al-foco"><i aria-hidden="true">!</i><span><span>${esPecuario ? "Animales afectados" : "Etapa afectada"}:</span> <b>${escaparHtml(nombre)}</b></span></div>`;
+  };
   const columnaNivel = (icono, nivel) => `<div class="al-izq"><div class="al-grande" aria-hidden="true">${icono}</div>${escalera(nivel)}</div>`;
   const pill = (nivel) => `<span class="al-pill" style="background:${NIVELES[nivel].color}${nivel === 1 ? ";color:#2B2B23" : ""}">${NIVELES[nivel].nombre}</span>`;
-  const etiquetaEtapa = (u) => !etapa && u.etapa !== "Todas" ? `${esPecuario ? "" : "Etapa: "}${escaparHtml(u.etapa)}` : "";
+  const etiquetaEtapa = (u) => !etapa && u.etapa !== "Todas" ? `<b>${esPecuario ? "" : "Etapa: "}${escaparHtml(u.etapa)}</b>` : "";
   const peor = resultados.length ? resultados[0].nivel : 0;
   let cuerpo;
   if (!resultados.length) {
@@ -1040,22 +1258,24 @@ function pintarAlertas(args) {
     if (variable === "Lluvia") { const v = xs("precip"); if (v.length) valor = `<div><span>🌧️ Lluvia acumulada</span><b>${Math.round(v.reduce((a, b) => a + b, 0))} mm</b></div>`; }
     if (variable === "Humedad relativa") { const v = xs("relhum"); if (v.length) valor = `<div><span>💧 Humedad promedio</span><b>${Math.round(v.reduce((a, b) => a + b, 0) / v.length)} %</b></div>`; }
     const titulo = { "Lluvia": "Lluvia adecuada", "Temperatura": "Temperatura adecuada", "Humedad relativa": "Humedad adecuada" }[variable] || "Clima adecuado";
-    cuerpo = `<div class="al-principal" style="--al-nivel:var(--al-optimo)">${columnaNivel(ICONO_VARIABLE[variable] || "✓", 0)}<div>${selectorTarjeta}
+    cuerpo = `<div class="al-principal" style="--al-nivel:var(--al-optimo)">${columnaNivel(ICONO_VARIABLE[variable] || "✓", 0)}<div>
         <h3>${titulo} para ${quien}</h3>
         <p>${textoPeriodo} la ${nombreVar} estuvo dentro de lo adecuado${etapa ? ` para la etapa de ${escaparHtml(etapa.toLowerCase())}` : ""}. No hay alertas.</p>
         ${valor ? `<div class="al-valores">${valor}</div>` : ""}
-        <div class="al-hacer"><i>✓</i><span>Continúe con el manejo habitual.</span></div></div></div>`;
+        <div class="al-hacer"><i>✓</i><span>Continúe con el manejo habitual.</span></div></div>
+        ${columnaDerecha(etapa, etapa ? "Etapa elegida" : "")}</div>`;
   } else {
     const p = resultados[0], col = NIVELES[p.nivel].color;
     const cuando = p.fecha ? `: ${fechaLarga(p.fecha, false)}` : "";
     const otras = resultados.slice(1).filter((r) => r.nivel > 0);
-    cuerpo = `<div class="al-principal" style="--al-nivel:${col}">${columnaNivel(ICONO_GRUPO[p.u.grupo] || "⚠️", p.nivel)}<div>${selectorTarjeta}
-        ${etiquetaEtapa(p.u) ? `<div class="al-etiqueta-etapa">${etiquetaEtapa(p.u)}</div>` : ""}
+    cuerpo = `<div class="al-principal" style="--al-nivel:${col}">${columnaNivel(ICONO_GRUPO[p.u.grupo] || "⚠️", p.nivel)}<div>
+        ${foco(p.u)}
         <h3>${escaparHtml(p.u.titulo)}</h3>
         ${etiquetaJunta(p.u)}
         <p>${escaparHtml(p.u.quePasa)}</p>
         <div class="al-dato"><b>${formatoValor(p.u, p.valor, p.dia)}</b><span>${escaparHtml(p.u.comoSeMide)}${cuando}</span></div>
-      </div></div>`;
+      </div>
+      ${columnaDerecha(p.u.etapa !== "Todas" ? p.u.etapa : etapa, p.u.etapa !== "Todas" || etapa ? "Esta alerta" : (esPecuario ? "Esta alerta aplica a todos los animales" : "Esta alerta aplica a todas las etapas"))}</div>`;
     // Todas las demás alertas (Vigilar o más), de la más grave a la más leve.
     if (otras.length) cuerpo += `<div class="al-otras-tit">${otras.length === 1 ? "Otra alerta" : `Otras ${otras.length} alertas`}</div>
       <div class="al-otras">${otras.map((r) => `<div class="al-otra" style="--al-nivel:${NIVELES[r.nivel].color}">
@@ -1070,7 +1290,7 @@ function pintarAlertas(args) {
   const resumen = nivelResumen === null ? "" : `<span class="al-resumen" style="--al-nivel:${NIVELES[nivelResumen].color}${nivelResumen === 1 ? ";--al-texto:#2B2B23" : ""}">${NIVELES[nivelResumen].nombre}</span>`;
   const cab = `<button type="button" class="al-cab" id="al-cab" aria-expanded="${alertasAbiertas}" aria-controls="al-cuerpo">
       <div class="al-cultivo" aria-hidden="true">${emoji}</div>
-      <h2>Así estuvo la ${nombreVar} para ${quien}<small>${escaparHtml(municipio)}, ${fin === inicio ? "el " : "del "}${rangoLargo(inicio, fin)}</small></h2>
+      <h2>Así estuvo la ${nombreVar} para ${quien}<small><b>${NOMBRE_PERIODO[periodoNombre] || periodoNombre}</b> · ${escaparHtml(municipio)}, ${fin === inicio ? "el " : "del "}${rangoLargo(inicio, fin)}</small></h2>
       ${resumen}<span class="al-flecha" aria-hidden="true"></span><span class="al-ver">${alertasAbiertas ? "Ocultar" : "Ver alertas"}</span></button>`;
   $al.innerHTML = cab + `<div class="al-cuerpo" id="al-cuerpo"${alertasAbiertas ? "" : " hidden"}>${selector && !resultados.length ? `<div class="al-barra">${selector}</div>` : ""}${cuerpo}
     <p class="al-pie">Calculado con datos satelitales para la zona.</p></div>`;
@@ -1191,6 +1411,7 @@ document.addEventListener("keydown", (ev) => {
 document.addEventListener("click", async (ev) => {
   const boton = ev.target.closest(".btn-grafico");
   if (!boton) return;
+  if (boton.dataset.accion === "copiar") { copiarGrafico(boton); return; }
   const img = await imagenGrafico(boton.dataset.grafico);
   if (!img) { alert("No hay gráfico para descargar. Elija un período de una semana o más."); return; }
   if (boton.dataset.accion === "descargar") { guardarArchivo(img.blob, img.nombre); return; }
@@ -1205,6 +1426,29 @@ document.addEventListener("click", async (ev) => {
   guardarArchivo(img.blob, img.nombre);
   window.open("https://wa.me/?text=" + encodeURIComponent(texto + " (adjunte la imagen que se acaba de descargar)"), "_blank", "noopener");
 });
+
+// Copia la imagen del gráfico al portapapeles para pegarla en un chat o una presentación.
+// La promesa se pasa directo a ClipboardItem para que funcione también en Safari.
+async function copiarGrafico(boton) {
+  const original = boton.innerHTML;
+  const avisar = (texto) => { boton.innerHTML = texto; setTimeout(() => { boton.innerHTML = original; }, 2200); };
+  if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
+    alert("Su navegador no permite copiar imágenes. Use el botón Descargar.");
+    return;
+  }
+  try {
+    const blob = imagenGrafico(boton.dataset.grafico).then((img) => {
+      if (!img) throw new Error("sin gráfico");
+      return img.blob;
+    });
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+    avisar("✅ Copiada");
+  } catch (e) {
+    console.error("No se pudo copiar la imagen:", e);
+    alert(e.message === "sin gráfico" ? "No hay gráfico para copiar. Elija un período de una semana o más."
+      : "No se pudo copiar la imagen. Use el botón Descargar.");
+  }
+}
 
 // Piso del eje de humedad: 40 % salvo que haya datos más bajos.
 function pisoHumedad(traces) {
