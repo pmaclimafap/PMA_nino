@@ -184,6 +184,7 @@
   .al-cab:focus-visible { outline: 2px solid var(--color-rain); outline-offset: -2px; }
   .al-resumen { flex: none; padding: 5px 14px; border-radius: 999px; font-size: 0.85rem; font-weight: 700;
     background: var(--al-nivel); color: var(--al-texto, #FFFFFF); }
+  .al-resumen-gris { background: color-mix(in srgb, var(--color-ink) 10%, transparent); color: var(--color-ink-soft); font-weight: 600; }
   .al-ver { flex: none; font-size: 0.88rem; font-weight: 600; color: var(--color-rain); }
   .al-flecha { order: 9; flex: none; width: 10px; height: 10px; border-right: 2px solid var(--color-rain); border-bottom: 2px solid var(--color-rain);
     transform: rotate(45deg); margin: -4px 4px 0 -4px; transition: transform .2s; }
@@ -208,7 +209,7 @@
   .al-foco > i { font-style: normal; flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--al-nivel); color: #FFFFFF;
     display: grid; place-items: center; font-size: 0.8rem; font-weight: 700; }
   .al-foco > span > span { color: var(--color-ink-soft); }
-  .al-otra small b { font-weight: 600; color: var(--color-ink); }
+  .al-otra small b { display: inline; margin: 0; font-size: inherit; font-weight: 600; color: var(--color-ink); }
   /* Gráfico del ciclo del cultivo o de los tipos de producción */
   .ciclo { background: var(--color-panel); border-radius: 12px; padding: 12px 12px 10px; }
   .ciclo-tit { font-size: 0.75rem; color: var(--color-ink-soft); margin: 0 4px 4px; }
@@ -286,6 +287,7 @@
   .al-bien > span:first-child { font-size: 0.88rem; color: var(--color-ink-soft); margin-right: 4px; }
   .al-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
     background: color-mix(in srgb, var(--al-optimo) 13%, var(--color-panel)); color: var(--al-optimo); }
+  .al-faltan { margin: 10px 24px 0; font-size: 0.82rem; color: var(--color-ink-soft); }
   .al-pie { margin: 14px 0 0; padding: 12px 24px 14px; font-size: 0.82rem; color: var(--color-ink-soft); background: color-mix(in srgb, var(--color-bg) 50%, var(--color-panel));
     border-top: 1px solid var(--color-line); }
   .al-pie summary { cursor: pointer; color: var(--color-rain); font-weight: 600; font-size: 0.88rem; list-style: none; display: flex;
@@ -324,7 +326,7 @@
     .al-tabla td { display: block; border: 0; padding: 3px 0; }
   }
   .grafico-controles { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 10px; }
-  /* Botón de información (sutil) y su letrero. */
+  /* Botón de información y su letrero. */
   .info-grafico { position: relative; }
   .info-boton { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--color-ink-soft); background: transparent;
     color: var(--color-ink-soft); font-family: Georgia, serif; font-style: italic; font-weight: 700; font-size: 0.9rem;
@@ -417,7 +419,7 @@
       <div class="header-top">
         <div>
           <div class="titulo-banda"><h1>Monitoreo climático comunitario y satelital</h1></div>
-          <p id="header-descripcion">Acá encontrará cómo han estado la lluvia, la temperatura y la humedad relativa en los últimos días en siete municipios de cuatro departamentos: Los Palmitos y San José de Toluviejo, en Sucre; Icononzo y Planadas, en Tolima; Fonseca, en La Guajira; y Manaure y El Paso, en Cesar. La información proviene de satélites (MSWX y MSWEP). Puede consultar un mapa por variable, gráficos día a día y cuántos días el calor o la humedad superaron el umbral de su sistema productivo.</p>
+          <p id="header-descripcion">Acá encontrará cómo ha estado la lluvia, la temperatura y la humedad relativa en los últimos días en siete municipios de cuatro departamentos: Los Palmitos y San José de Toluviejo, en Sucre; Icononzo y Planadas, en Tolima; Fonseca, en La Guajira; y Manaure y El Paso, en Cesar. La información proviene de satélites (MSWX y MSWEP). Puede consultar un mapa por variable, gráficos día a día y cuántos días el calor o la humedad superaron el umbral de su sistema productivo.</p>
         </div>
       </div>
     </header>
@@ -429,7 +431,6 @@
     <!-- Ventana de tiempo: se elige aquí o con los botones sobre el gráfico (los dos están sincronizados). -->
     <div class="field"><label for="sel-periodo">Período</label><select id="sel-periodo"></select></div>
     <div class="field"><label for="sel-variable">Variable</label><select id="sel-variable"></select></div>
-    <!-- Solo se muestra con Temperatura y Humedad (los umbrales dependen del sistema). -->
     <div class="field" id="selector-cultivo" style="display:none;"><label for="sel-sistema">Sistema productivo</label><select id="sel-sistema"></select></div>
     <div class="periodo-caja" id="periodo-caja"></div>
   </div>
@@ -485,6 +486,8 @@
 
   <div id="vista-campo" style="display:none;">
     <div class="campo-estado" id="campo-estado"></div>
+    <!-- Panel de alertas con los registros de la asociación (lo llena pintarAlertas). -->
+    <section class="al" id="alertas-campo" aria-live="polite"></section>
     <div class="cards" id="campo-cards"></div>
     <div class="chart-panel">
       <div class="grafico-controles">
@@ -668,8 +671,6 @@ const MESES_ES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","n
 /* ------------------------------------------------------------------------
    SISTEMA PRODUCTIVO: los umbrales de "días de calor" / "días de humedad
    alta" dependen del cultivo.
-   Los umbrales de abajo son de ejemplo por ahora — se reemplazan cuando
-   se tenga el análisis agronómico real por cultivo.
    ------------------------------------------------------------------------ */
 // Sistemas productivos de los 7 municipios. Se muestran todos en cualquier
 // municipio.
@@ -678,8 +679,6 @@ const EMOJI_SISTEMA = {
   Aguacate: "🥑", Cacao: "🍫", Café: "☕", "Gallinas ponedoras": "🐔", Ganadería: "🐄",
   Maíz: "🌽", Plátano: "🍌", Porcicultura: "🐖", Yuca: "🌱",
 };
-// Umbrales DE EJEMPLO: temperatura máxima (°C) y humedad relativa (%) por
-// encima de las cuales se cuenta un "día de calor" o "de humedad alta".
 const UMBRAL_TMAX_POR_CULTIVO = {
   Aguacate: 32, Cacao: 33, Café: 28, "Gallinas ponedoras": 30,
   Ganadería: 33, Maíz: 33, Plátano: 34, Porcicultura: 30, Yuca: 34,
@@ -845,7 +844,7 @@ actualizarOpcionesSistema();
    Indicadores (columna "indicador"):
      max / min      valor más alto o más bajo del período (con su fecha)
      media / suma   promedio o acumulado de los últimos N días ("ventana")
-     dsc            racha más larga de días con menos de 1 mm
+     dsc            racha más larga de días con menos de 1 mm (días secos consecutivos)
      max_suma3      lluvia máxima acumulada en 3 días seguidos
      sostenido3     valor que se mantuvo al menos 3 días seguidos
      dias_cond      días de los últimos N que cumplen las "condiciones"
@@ -873,8 +872,11 @@ const PARA_QUIEN = { "Café": "su cultivo de café", "Aguacate": "su cultivo de 
 const NOMBRE_PERIODO = { "Última fecha": "Último día", "Última semana": "Última semana", "Últimas 2 semanas": "Últimas 2 semanas", "Último mes": "Último mes" };
 const SISTEMAS_PECUARIOS = ["Porcicultura", "Gallinas ponedoras", "Ganadería"];
 const ETAPA_ELEGIDA = {}; // sistema -> etapa elegida ("" = todas)
-let ultimoPanelAlertas = null;
-let alertasAbiertas = false; // el panel empieza recogido; se despliega al hacer clic
+// Estado de cada panel de alertas ("alertas" = satelital, "alertas-campo" = comunitario):
+// los últimos datos dibujados y si está desplegado (empieza recogido).
+const ESTADO_ALERTAS = {};
+// Porcentaje mínimo de días con datos para calcular un indicador.
+const COBERTURA_MINIMA = 0.8;
 
 function leerCsvUmbrales(texto) {
   const lineas = texto.replace(/^﻿/, "").split(/\r?\n/).filter((l) => l.trim());
@@ -920,8 +922,8 @@ async function cargarUmbrales() {
 }
 
 // Series diarias del punto del municipio, por fecha.
-function seriesPorFecha(vars) {
-  const fechas = (vars.precip && vars.precip.length ? vars.precip : vars.tavg || []).map((p) => p.date);
+function seriesPorFecha(vars, fechasCompletas = null) {
+  const fechas = fechasCompletas || (vars.precip && vars.precip.length ? vars.precip : vars.tavg || []).map((p) => p.date);
   const mapa = {};
   ["precip", "tavg", "tmax", "tmin", "relhum"].forEach((k) => {
     mapa[k] = {};
@@ -947,6 +949,12 @@ function evaluarUmbral(u, s, fin, diasPeriodo) {
   });
   const racha = (fs, prueba) => { let mejor = 0, act = 0; fs.forEach((f) => { act = prueba(f) ? act + 1 : 0; mejor = Math.max(mejor, act); }); return mejor; };
   const ventana = (f, n) => { const i = s.fechas.indexOf(f); return i - n + 1 < 0 ? null : s.fechas.slice(i - n + 1, i + 1); };
+  // Días que usa el indicador y datos que necesita; si faltan muchos días no se calcula.
+  const diasUsados = ["media", "suma", "dias_cond"].includes(u.indicador) ? tramo(u.ventana || (u.indicador === "dias_cond" ? 7 : diasPeriodo)) : periodo;
+  const necesarias = [...new Set([...(u.variable === "ith" ? ["tmax", "relhum"] : u.variable ? [u.variable] : []), ...u.condiciones.map((c) => c.v)])];
+  const largo = ["media", "suma", "dias_cond"].includes(u.indicador) ? (u.ventana || (u.indicador === "dias_cond" ? 7 : diasPeriodo)) : diasPeriodo;
+  const conDatos = diasUsados.filter((f) => necesarias.every((v) => val(v, f) !== undefined)).length;
+  if (conDatos < Math.ceil(largo * COBERTURA_MINIMA)) return { u, incompleto: true };
   let valor = null, fecha = null;
   switch (u.indicador) {
     case "max": case "min": {
@@ -1164,41 +1172,47 @@ const ETAPAS_DIBUJO = {
     "Vacas en lactancia": () => `${D_SUELO}${dVaca(32, 66, 1.05, "#FFFFFF", "#3A2E2A", true)}${dCantina(66, 76)}`,
   },
 };
-// Solo se dibujan las etapas que tienen umbrales en el Excel, no el ciclo completo.
-const TITULO_CICLO = { "Café": "Etapas del café que se vigilan", "Aguacate": "Etapas del aguacate que se vigilan", "Maíz": "Etapas del maíz que se vigilan",
-  "Yuca": "Etapas de la yuca que se vigilan", "Plátano": "Etapas del plátano que se vigilan", "Cacao": "Etapas del cacao que se vigilan",
-  "Porcicultura": "Animales que se vigilan", "Gallinas ponedoras": "Animales que se vigilan", "Ganadería": "Animales que se vigilan" };
+// Nombre que ve el productor para cada grupo de animales (en el CSV se usa el nombre corto).
+const NOMBRE_GRUPO_ANIMAL = {
+  "Levante": "Pollas de levante", "Producción": "Gallinas en postura",
+  "Precebo": "Lechones de precebo", "Levante y ceba": "Cerdos de levante y ceba",
+  "Ceba y levante": "Ganado de ceba y levante",
+};
+const nombreEtapa = (e) => NOMBRE_GRUPO_ANIMAL[e] || e;
 
 // Gráfico del ciclo. "activa" es la etapa a resaltar ("" = todas a color).
-function graficoCiclo(sistema, activa, marca) {
+function graficoCiclo(sistema, activa, marca, titulo) {
   const dibujos = ETAPAS_DIBUJO[sistema];
   if (!dibujos) return "";
-  return `<div class="ciclo" aria-label="${escaparHtml(TITULO_CICLO[sistema] || "Etapas")}"><div class="ciclo-tit">${TITULO_CICLO[sistema] || "Etapas"}</div>
+  return `<div class="ciclo" aria-label="${escaparHtml(titulo)}"><div class="ciclo-tit">${escaparHtml(titulo)}</div>
     <div class="ciclo-fila${activa ? "" : " todas"}">${Object.entries(dibujos).map(([nombre, f]) =>
       `<div class="ciclo-paso${nombre === activa ? " on" : ""}"><span class="ciclo-marca${nombre === activa ? "" : " oculta"}">${marca}</span>
         <svg viewBox="0 0 80 100" aria-hidden="true"><g class="ciclo-dib">${f()}</g></svg>
-        <div class="ciclo-eje"><div class="ciclo-punto"></div></div><div class="ciclo-nom">${escaparHtml(nombre)}</div></div>`).join("")}</div>
+        <div class="ciclo-eje"><div class="ciclo-punto"></div></div><div class="ciclo-nom">${escaparHtml(nombreEtapa(nombre))}</div></div>`).join("")}</div>
     ${activa ? "" : `<div class="ciclo-todas">${marca}</div>`}</div>`;
 }
 
 // Texto que acompaña al valor. En los conteos de días el texto continúa la frase
-// ("3 días" + "de la última semana con…"), por eso va en minúscula y sin repetir "días".
+// ("3 días" + "de la última semana con…").
 function textoMedida(r) {
   let texto = r.u.comoSeMide;
   if (r.u.unidad === "días" && Math.round(r.valor) === 1) texto = texto.replace(/^seguidos/, "seguido");
   return texto;
 }
 
-function pintarAlertas(args) {
-  if (args) ultimoPanelAlertas = args; else args = ultimoPanelAlertas;
-  const $al = document.getElementById("alertas");
-  if (!args) return;
+function pintarAlertas(args, idPanel = "alertas") {
+  const estado = ESTADO_ALERTAS[idPanel] || (ESTADO_ALERTAS[idPanel] = { args: null, abierto: false });
+  if (args) estado.args = args; else args = estado.args;
+  const $al = document.getElementById(idPanel);
+  if (!args || !$al) return;
   const { municipio, vars, periodoNombre, diasPeriodo, fin, variable } = args;
+  const esComunitario = idPanel === "alertas-campo";
+  const lugar = args.lugar || municipio;
   const sistema = $sistema.value;
   if (!sistema) {
-    $al.innerHTML = `<button type="button" class="al-cab al-elegir" id="al-elegir"><div class="al-cultivo" aria-hidden="true">🏡</div>
+    $al.innerHTML = `<button type="button" class="al-cab al-elegir"><div class="al-cultivo" aria-hidden="true">🏡</div>
       <h2>¿Cómo estuvo el clima para su finca?<small>Seleccione arriba el sistema productivo para ver las alertas.</small></h2></button>`;
-    document.getElementById("al-elegir").addEventListener("click", () => { $sistema.focus(); $sistema.showPicker?.(); });
+    $al.querySelector(".al-elegir").addEventListener("click", () => { $sistema.focus(); $sistema.showPicker?.(); });
     return;
   }
   if (umbralesError) { $al.innerHTML = `<p class="al-aviso">${escaparHtml(umbralesError)}</p>`; return; }
@@ -1227,8 +1241,10 @@ function pintarAlertas(args) {
   const esPecuario = SISTEMAS_PECUARIOS.includes(sistema);
   const aplican = deVariable.filter((u) => !etapa || u.etapa === etapa || u.etapa === "Todas");
 
-  const s = seriesPorFecha(vars);
-  const resultados = aplican.map((u) => evaluarUmbral(u, s, fin, diasPeriodo)).filter(Boolean)
+  const s = seriesPorFecha(vars, args.fechas || null);
+  const evaluados = aplican.map((u) => evaluarUmbral(u, s, fin, diasPeriodo)).filter(Boolean);
+  const sinDatos = evaluados.filter((r) => r.incompleto).length; // indicadores sin registros suficientes
+  const resultados = evaluados.filter((r) => !r.incompleto)
     .sort((a, b) => b.nivel - a.nivel || (a.u.provisional - b.u.provisional));
   const inicio = s.fechas[Math.max(0, s.fechas.lastIndexOf(fin) - diasPeriodo + 1)] || fin;
   const quien = PARA_QUIEN[sistema] || "su sistema productivo";
@@ -1237,31 +1253,33 @@ function pintarAlertas(args) {
   const textoPeriodo = { "Última fecha": "El último día", "Última semana": "Esta semana", "Últimas 2 semanas": "En las últimas dos semanas", "Último mes": "En el último mes" }[periodoNombre] || "En este período";
 
   const selector = etapas.length ? `<label class="al-etapa">${esPecuario ? "Tipo de animal" : "Etapa del cultivo"}
-      <select id="al-sel-etapa"><option value="">${esPecuario ? "Todos" : "Todas las etapas"}</option>
-      ${etapas.map((e) => `<option value="${escaparHtml(e)}"${e === etapa ? " selected" : ""}>${escaparHtml(e)}</option>`).join("")}</select></label>` : "";
+      <select class="al-sel-etapa"><option value="">${esPecuario ? "Todos" : "Todas las etapas"}</option>
+      ${etapas.map((e) => `<option value="${escaparHtml(e)}"${e === etapa ? " selected" : ""}>${escaparHtml(nombreEtapa(e))}</option>`).join("")}</select></label>` : "";
 
   const escalera = (nivel) => `<div class="al-escalera" aria-label="Nivel: ${NIVELES[nivel].nombre}">${NIVELES.map((n, i) =>
       `<div class="al-escalon${i === nivel ? " on" : ""}">${n.nombre}</div>`).join("")}</div>`;
   // Columna izquierda de la tarjeta principal: ícono del tipo de alerta y escalera de niveles.
   // El selector de etapa va dentro de la tarjeta principal, arriba a la derecha.
   // Columna derecha de la tarjeta: selector de etapa y gráfico del ciclo.
-  const columnaDerecha = (activa, marca) => {
-    const ciclo = graficoCiclo(sistema, activa, marca);
+  const columnaDerecha = (activa, marca, titulo) => {
+    const ciclo = titulo ? graficoCiclo(sistema, activa, marca, titulo) : "";
     return selector || ciclo ? `<div class="al-der">${selector ? `<div class="al-etapa-tarjeta">${selector}</div>` : ""}${ciclo}</div>` : "";
   };
   // Etiqueta visible con la etapa o el tipo de animal al que apunta la alerta.
   const foco = (u) => {
     const todas = u.etapa === "Todas";
-    const nombre = todas ? (esPecuario ? "Todos" : "Todas las etapas") : u.etapa;
-    return `<div class="al-foco"><i aria-hidden="true">!</i><span><span>${esPecuario ? "Animales afectados" : "Etapa afectada"}:</span> <b>${escaparHtml(nombre)}</b></span></div>`;
+    const nombre = todas ? (esPecuario ? "Todos los grupos" : "Todas las etapas") : nombreEtapa(u.etapa);
+    return `<div class="al-foco"><i aria-hidden="true">!</i><span><span>${esPecuario ? "Grupo afectado" : "Etapa afectada"}:</span> <b>${escaparHtml(nombre)}</b></span></div>`;
   };
   const columnaNivel = (icono, nivel) => `<div class="al-izq"><div class="al-grande" aria-hidden="true">${icono}</div>${escalera(nivel)}</div>`;
   const pill = (nivel) => `<span class="al-pill" style="background:${NIVELES[nivel].color}${nivel === 1 ? ";color:#2B2B23" : ""}">${NIVELES[nivel].nombre}</span>`;
-  const etiquetaEtapa = (u) => !etapa && u.etapa !== "Todas" ? `<b>${esPecuario ? "" : "Etapa: "}${escaparHtml(u.etapa)}</b>` : "";
+  const etiquetaEtapa = (u) => !etapa && u.etapa !== "Todas" ? `<b>${esPecuario ? "Grupo: " : "Etapa: "}${escaparHtml(nombreEtapa(u.etapa))}</b>` : "";
   const peor = resultados.length ? resultados[0].nivel : 0;
   let cuerpo;
   if (!resultados.length) {
-    cuerpo = `<p class="al-aviso">No hay datos suficientes para evaluar las alertas en este período.</p>`;
+    cuerpo = `<p class="al-aviso">${esComunitario
+      ? "No hay suficientes registros para calcular las alertas en este período. Se necesitan reportes en al menos 8 de cada 10 días."
+      : "No hay datos suficientes para evaluar las alertas en este período."}</p>`;
   } else if (peor === 0) {
     // Estado óptimo: solo el valor de la variable elegida.
     const xs = (k) => { const i = s.fechas.lastIndexOf(fin); return s.fechas.slice(Math.max(0, i - diasPeriodo + 1), i + 1).map((f) => s.mapa[k][f]).filter((x) => x !== undefined); };
@@ -1272,10 +1290,11 @@ function pintarAlertas(args) {
     const titulo = { "Lluvia": "Lluvia adecuada", "Temperatura": "Temperatura adecuada", "Humedad relativa": "Humedad adecuada" }[variable] || "Clima adecuado";
     cuerpo = `<div class="al-principal" style="--al-nivel:var(--al-optimo)">${columnaNivel(ICONO_VARIABLE[variable] || "✓", 0)}<div>
         <h3>${titulo} para ${quien}</h3>
-        <p>${textoPeriodo} la ${nombreVar} estuvo dentro de lo adecuado${etapa ? ` para la etapa de ${escaparHtml(etapa.toLowerCase())}` : ""}. No hay alertas.</p>
+        <p>${textoPeriodo} la ${nombreVar} estuvo dentro de lo adecuado${etapa ? (esPecuario ? ` para ${escaparHtml(nombreEtapa(etapa).toLowerCase())}` : ` para la etapa de ${escaparHtml(etapa.toLowerCase())}`) : ""}. No hay alertas.</p>
         ${valor ? `<div class="al-valores">${valor}</div>` : ""}
       </div>
-        ${columnaDerecha(etapa, etapa ? "Etapa elegida" : "")}</div>`;
+        ${columnaDerecha(etapa, esPecuario ? "Grupo elegido" : "Etapa elegida",
+            etapa ? (esPecuario ? "Grupo de animales elegido" : "Etapa del cultivo elegida") : "")}</div>`;
   } else {
     const p = resultados[0], col = NIVELES[p.nivel].color;
     const cuando = p.fecha ? `: ${fechaLarga(p.fecha, false)}` : "";
@@ -1287,7 +1306,10 @@ function pintarAlertas(args) {
         <p>${escaparHtml(p.u.quePasa)}</p>
         <div class="al-dato"><b>${formatoValor(p.u, p.valor, p.dia)}</b><span>${escaparHtml(textoMedida(p))}${cuando}</span></div>
       </div>
-      ${columnaDerecha(p.u.etapa !== "Todas" ? p.u.etapa : etapa, p.u.etapa !== "Todas" || etapa ? (esPecuario ? "Afectados" : "Etapa afectada") : (esPecuario ? "Esta alerta aplica a todos los animales" : "Esta alerta aplica a todas las etapas que se vigilan"))}</div>`;
+      ${columnaDerecha(p.u.etapa !== "Todas" ? p.u.etapa : etapa,
+          p.u.etapa !== "Todas" || etapa ? (esPecuario ? "Grupo afectado" : "Etapa afectada")
+            : (esPecuario ? "Esta alerta aplica a todos los grupos" : "Esta alerta aplica a todas las etapas"),
+          esPecuario ? "¿Qué grupo de animales está en alerta?" : "¿En qué etapa del cultivo es la alerta?")}</div>`;
     // Todas las demás alertas (Vigilar o más), de la más grave a la más leve.
     if (otras.length) cuerpo += `<div class="al-otras-tit">${otras.length === 1 ? "Otra alerta" : `Otras ${otras.length} alertas`}</div>
       <div class="al-otras">${otras.map((r) => `<div class="al-otra" style="--al-nivel:${NIVELES[r.nivel].color}">
@@ -1299,16 +1321,19 @@ function pintarAlertas(args) {
   }
 
   const nivelResumen = resultados.length ? peor : null;
-  const resumen = nivelResumen === null ? "" : `<span class="al-resumen" style="--al-nivel:${NIVELES[nivelResumen].color}${nivelResumen === 1 ? ";--al-texto:#2B2B23" : ""}">${NIVELES[nivelResumen].nombre}</span>`;
-  const cab = `<button type="button" class="al-cab" id="al-cab" aria-expanded="${alertasAbiertas}" aria-controls="al-cuerpo">
+  const resumen = nivelResumen === null ? `<span class="al-resumen al-resumen-gris">Sin datos suficientes</span>` : `<span class="al-resumen" style="--al-nivel:${NIVELES[nivelResumen].color}${nivelResumen === 1 ? ";--al-texto:#2B2B23" : ""}">${NIVELES[nivelResumen].nombre}</span>`;
+  const abierto = estado.abierto;
+  const cab = `<button type="button" class="al-cab" aria-expanded="${abierto}" aria-controls="${idPanel}-cuerpo">
       <div class="al-cultivo" aria-hidden="true">${emoji}</div>
-      <h2>Así estuvo la ${nombreVar} para ${quien}<small><b>${NOMBRE_PERIODO[periodoNombre] || periodoNombre}</b> · ${escaparHtml(municipio)}, ${fin === inicio ? "el " : "del "}${rangoLargo(inicio, fin)}</small></h2>
-      ${resumen}<span class="al-flecha" aria-hidden="true"></span><span class="al-ver">${alertasAbiertas ? "Ocultar" : "Ver alertas"}</span></button>`;
-  $al.innerHTML = cab + `<div class="al-cuerpo" id="al-cuerpo"${alertasAbiertas ? "" : " hidden"}>${selector && !resultados.length ? `<div class="al-barra">${selector}</div>` : ""}${cuerpo}
-    <p class="al-pie">Calculado con datos satelitales para la zona.</p></div>`;
-  document.getElementById("al-cab").addEventListener("click", () => { alertasAbiertas = !alertasAbiertas; pintarAlertas(); });
-  const $sel = document.getElementById("al-sel-etapa");
-  if ($sel) $sel.addEventListener("change", () => { ETAPA_ELEGIDA[sistema] = $sel.value; pintarAlertas(); });
+      <h2>Así estuvo la ${nombreVar} para ${quien}<small><b>${NOMBRE_PERIODO[periodoNombre] || periodoNombre}</b> · ${escaparHtml(lugar)}, ${fin === inicio ? "el " : "del "}${rangoLargo(inicio, fin)}</small></h2>
+      ${resumen}<span class="al-flecha" aria-hidden="true"></span><span class="al-ver">${abierto ? "Ocultar" : "Ver alertas"}</span></button>`;
+  const notaFaltantes = sinDatos && resultados.length
+    ? `<p class="al-faltan">${sinDatos === 1 ? "1 alerta no se pudo calcular" : `${sinDatos} alertas no se pudieron calcular`} porque faltan registros en el período.</p>` : "";
+  $al.innerHTML = cab + `<div class="al-cuerpo" id="${idPanel}-cuerpo"${abierto ? "" : " hidden"}>${cuerpo}
+    ${notaFaltantes}<p class="al-pie">${esComunitario ? `Calculado con los registros de ${escaparHtml(args.asociacion || "la asociación")}.` : "Calculado con datos satelitales para la zona."}</p></div>`;
+  $al.querySelector(".al-cab").addEventListener("click", () => { estado.abierto = !estado.abierto; pintarAlertas(null, idPanel); });
+  const $sel = $al.querySelector(".al-sel-etapa");
+  if ($sel) $sel.addEventListener("change", () => { ETAPA_ELEGIDA[sistema] = $sel.value; pintarAlertas(null, idPanel); });
 }
 
 function tarjeta(label, value, detail, accentVar, icono = "") {
@@ -1371,7 +1396,7 @@ let mostrarMaxTemp = true, mostrarMinTemp = true; // qué líneas se ven en el g
 /* ------------------------------------------------------------------------
    DESCARGAR Y COMPARTIR LOS GRÁFICOS
    La imagen sale con fondo blanco, el municipio y el período en el título y
-   la fuente al pie, para que se entienda sola al mandarla por WhatsApp.
+   la fuente al pie.
    En celular, "Compartir" abre el menú del teléfono con la imagen ya
    adjunta (ahí se elige WhatsApp). En computador, donde ese menú no
    recibe imágenes, se descarga la imagen y se abre WhatsApp Web con el
@@ -1440,7 +1465,6 @@ document.addEventListener("click", async (ev) => {
 });
 
 // Copia la imagen del gráfico al portapapeles para pegarla en un chat o una presentación.
-// La promesa se pasa directo a ClipboardItem para que funcione también en Safari.
 async function copiarGrafico(boton) {
   const original = boton.innerHTML;
   const avisar = (texto) => { boton.innerHTML = texto; setTimeout(() => { boton.innerHTML = original; }, 2200); };
@@ -1653,7 +1677,6 @@ function leerCsvCategorias(texto) {
   const iMun = col("municipio"), iLat = col("lat"), iLon = col("lon"), iPunto = col("punto_tablero"),
         iVar = col("variable"), iDias = col("periodo_dias"),
         iCortes = cab.map((n, i) => (/^corte_\d+$/.test(n) ? i : -1)).filter((i) => i >= 0);
-  // Tiene que haber un corte menos que categorías (2 cortes para Bajo/Medio/Alto).
   if (iCortes.length !== ETIQUETAS_CATEGORIA.length - 1) {
     throw new Error(`el archivo trae ${iCortes.length} cortes y el tablero espera ${ETIQUETAS_CATEGORIA.length - 1} ` +
       `(${ETIQUETAS_CATEGORIA.join(", ")}); hay que generar de nuevo el CSV con el notebook`);
@@ -1757,7 +1780,7 @@ function pintarLeyendaMapa(varKey, diasPeriodo, municipio) {
 }
   
 /* ------------------------------------------------------------------------
-   MAPA: Leaflet real, con imágenes satelitales de fondo (Esri World
+   MAPA: Leaflet, con imágenes satelitales de fondo (Esri World
    Imagery)
    ------------------------------------------------------------------------ */
 let mapaLeaflet = null;
@@ -1774,7 +1797,7 @@ let mapaLeaflet = null;
    ------------------------------------------------------------------------ */
 const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/";
 let fondoSatelite = false;     // qué fondo está activo (cambia el estilo de los bordes)
-let capaContextoActual = null; // municipios vecinos del mapa satelital, para re-estilizarlos
+let capaContextoActual = null; // municipios vecinos del mapa satelital
 function estiloContexto() {
   return fondoSatelite
     ? { color: "#FFFFFF", weight: 1.3, opacity: 0.85, fillColor: "#FFFFFF", fillOpacity: 0.04, dashArray: "4 3" }
@@ -2107,6 +2130,7 @@ function mensajeCampo(texto) {
    hacia atrás desde el ÚLTIMO REPORTE de la asociación, y si la asociación tiene menos días que el período, se muestra lo que hay. */
 function pintarVistaCampo(municipio, periodoNombre, diasPeriodo, variableElegida, sistemaProductivo) {
   const visible = document.getElementById("vista-campo").style.display !== "none";
+  document.getElementById("alertas-campo").innerHTML = ""; // se vuelve a llenar si hay registros
   if (periodoNombre === "Última fecha") {
     mensajeCampo("Elige \"Última semana\" o un período más largo arriba para ver los reportes comunitarios.");
     return;
@@ -2150,6 +2174,17 @@ function pintarVistaCampo(municipio, periodoNombre, diasPeriodo, variableElegida
     `<strong>${escaparHtml(asoc.nombre)}</strong>${asoc.ubicacion ? " · " + escaparHtml(asoc.ubicacion) : ""}<br>` +
     `Reportes en ${vars.fechas.length} de ${diasPeriodo} días del período · último reporte: ${fechaEs(fin)} (${hace})${atrasado}`;
 
+  // Alertas: se usan los últimos 60 días de registros (algunas miran 30 días hacia atrás)
+  // sobre un calendario completo, para que los días sin reporte cuenten como faltantes.
+  try {
+    const inicioAlertas = sumarDias(fin, -59);
+    const fechasAlertas = [];
+    for (let f = inicioAlertas; f <= fin; f = sumarDias(f, 1)) fechasAlertas.push(f);
+    pintarAlertas({ municipio, lugar: `${asoc.nombre}, ${municipio}`, asociacion: asoc.nombre, vars: construirVarsCampo(asoc, inicioAlertas, fin),
+      fechas: fechasAlertas, periodoNombre, diasPeriodo, fin, variable: variableElegida }, "alertas-campo");
+  } catch (e) {
+    console.error("No se pudo dibujar el panel de alertas comunitario:", e);
+  }
   mostrarIndicadores(vars, 999, etiqueta, variableElegida, null, $campoCards, sistemaProductivo);
   const hayDatos = { "Lluvia": vars.precip, "Temperatura": vars.tmax.length ? vars.tmax : vars.tmin, "Humedad relativa": vars.relhum_max.length ? vars.relhum_max : vars.relhum_min }[variableElegida];
   if (!hayDatos || !hayDatos.length) {
