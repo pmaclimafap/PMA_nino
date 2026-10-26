@@ -1164,8 +1164,10 @@ const ETAPAS_DIBUJO = {
     "Vacas en lactancia": () => `${D_SUELO}${dVaca(32, 66, 1.05, "#FFFFFF", "#3A2E2A", true)}${dCantina(66, 76)}`,
   },
 };
-const TITULO_CICLO = { "Café": "Etapas del café", "Aguacate": "Etapas del aguacate", "Maíz": "Etapas del maíz", "Yuca": "Etapas de la yuca",
-  "Plátano": "Etapas del plátano", "Cacao": "Etapas del cacao", "Porcicultura": "Tipos de producción", "Gallinas ponedoras": "Tipos de producción", "Ganadería": "Tipos de producción" };
+// Solo se dibujan las etapas que tienen umbrales en el Excel, no el ciclo completo.
+const TITULO_CICLO = { "Café": "Etapas del café que se vigilan", "Aguacate": "Etapas del aguacate que se vigilan", "Maíz": "Etapas del maíz que se vigilan",
+  "Yuca": "Etapas de la yuca que se vigilan", "Plátano": "Etapas del plátano que se vigilan", "Cacao": "Etapas del cacao que se vigilan",
+  "Porcicultura": "Animales que se vigilan", "Gallinas ponedoras": "Animales que se vigilan", "Ganadería": "Animales que se vigilan" };
 
 // Gráfico del ciclo. "activa" es la etapa a resaltar ("" = todas a color).
 function graficoCiclo(sistema, activa, marca) {
@@ -1177,6 +1179,14 @@ function graficoCiclo(sistema, activa, marca) {
         <svg viewBox="0 0 80 100" aria-hidden="true"><g class="ciclo-dib">${f()}</g></svg>
         <div class="ciclo-eje"><div class="ciclo-punto"></div></div><div class="ciclo-nom">${escaparHtml(nombre)}</div></div>`).join("")}</div>
     ${activa ? "" : `<div class="ciclo-todas">${marca}</div>`}</div>`;
+}
+
+// Texto que acompaña al valor. En los conteos de días el texto continúa la frase
+// ("3 días" + "de la última semana con…"), por eso va en minúscula y sin repetir "días".
+function textoMedida(r) {
+  let texto = r.u.comoSeMide;
+  if (r.u.unidad === "días" && Math.round(r.valor) === 1) texto = texto.replace(/^seguidos/, "seguido");
+  return texto;
 }
 
 function pintarAlertas(args) {
@@ -1264,7 +1274,7 @@ function pintarAlertas(args) {
         <h3>${titulo} para ${quien}</h3>
         <p>${textoPeriodo} la ${nombreVar} estuvo dentro de lo adecuado${etapa ? ` para la etapa de ${escaparHtml(etapa.toLowerCase())}` : ""}. No hay alertas.</p>
         ${valor ? `<div class="al-valores">${valor}</div>` : ""}
-        <div class="al-hacer"><i>✓</i><span>Continúe con el manejo habitual.</span></div></div>
+      </div>
         ${columnaDerecha(etapa, etapa ? "Etapa elegida" : "")}</div>`;
   } else {
     const p = resultados[0], col = NIVELES[p.nivel].color;
@@ -1275,16 +1285,16 @@ function pintarAlertas(args) {
         <h3>${escaparHtml(p.u.titulo)}</h3>
         ${etiquetaJunta(p.u)}
         <p>${escaparHtml(p.u.quePasa)}</p>
-        <div class="al-dato"><b>${formatoValor(p.u, p.valor, p.dia)}</b><span>${escaparHtml(p.u.comoSeMide)}${cuando}</span></div>
+        <div class="al-dato"><b>${formatoValor(p.u, p.valor, p.dia)}</b><span>${escaparHtml(textoMedida(p))}${cuando}</span></div>
       </div>
-      ${columnaDerecha(p.u.etapa !== "Todas" ? p.u.etapa : etapa, p.u.etapa !== "Todas" || etapa ? (esPecuario ? "Afectados" : "Etapa afectada") : (esPecuario ? "Esta alerta aplica a todos los animales" : "Esta alerta aplica a todas las etapas"))}</div>`;
+      ${columnaDerecha(p.u.etapa !== "Todas" ? p.u.etapa : etapa, p.u.etapa !== "Todas" || etapa ? (esPecuario ? "Afectados" : "Etapa afectada") : (esPecuario ? "Esta alerta aplica a todos los animales" : "Esta alerta aplica a todas las etapas que se vigilan"))}</div>`;
     // Todas las demás alertas (Vigilar o más), de la más grave a la más leve.
     if (otras.length) cuerpo += `<div class="al-otras-tit">${otras.length === 1 ? "Otra alerta" : `Otras ${otras.length} alertas`}</div>
       <div class="al-otras">${otras.map((r) => `<div class="al-otra" style="--al-nivel:${NIVELES[r.nivel].color}">
         <div class="al-ic" aria-hidden="true">${ICONO_GRUPO[r.u.grupo] || "⚠️"}</div>
         <div><div class="al-otra-tit"><b>${escaparHtml(r.u.titulo)}</b>${pill(r.nivel)}</div>
           <span>${escaparHtml(r.u.quePasa)}</span>
-          <small>${formatoValor(r.u, r.valor, r.dia)} · ${escaparHtml(r.u.comoSeMide)}${r.fecha ? `: ${fechaLarga(r.fecha, false)}` : ""}${etiquetaEtapa(r.u) ? ` · ${etiquetaEtapa(r.u)}` : ""}</small>
+          <small>${formatoValor(r.u, r.valor, r.dia)}${r.u.unidad === "días" ? " " : " · "}${escaparHtml(textoMedida(r))}${r.fecha ? `: ${fechaLarga(r.fecha, false)}` : ""}${etiquetaEtapa(r.u) ? ` · ${etiquetaEtapa(r.u)}` : ""}</small>
           ${etiquetaJunta(r.u)}</div></div>`).join("")}</div>`;
   }
 
