@@ -345,9 +345,6 @@
   @media (max-width: 40rem) { .periodo-botones { margin-left: 0; } }
   /* En el comunitario no existe "1 día" (los reportes se ven por semana o más). */
   #campo-periodo-botones button[data-periodo="Última fecha"] { display: none; }
-  /* El período se elige arriba; los botones sobre los gráficos quedan ocultos.
-     Para volver a mostrarlos, borre esta línea. */
-  .periodo-botones { display: none !important; }
   /* Botones para descargar y compartir el gráfico. */
   .grafico-acciones { display: inline-flex; flex-wrap: wrap; gap: 6px; }
   .btn-grafico { font-family: var(--font-body); font-size: 0.82rem; font-weight: 600; padding: 7px 14px; border-radius: 999px;
@@ -424,7 +421,7 @@
   <div class="controls">
     <div class="field"><label for="sel-municipio">Municipio</label><select id="sel-municipio"></select></div>
     <div class="field" id="campo-asociacion-field" style="display:none;"><label for="sel-asociacion">Asociación</label><select id="sel-asociacion"></select></div>
-    <!-- Ventana de tiempo: se elige aquí, junto a municipio y variable. -->
+    <!-- Ventana de tiempo: se elige aquí o con los botones sobre el gráfico (los dos están sincronizados). -->
     <div class="field"><label for="sel-periodo">Período</label><select id="sel-periodo"></select></div>
     <div class="field"><label for="sel-variable">Variable</label><select id="sel-variable"></select></div>
     <!-- Solo se muestra con Temperatura y Humedad (los umbrales dependen del sistema). -->
@@ -1275,7 +1272,7 @@ function pintarAlertas(args) {
         <p>${escaparHtml(p.u.quePasa)}</p>
         <div class="al-dato"><b>${formatoValor(p.u, p.valor, p.dia)}</b><span>${escaparHtml(p.u.comoSeMide)}${cuando}</span></div>
       </div>
-      ${columnaDerecha(p.u.etapa !== "Todas" ? p.u.etapa : etapa, p.u.etapa !== "Todas" || etapa ? "Esta alerta" : (esPecuario ? "Esta alerta aplica a todos los animales" : "Esta alerta aplica a todas las etapas"))}</div>`;
+      ${columnaDerecha(p.u.etapa !== "Todas" ? p.u.etapa : etapa, p.u.etapa !== "Todas" || etapa ? (esPecuario ? "Afectados" : "Etapa afectada") : (esPecuario ? "Esta alerta aplica a todos los animales" : "Esta alerta aplica a todas las etapas"))}</div>`;
     // Todas las demás alertas (Vigilar o más), de la más grave a la más leve.
     if (otras.length) cuerpo += `<div class="al-otras-tit">${otras.length === 1 ? "Otra alerta" : `Otras ${otras.length} alertas`}</div>
       <div class="al-otras">${otras.map((r) => `<div class="al-otra" style="--al-nivel:${NIVELES[r.nivel].color}">
