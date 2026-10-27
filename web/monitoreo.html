@@ -220,10 +220,25 @@
   .ciclo-paso:last-child .ciclo-eje::before { right: 50%; }
   .ciclo-paso:only-child .ciclo-eje::before { display: none; }
   .ciclo-paso { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .ciclo-paso svg { display: block; width: 100%; min-width: 0; max-width: 84px; height: auto; }
+  .ciclo-paso svg { display: block; width: 100%; min-width: 0; max-width: 96px; height: auto; }
   .ciclo, .ciclo-fila { min-width: 0; max-width: 100%; }
-  .ciclo-dib { opacity: .42; filter: grayscale(.85); }
-  .ciclo-paso.on .ciclo-dib, .ciclo-fila.todas .ciclo-dib { opacity: 1; filter: none; }
+  /* Dibujos: borde (--c), relleno (--r) y segundo tono (--r2) vienen de cada figura. */
+  .ciclo-dib * { vector-effect: non-scaling-stroke; }
+  .d-f { fill: var(--r); stroke: var(--c); stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+  .d-t { fill: none; stroke: var(--c); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .d-s { fill: var(--c); stroke: none; }
+  .d-det { fill: none; stroke: var(--c); stroke-width: 1; stroke-linecap: round; opacity: .55; }
+  .d-sombra { fill: rgba(60, 40, 20, .10); }
+  .d-sup { fill: var(--r2); stroke: none; }
+  .d-f2 { fill: var(--r2); stroke: none; }  /* segundo tono (brillo de hojas y frutos) */
+  /* Las etapas que no están resaltadas quedan en gris y sin detalles finos.
+     (Si la alerta aplica a todas, la fila lleva la clase "todas" y todo va a color.) */
+  .ciclo-fila:not(.todas) .ciclo-paso:not(.on) .ciclo-dib * {
+    --c: color-mix(in srgb, var(--color-ink) 28%, var(--color-panel)) !important;
+    --r: color-mix(in srgb, var(--color-ink) 5%, var(--color-panel)) !important;
+    --r2: color-mix(in srgb, var(--color-ink) 10%, var(--color-panel)) !important; }
+  .ciclo-fila:not(.todas) .ciclo-paso:not(.on) .d-det,
+  .ciclo-fila:not(.todas) .ciclo-paso:not(.on) .d-sombra { display: none; }
   .ciclo-punto { position: relative; width: 12px; height: 12px; border-radius: 50%; background: #D8CDB8; border: 2px solid var(--color-panel); }
   .ciclo-paso.on .ciclo-punto, .ciclo-fila.todas .ciclo-punto { background: var(--al-nivel); }
   .ciclo-paso.on .ciclo-punto { width: 16px; height: 16px; box-shadow: 0 0 0 4px color-mix(in srgb, var(--al-nivel) 25%, transparent); }
@@ -1027,154 +1042,232 @@ function etiquetaJunta(u) {
 
 /* ----------------------------------------------------------------------
    DIBUJOS DE LAS ETAPAS (gráfico del ciclo en la tarjeta de alerta)
-   Cada dibujo es un SVG de 80 × 100. El orden de cada lista es el orden
-   del ciclo; los nombres deben coincidir con la columna "etapa" del CSV.
+   Estilo: ilustración de línea con colores naturales. Cada dibujo es un SVG
+   de 80 × 100. Los colores van en variables (--c borde, --r relleno,
+   --r2 segundo tono); en las etapas que no están resaltadas el CSS las
+   cambia a gris, y los detalles finos (clase "det") y las sombras se ocultan.
+   El orden de cada lista es el orden del ciclo y los nombres deben coincidir
+   con la columna "etapa" de Umbrales.csv.
    ---------------------------------------------------------------------- */
-const D_SUELO = `<path d="M4 92 H76" stroke="#A9825A" stroke-width="3" stroke-linecap="round"/><ellipse cx="40" cy="94" rx="30" ry="3" fill="#E8DCC6"/>`;
-const dHoja = (x, y, dx, dy, c = "#3E8E41") => `<path d="M${x} ${y} q ${dx * 0.6} ${dy - 6} ${dx} ${dy}" stroke="${c}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
-// Arbusto o árbol con hojas ovaladas (café, aguacate, cacao)
-const dHojaOval = (x, y, ang, c = "#2F7A3A", tam = 1) => `<ellipse cx="${x}" cy="${y}" rx="${5.5 * tam}" ry="${2.6 * tam}" transform="rotate(${ang} ${x} ${y})" fill="${c}"/>`;
-function dCafeto(extra = "", escala = 1) {
-  // Arbusto redondeado: ramas que salen del tallo y caen un poco, con hojas brillantes.
-  let s = `<path d="M40 92 V22" stroke="#7A4E2D" stroke-width="3" stroke-linecap="round"/>`;
-  for (let y = 30; y <= 80; y += 7) {
-    const w = 6 + 18 * Math.sin(Math.PI * (y - 22) / 66);
-    [-1, 1].forEach((lado) => {
-      const xf = 40 + lado * w, yf = y + 6;
-      s += `<path d="M40 ${y} q${lado * w * 0.5} -3 ${lado * w} 6" stroke="#7A4E2D" stroke-width="1.5" fill="none"/>`;
-      s += dHojaOval(40 + lado * w * 0.45, y - 1.5, lado * 15, "#2F7A3A", 1.05) + dHojaOval(xf, yf, lado * 40, "#3C8C45", 1.05);
-    });
-  }
-  s += dHojaOval(37, 22, -55, "#3C8C45") + dHojaOval(43, 22, 55, "#3C8C45");
-  return `${D_SUELO}<g transform="translate(40 92) scale(${escala}) translate(-40 -92)">${s}${extra}</g>`;
+let idDibujo = 0;
+const COLOR = (c, r, r2) => `style="--c:${c};--r:${r}${r2 ? `;--r2:${r2}` : ""}"`;
+const D_HOJA = COLOR("#2F6B3F", "#A9D68E"), D_HOJA2 = COLOR("#2F6B3F", "#7FBF6A"), D_TALLO = COLOR("#6B4226", "#A9774B"),
+  D_TALLO_V = COLOR("#2F6B3F", "#9CCB7E"), D_RAIZ = COLOR("#6B4226", "#C99567"), D_TIERRA = COLOR("#A07A52", "#F1E4CC", "#DCC39C"),
+  D_MAZ = COLOR("#9A7412", "#F4C842"), D_ESPIGA = COLOR("#A9822C", "#E9C46A"), D_ROSA = COLOR("#B04C66", "#F6BCC8"),
+  D_ROSA2 = COLOR("#9A3E57", "#EFA6B6"), D_CORAZON = COLOR("#A83232", "#E56A6A"), D_FLOR = COLOR("#8C8A7A", "#FFFFFF"),
+  D_CEREZA = COLOR("#8E1F1F", "#D93A3A"), D_CEREZA_V = COLOR("#4E7A2A", "#9CCB5A"), D_AGUACATE = COLOR("#1F3F1C", "#4E7A34"),
+  D_CACAO = COLOR("#9A5A10", "#F0A830"), D_CACAO_V = COLOR("#4E7A2A", "#A6D06A"), D_FLOR_CACAO = COLOR("#B05A78", "#F8DCE6"),
+  D_BELLOTA = COLOR("#5A1E44", "#93306E"), D_PLATANO = COLOR("#5E7F1E", "#C3DD6A"), D_GALLINA = COLOR("#7A3E14", "#C9773A", "#A85A24"),
+  D_POLLA = COLOR("#8A5A2A", "#E3B27A"), D_CRESTA = COLOR("#9E1C1C", "#E03A3A"), D_PICO = COLOR("#A87412", "#F2C24A"),
+  D_HUEVO = COLOR("#B59A72", "#F6E9D2"), D_PAJA = COLOR("#A9822C", "#EED38A"), D_VACA = COLOR("#4A4440", "#FFFFFF"),
+  D_MANCHA = COLOR("#2E2A28", "#3A3532"), D_NOVILLO = COLOR("#5A3218", "#B0683A"), D_TORO = COLOR("#2E1E14", "#6B4226"),
+  D_HOCICO = COLOR("#B04C66", "#F6BCC8"), D_CUERNO = COLOR("#8C7A5A", "#EFE3C8"), D_METAL = COLOR("#6E7C86", "#D3DCE2");
+
+// Suelo: superficie ondulada, franja más oscura arriba y fondo que se desvanece.
+// La máscara hace el desvanecido sin depender del color, así también sirve en gris.
+function dSuelo(y = 88, alto = 12) {
+  const id = "ds" + (idDibujo++), sup = `M2 ${y} Q 12 ${y - 4} 22 ${y - 1} T 42 ${y - 1} T 62 ${y - 2} T 78 ${y}`;
+  return `<defs><linearGradient id="${id}l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#fff" stop-opacity=".9"/>
+    <stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><mask id="${id}"><rect x="0" y="${y - 6}" width="80" height="${alto + 8}" fill="url(#${id}l)"/></mask></defs>
+    <g ${D_TIERRA}><path d="${sup} V ${y + alto} H2 Z" fill="var(--r)" mask="url(#${id})" stroke="none"/>
+    <path class="d-sup" d="${sup} V ${y + 3.5} Q 62 ${y + 2} 42 ${y + 3} T 2 ${y + 4} Z"/><path class="d-t" d="${sup}"/></g>`;
 }
-const dPuntos = (lista, c, r) => lista.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/>`).join("");
-const PUNTOS_CAFE = [[31, 80], [49, 80], [27, 66], [53, 66], [29, 52], [51, 52], [33, 40], [47, 40], [36, 72], [44, 58]];
-function dArbol(extra = "", copa = "#3E8E41") {
-  return `${D_SUELO}<path d="M40 92 V52 M40 66 l-10 -10 M40 62 l9 -9" stroke="#7A4E2D" stroke-width="5" stroke-linecap="round"/>
-    <circle cx="40" cy="36" r="20" fill="${copa}"/><circle cx="24" cy="46" r="12" fill="${copa}"/><circle cx="56" cy="46" r="12" fill="${copa}"/>
-    <circle cx="32" cy="26" r="11" fill="#4E9C4A"/><circle cx="50" cy="28" r="10" fill="#4E9C4A"/>${extra}`;
+const dSombra = (x, y, rx) => `<ellipse class="d-sombra" cx="${x}" cy="${y}" rx="${rx}" ry="${rx * 0.11}"/>`;
+// Hoja alargada (maíz, plátano): sale de (x, y) y termina en (x + dx, y + dy), con nervadura
+const dHojaLarga = (x, y, dx, dy, color = D_HOJA, ancho = 1) => `<g ${color}><path class="d-f" d="M${x} ${y} Q ${x + dx * 0.45} ${y + dy - 10 * ancho} ${x + dx} ${y + dy} Q ${x + dx * 0.55} ${y + dy * 0.2 - 2} ${x} ${y + 5 * ancho} Z"/>
+  <path class="d-det" d="M${x} ${y + 2} Q ${x + dx * 0.5} ${y + dy * 0.5 - 4 * ancho} ${x + dx * 0.95} ${y + dy * 0.97}"/></g>`;
+// Hoja ovalada (café, cacao, aguacate), centrada en (x, y), girada "ang" grados
+const dHojaOval = (x, y, ang, largo = 9, color = D_HOJA2) => `<g transform="translate(${x} ${y}) rotate(${ang})" ${color}>
+  <path class="d-f" d="M${-largo / 2} 0 Q 0 ${-largo * 0.34} ${largo / 2} 0 Q 0 ${largo * 0.34} ${-largo / 2} 0 Z"/><path class="d-det" d="M${-largo / 2 + 1} 0 H${largo / 2 - 1}"/></g>`;
+// Tallo que se adelgaza hacia arriba
+const dTallo = (y1, y2, w1, w2, color = D_TALLO, x = 40) => `<path class="d-f" ${color} d="M${x - w1} ${y1} C ${x - w1} ${(y1 + y2) / 2} ${x - w2} ${y2 + 6} ${x - w2} ${y2} L ${x + w2} ${y2} C ${x + w2} ${y2 + 6} ${x + w1} ${(y1 + y2) / 2} ${x + w1} ${y1} Z"/>`;
+const dLinea = (d, color = D_TALLO) => `<path class="d-t" ${color} d="${d}"/>`;
+const dCirculos = (lista, color, r) => `<g ${color}>${lista.map(([x, y]) => `<circle class="d-f" cx="${x}" cy="${y}" r="${r}"/>`).join("")}</g>`;
+const dCorazon = (x, y) => `<path class="d-f" ${D_CORAZON} d="M${x} ${y + 6} l-5 -5 a3 3 0 0 1 5 -4 a3 3 0 0 1 5 4 z"/>`;
+
+// ---------- Café: un tallo con pocos pares de hojas grandes; flores y frutos en las axilas ----------
+const D_HOJA_CAFE = COLOR("#1F4A22", "#3F7F3A", "#62A452"), D_TALLO_CAFE = COLOR("#5A3A22", "#8C6240");
+const D_MADURA = COLOR("#7A1414", "#C62828", "#E8584A"), D_PINTONA = COLOR("#8A4A10", "#E8892A", "#F2B060"), D_VERDE = COLOR("#3E6A1E", "#8DBF4A", "#B6D97A");
+// Hojas grandes, elípticas, con punta alargada, borde algo ondulado y nervaduras laterales marcadas.
+function hojaCafe2(x, y, ang, L = 16) {
+  const w = L * 0.3;
+  let venas = "";
+  for (let k = 1; k <= 5; k++) { const t = k / 6.2, xv = L * t, a = w * Math.sin(Math.PI * Math.min(1, t * 1.15)) * 0.8;
+    venas += `M${xv} 0 Q ${xv + L * 0.06} ${-a * 0.6} ${xv + L * 0.11} ${-a} M${xv} 0 Q ${xv + L * 0.06} ${a * 0.6} ${xv + L * 0.11} ${a} `; }
+  return `<g transform="translate(${x} ${y}) rotate(${ang})" ${D_HOJA_CAFE}>
+    <path class="d-f" d="M0 0 C ${L * 0.12} ${-w * 0.9} ${L * 0.45} ${-w * 1.08} ${L * 0.68} ${-w * 0.75} C ${L * 0.82} ${-w * 0.5} ${L * 0.92} ${-w * 0.2} ${L} 0 C ${L * 0.9} ${w * 0.22} ${L * 0.8} ${w * 0.55} ${L * 0.66} ${w * 0.78} C ${L * 0.45} ${w * 1.05} ${L * 0.12} ${w * 0.9} 0 0 Z"/>
+    <path class="d-f2" d="M0 0 C ${L * 0.12} ${-w * 0.9} ${L * 0.45} ${-w * 1.08} ${L * 0.68} ${-w * 0.75} C ${L * 0.82} ${-w * 0.5} ${L * 0.92} ${-w * 0.2} ${L} 0 Q ${L * 0.5} ${-w * 0.12} 0 0 Z"/>
+    <path class="d-det" d="M0.5 0 Q ${L * 0.5} ${-w * 0.08} ${L - 0.6} 0 ${venas}"/></g>`;
 }
-const dAguacate = (x, y) => `<path d="M${x} ${y - 7} v-4" stroke="#5B3A1E" stroke-width="1.2"/><path d="M${x} ${y - 7} c4 0 5 6 4 9 c-1 3 -7 3 -8 0 c-1 -3 0 -9 4 -9 z" fill="#2E5E2A" stroke="#1F3F1C" stroke-width=".8"/>`;
-function dCacao(extra = "") {
-  return `${D_SUELO}<path d="M40 92 V30" stroke="#6B4226" stroke-width="7" stroke-linecap="round"/>
-    <path d="M40 40 l-14 -10 M40 36 l13 -12" stroke="#6B4226" stroke-width="3" stroke-linecap="round"/>
-    ${dHojaOval(22, 26, -30, "#2F7A3A", 1.6)}${dHojaOval(30, 18, -60, "#3E8E41", 1.6)}${dHojaOval(40, 14, 90, "#2F7A3A", 1.6)}
-    ${dHojaOval(50, 18, 60, "#3E8E41", 1.6)}${dHojaOval(58, 24, 30, "#2F7A3A", 1.6)}${extra}`;
+// Café: un tallo con pocos pares de hojas grandes y bien separados (las de abajo caen un poco,
+// las de arriba suben); cada hoja con su pecíolo corto. Flores y frutos en las axilas de arriba.
+function hojaConPeciolo(x, y, angGrados, L) {
+  const a = angGrados * Math.PI / 180, px = x + Math.cos(a) * 2.6, py = y + Math.sin(a) * 2.6;
+  return `<path class="d-t" ${D_TALLO_V} d="M${x} ${y} L${px.toFixed(1)} ${py.toFixed(1)}"/>${hojaCafe2(px, py, angGrados, L)}`;
 }
-const dMazorca = (x, y, c, t = 1) => `<g transform="translate(${x} ${y}) scale(${t})"><path d="M0 -9 c6 0 7 7 6 11 c-1 5 -11 5 -12 0 c-1 -4 0 -11 6 -11 z" fill="${c}"/>
-    <path d="M-2 -7 v14 M2 -7 v14" stroke="rgba(0,0,0,.15)" stroke-width="1"/></g>`;
-const dFlorCacao = (x, y) => `<circle cx="${x}" cy="${y}" r="1.8" fill="#F6D7E0"/><circle cx="${x}" cy="${y}" r=".7" fill="#C2185B"/>`;
-function dPlatano(alto, extra = "") {
-  const y0 = 92 - alto;
-  return `${D_SUELO}<path d="M37 92 L38 ${y0} M43 92 L42 ${y0}" stroke="#7FA34A" stroke-width="4"/><rect x="37" y="${y0}" width="6" height="${alto}" fill="#8DB55A"/>
-    <path d="M40 ${y0} q-14 -6 -30 2" stroke="#3E8E41" stroke-width="7" fill="none" stroke-linecap="round"/>
-    <path d="M40 ${y0} q14 -8 30 0" stroke="#4E9C4A" stroke-width="7" fill="none" stroke-linecap="round"/>
-    <path d="M40 ${y0} q-6 -14 -18 -16" stroke="#4E9C4A" stroke-width="6" fill="none" stroke-linecap="round"/>
-    <path d="M40 ${y0} q6 -14 18 -18" stroke="#3E8E41" stroke-width="6" fill="none" stroke-linecap="round"/>${extra}`;
+function racimo3(x, y, tipo, n) {
+  const pos = [[0, 0], [-3.3, 0.9], [3.3, 1], [-1.6, 3.8], [1.8, 3.9]].slice(0, n);
+  return pos.map(([dx, dy], k) => {
+    if (tipo === "flor") return `<g transform="translate(${x + dx * 1.2} ${y + dy - 1}) rotate(${k * 29})" style="--c:#A3AE92;--r:#FFFFFF">${[0, 72, 144, 216, 288].map((g) =>
+      `<path class="d-f" transform="rotate(${g})" d="M0 0 C 1.1 -1 1.2 -3.2 0 -4.3 C -1.2 -3.2 -1.1 -1 0 0 Z"/>`).join("")}<circle class="d-s" style="--c:#D9C27A" r=".8"/></g>`;
+    const col = tipo === "verde" ? D_VERDE : (k === 2 ? D_PINTONA : D_MADURA);
+    return `<g ${col}><circle class="d-f" cx="${x + dx}" cy="${y + dy}" r="2.9"/><circle class="d-f2" cx="${x + dx - .9}" cy="${y + dy - 1}" r=".9"/>
+      <circle class="d-t" cx="${x + dx + .2}" cy="${y + dy + .2}" r=".55"/></g>`;
+  }).join("");
 }
-const dBellota = (x, y) => `<path d="M40 ${y - 14} q6 4 ${x - 40} 14" stroke="#7FA34A" stroke-width="2" fill="none"/><path d="M${x} ${y} c4 0 5 8 0 12 c-5 -4 -4 -12 0 -12 z" fill="#7B2C5C"/>`;
-const dRacimo = (x, y) => `<path d="M40 ${y - 16} q6 2 ${x - 40} 4" stroke="#7FA34A" stroke-width="2" fill="none"/>` +
-  [0, 6, 12].map((dy) => [-6, 0, 6].map((dx) => `<path d="M${x + dx - 2} ${y + dy} q2 6 6 6" stroke="#9BC44A" stroke-width="3" fill="none" stroke-linecap="round"/>`).join("")).join("");
-// Yuca: se ve la parte de arriba y las raíces bajo tierra
-const D_TIERRA = `<rect x="2" y="64" width="76" height="34" rx="4" fill="#EAD9BE"/><path d="M2 64 H78" stroke="#A9825A" stroke-width="3" stroke-linecap="round"/>`;
-function dHojaYuca(cx, cy, r, ang = 0, c = "#3E8E41") {
-  return `<g transform="translate(${cx} ${cy}) rotate(${ang})">${[-60, -30, 0, 30, 60].map((a) =>
-    `<ellipse cx="0" cy="${-r / 2}" rx="${r * 0.16}" ry="${r / 2}" transform="rotate(${a})" fill="${c}"/>`).join("")}<circle r="1.5" fill="#7A4E2D"/></g>`;
+function cafetoH(tipo = "", esc = 1) {
+  // [altura del nudo, largo de la hoja, ángulo sobre la horizontal (negativo = cae)]
+  const pares = [[64, 25, -20], [52, 25, -6], [41, 21, 12], [32, 16, 30]];
+  let s = dTallo(88, 24, 1.9, 0.7, D_TALLO_CAFE), frutos = "";
+  s += `<path class="d-det" ${D_TALLO_CAFE} d="M38.4 82 h3.2 M38.5 75 h3 M38.6 69 h2.8"/>`;
+  pares.forEach(([y, L, ang], i) => {
+    s += hojaConPeciolo(40, y, 180 + ang, L) + hojaConPeciolo(40, y, -ang, L * 0.96);
+    if (tipo && i >= 1) frutos += racimo3(40, y - 3.2, tipo, i === 1 ? 5 : i === 2 ? 4 : 3);
+  });
+  s += hojaConPeciolo(40, 26, -62, 9) + hojaConPeciolo(40, 26, -118, 9) + `<path class="d-f" ${D_HOJA_CAFE} d="M40 24 C 38.5 21 39 18 40 16.5 C 41 18 41.5 21 40 24 Z"/>`;
+  return `${dSuelo()}<g transform="translate(40 88) scale(${esc}) translate(-40 -88)">${s}${frutos}</g>`;
 }
-const dTalloYuca = (y1, y2) => `<path d="M40 ${y1} V${y2}" stroke="#8B5E3C" stroke-width="3.5" stroke-linecap="round"/>`;
-// Animales
-function dCerdo(x, y, s, c = "#F3A6B4") {
-  return `<g transform="translate(${x} ${y}) scale(${s})">
-   <rect x="-16" y="4" width="5" height="11" rx="2" fill="${c}"/><rect x="8" y="4" width="5" height="11" rx="2" fill="${c}"/>
-   <ellipse cx="0" cy="0" rx="20" ry="12" fill="${c}"/>
-   <circle cx="19" cy="-4" r="9" fill="${c}"/><path d="M15 -12 l4 -6 l3 6 z" fill="#E58A9C"/>
-   <ellipse cx="27" cy="-2" rx="4" ry="3.4" fill="#E58A9C"/><circle cx="20" cy="-6" r="1.3" fill="#3B2B2B"/>
-   <path d="M-20 -2 q-6 -2 -4 -7" stroke="#E58A9C" stroke-width="1.8" fill="none"/></g>`;
+
+// ---------- Aguacate: árbol de copa amplia ----------
+const dArbolAguacate = (extra = "") => `${dSuelo()}${dTallo(88, 50, 3, 1.6)}${dLinea("M40 64 Q 33 58 29 52 M40 58 Q 47 53 50 47")}
+  <g ${D_HOJA2}><path class="d-f" d="M16 46 C 10 40 13 30 21 28 C 22 18 33 12 41 16 C 48 10 60 15 60 24 C 68 26 70 36 64 42 C 66 50 56 56 48 52 C 42 58 30 57 26 52 C 19 54 13 51 16 46 Z"/>
+  <path class="d-det" d="M24 40 q4 -5 9 -6 M44 28 q6 -2 10 2 M36 46 q5 -3 11 -1 M28 30 q3 -3 7 -3"/></g>${extra}`;
+const dAguacate = (x, y) => `<g ${D_AGUACATE}><path class="d-t" d="M${x} ${y - 8} v-4"/><path class="d-f" d="M${x} ${y - 8} C ${x + 4.5} ${y - 8} ${x + 5.5} ${y + 2} ${x + 4} ${y + 4} C ${x + 2} ${y + 6.5} ${x - 2} ${y + 6.5} ${x - 4} ${y + 4} C ${x - 5.5} ${y + 2} ${x - 4.5} ${y - 8} ${x} ${y - 8} Z"/>
+  <path class="d-det" d="M${x - 1.5} ${y - 4} q -1.5 4 0 7"/></g>`;
+
+// ---------- Maíz ----------
+const dEspiga = (y) => dLinea(`M40 ${y + 10} V${y - 6} M40 ${y + 2} L33 ${y - 6} M40 ${y + 2} L47 ${y - 6} M40 ${y + 6} L31 ${y + 1} M40 ${y + 6} L49 ${y + 1}`, D_ESPIGA);
+const dMazorca = (x, y) => `<g ${D_MAZ}><path class="d-f" d="M${x} ${y - 14} C ${x + 7} ${y - 12} ${x + 7} ${y + 6} ${x + 1} ${y + 10} C ${x - 5} ${y + 6} ${x - 6} ${y - 10} ${x} ${y - 14} Z"/>
+  <path class="d-det" d="M${x - 2} ${y - 9} h4 M${x - 3} ${y - 5} h6 M${x - 3} ${y - 1} h6 M${x - 3} ${y + 3} h5 M${x} ${y - 12} v20"/></g>
+  <path class="d-f" ${D_HOJA} d="M${x - 6} ${y + 12} C ${x - 9} ${y} ${x - 6} ${y - 8} ${x - 1} ${y - 12} C ${x - 2} ${y - 2} ${x - 1} ${y + 6} ${x + 2} ${y + 12} Z"/>`;
+
+// ---------- Yuca: se ve la parte de arriba y las raíces bajo tierra ----------
+const dLobulo = (L, w, curva) => `M0 0 C ${w} ${-L * 0.3} ${w * 0.6 + curva} ${-L * 0.8} ${curva} ${-L} C ${-w * 0.6 + curva} ${-L * 0.8} ${-w} ${-L * 0.3} 0 0 Z`;
+function dHojaYuca(x, y, L, ang) {
+  const angs = [-70, -36, 0, 36, 70], esc = [0.62, 0.86, 1, 0.86, 0.62];
+  return `<g transform="translate(${x} ${y}) rotate(${ang})" ${D_HOJA}>${angs.map((a, k) => `<g transform="rotate(${a})">
+    <path class="d-f" d="${dLobulo(L * esc[k], L * 0.13, a * 0.02)}"/><path class="d-det" d="M0 0 Q ${a * 0.01} ${-L * esc[k] * 0.5} ${a * 0.02} ${-L * esc[k] * 0.9}"/></g>`).join("")}
+    <circle class="d-s" r="1.2"/></g>`;
 }
-function dGallina(x, y, s, c = "#B5642F") {
-  return `<g transform="translate(${x} ${y}) scale(${s})">
-   <path d="M-4 10 v9 M4 10 v9 M-4 19 h-4 M4 19 h4" stroke="#E0A02A" stroke-width="2" stroke-linecap="round"/>
-   <path d="M-18 -6 q-6 -12 2 -14 q2 8 8 10 z" fill="#5A2E14"/>
-   <ellipse cx="0" cy="0" rx="17" ry="12" fill="${c}"/><path d="M-10 -2 q8 8 18 0" stroke="rgba(0,0,0,.18)" stroke-width="2" fill="none"/>
-   <circle cx="14" cy="-12" r="7" fill="${c}"/><path d="M11 -19 q2 -5 4 0 q2 -5 4 1" fill="#D62828"/>
-   <path d="M20 -12 l6 2 l-6 2 z" fill="#E0A02A"/><path d="M18 -7 q1 4 -1 6" stroke="#D62828" stroke-width="2.4" fill="none"/>
-   <circle cx="16" cy="-13" r="1.2" fill="#222"/></g>`;
+function dRaiz(x0, y0, x1, y1, ancho) {
+  const mx = (x0 + x1) / 2, my = (y0 + y1) / 2, dx = y1 - y0, dy = -(x1 - x0), n = Math.hypot(dx, dy), ux = dx / n * ancho, uy = dy / n * ancho;
+  return `<g ${D_RAIZ}><path class="d-f" d="M${x0} ${y0} Q ${mx + ux} ${my + uy} ${x1} ${y1} Q ${mx - ux} ${my - uy} ${x0} ${y0} Z"/>
+    <path class="d-det" d="M${mx + ux * 0.4 - (x1 - x0) * 0.12} ${my + uy * 0.4 - (y1 - y0) * 0.12} l ${-ux * 0.7} ${-uy * 0.7} M${mx + ux * 0.4 + (x1 - x0) * 0.14} ${my + uy * 0.4 + (y1 - y0) * 0.14} l ${-ux * 0.7} ${-uy * 0.7}"/></g>`;
 }
-const dHuevo = (x, y) => `<ellipse cx="${x}" cy="${y}" rx="4" ry="5.2" fill="#F4E3C8" stroke="#D9C3A0" stroke-width=".8"/>`;
-function dVaca(x, y, s, c = "#FFFFFF", manchas = "#3A2E2A", ubre = false) {
-  return `<g transform="translate(${x} ${y}) scale(${s})">
-   <rect x="-20" y="6" width="5" height="14" rx="2" fill="${c}" stroke="#555" stroke-width=".6"/><rect x="12" y="6" width="5" height="14" rx="2" fill="${c}" stroke="#555" stroke-width=".6"/>
-   <rect x="-24" y="-10" width="44" height="22" rx="10" fill="${c}" stroke="#555" stroke-width=".8"/>
-   ${manchas ? `<ellipse cx="-10" cy="-2" rx="7" ry="5" fill="${manchas}"/><ellipse cx="8" cy="4" rx="5" ry="4" fill="${manchas}"/>` : ""}
-   ${ubre ? `<ellipse cx="2" cy="13" rx="6" ry="4" fill="#F3A6B4"/>` : ""}
-   <path d="M-24 -6 q-6 2 -5 12" stroke="#555" stroke-width="1.5" fill="none"/>
-   <rect x="18" y="-16" width="13" height="15" rx="5" fill="${c}" stroke="#555" stroke-width=".8"/><rect x="24" y="-6" width="8" height="6" rx="3" fill="#F3A6B4"/>
-   <path d="M19 -16 l-3 -5 M30 -16 l3 -5" stroke="#C9B79C" stroke-width="2.2" stroke-linecap="round"/><circle cx="24" cy="-11" r="1.2" fill="#222"/></g>`;
+
+// ---------- Plátano ----------
+const dHojaPlatano = (x, y, dx, dy) => dHojaLarga(x, y, dx, dy, D_HOJA2, 1.6);
+const dPlanta = (alto, extra = "") => { const y0 = 88 - alto;
+  return `${dSuelo()}${dTallo(88, y0, 3.6, 2.6, D_TALLO_V)}<path class="d-det" ${D_TALLO_V} d="M38.5 86 L39 ${y0 + 4} M41.5 86 L41 ${y0 + 4}"/>
+    ${dHojaPlatano(40, y0 + 2, -30, 6)}${dHojaPlatano(40, y0, 30, 2)}${dHojaPlatano(40, y0, -20, -16)}${dHojaPlatano(40, y0, 18, -18)}${extra}`; };
+const dBellota = (x, y) => `${dLinea(`M40 ${y - 18} Q ${x + 2} ${y - 16} ${x} ${y}`, D_TALLO_V)}<g ${D_BELLOTA}><path class="d-f" d="M${x} ${y - 1} C ${x + 4.5} ${y} ${x + 5} ${y + 8} ${x} ${y + 12} C ${x - 5} ${y + 8} ${x - 4.5} ${y} ${x} ${y - 1} Z"/>
+  <path class="d-det" d="M${x - 2.5} ${y + 4} q 2.5 1.5 5 0 M${x - 2} ${y + 7.5} q 2 1.2 4 0"/></g>`;
+const dRacimo = (x, y) => `${dLinea(`M40 ${y - 20} Q ${x + 2} ${y - 18} ${x} ${y - 4} V ${y + 18}`, D_TALLO_V)}<g ${D_PLATANO}>${[0, 7, 14].map((dy) => [-7, -2.5, 2.5, 7].map((dx) =>
+  `<path class="d-f" d="M${x + dx * 0.6} ${y + dy} q ${dx * 0.5} 1 ${dx * 0.8 + (dx > 0 ? 2 : -2)} -5 q -1.5 4.5 ${-(dx * 0.8 + (dx > 0 ? 2 : -2))} 7 z"/>`).join("")).join("")}</g>
+  <g ${D_BELLOTA}><path class="d-f" d="M${x} ${y + 18} C ${x + 3} ${y + 19} ${x + 3.5} ${y + 24} ${x} ${y + 27} C ${x - 3.5} ${y + 24} ${x - 3} ${y + 19} ${x} ${y + 18} Z"/></g>`;
+
+// ---------- Cacao: las flores y mazorcas salen del tronco ----------
+const dArbolCacao = (extra = "") => `${dSuelo()}${dTallo(88, 26, 4, 2.4)}${dLinea("M40 40 Q 30 32 22 28 M40 34 Q 50 28 58 24 M40 30 Q 39 22 40 16")}
+  ${dHojaOval(20, 27, -20, 13)}${dHojaOval(26, 19, -60, 13)}${dHojaOval(40, 13, 90, 13)}${dHojaOval(54, 18, 60, 13)}${dHojaOval(60, 25, 20, 13)}${dHojaOval(33, 25, -35, 11)}${dHojaOval(47, 24, 35, 11)}${extra}`;
+const dFlorCacao = (x, y) => `<g ${D_FLOR_CACAO}><circle class="d-f" cx="${x}" cy="${y}" r="1.9"/><circle class="d-s" cx="${x}" cy="${y}" r=".6"/></g>`;
+const dMazorcaCacao = (x, y, color, t = 1) => `<g transform="translate(${x} ${y}) scale(${t})" ${color}><path class="d-t" d="M0 -10 v-3"/>
+  <path class="d-f" d="M0 -10 C 6.5 -10 8 -2 7 3 C 6 9 2 12 0 12 C -2 12 -6 9 -7 3 C -8 -2 -6.5 -10 0 -10 Z"/>
+  <path class="d-det" d="M-3.5 -8 Q -5 1 -3 10 M0 -10 V12 M3.5 -8 Q 5 1 3 10"/></g>`;
+
+// ---------- Animales ----------
+function dCerdo(x, y, s, opc = {}) {
+  const { espejo = false, color = D_ROSA, ubre = false, robusto = false, cria = false } = opc, k = robusto ? 1.12 : 1;
+  const cabeza = cria ? `scale(1.18) translate(-3 1)` : "";
+  return `<g transform="translate(${x} ${y}) scale(${(espejo ? -s : s) * k} ${s * (robusto ? 1.06 : 1)})" ${color}>${dSombra(0, 18, 24)}
+    <path class="d-f" d="M-24 -2 C -24 -13 -14 -17 -2 -17 C 8 -17 15 -15 19 -11 C 23 -12 27 -10 29 -7 C 31 -7 33 -5 33 -2 C 33 1 31 2 29 2 C 27 5 24 7 20 8 L19 15 Q 19 17 17 17 L14 17 Q 12 17 12 15 L11 10 L-10 10 L-11 15 Q -11 17 -13 17 L-16 17 Q -18 17 -18 15 L-19 8 C -23 5 -24 2 -24 -2 Z"/>
+    <path class="d-det" d="M-4 -14 C 4 -13 10 -9 12 -2 M-20 4 C -12 9 4 9 14 6"/>
+    <g transform="${cabeza}"><path class="d-f" d="M15 -15 C 18 -21 23 -20 23 -15 C 22 -12 19 -10 17 -10 Z"/>
+    <ellipse class="d-f" cx="32" cy="-2.4" rx="2.3" ry="3.4"/><circle class="d-s" cx="31.6" cy="-3.6" r=".6"/><circle class="d-s" cx="31.6" cy="-1.2" r=".6"/>
+    <circle class="d-s" cx="23" cy="-7" r="1.2"/></g>
+    <path class="d-t" d="M-24 -4 c -4 -1 -5.5 -5 -2.5 -6.2 c 3 -1 3.4 3 .2 3"/>
+    <path class="d-s" d="M12.2 15 h4.8 v2 h-4.8 z M-17.8 15 h4.8 v2 h-4.8 z" opacity=".55"/>
+    ${ubre ? `<path class="d-f" d="M-9 9.5 Q 0 14 9 9.5 Z"/>` : ""}</g>`;
 }
-const dCorazon = (x, y) => `<path d="M${x} ${y + 6} l-6 -6 a3.4 3.4 0 0 1 6 -4 a3.4 3.4 0 0 1 6 4 z" fill="#C0392B"/>`;
-const dCantina = (x, y) => `<path d="M${x - 5} ${y} h10 l-1 14 h-8 z" fill="#C9D3DA" stroke="#7D8A93" stroke-width=".8"/><rect x="${x - 3}" y="${y - 3}" width="6" height="3" fill="#7D8A93"/>`;
+function dGallina(x, y, s, opc = {}) {
+  const { color = D_GALLINA, polla = false } = opc;
+  return `<g transform="translate(${x} ${y}) scale(${s})">${dSombra(0, 20, 16)}
+    ${dLinea("M-3 10 V19 M4 10 V19 M-3 19 h-4 M-3 19 h3 M4 19 h-3 M4 19 h4", D_PICO)}
+    <g ${color}><path class="d-f" d="M-14 -4 C -22 -12 -20 -22 -14 -24 C -12 -16 -8 -12 -4 -10 C 2 -12 8 -14 12 -16 C 13 -20 16 -24 20 -23 C 24 -22 25 -18 24 -14 C 24 -8 22 -2 18 4 C 13 10 4 13 -3 12 C -10 11 -15 5 -14 -4 Z"/>
+    <path class="d-det" d="M-10 -2 C -4 4 6 4 12 -2 M-8 3 C -2 7 6 7 10 3 M-14 -10 l -4 -8 M-11 -12 l -3 -9"/>
+    <circle class="d-s" cx="20" cy="-18" r="1.1"/></g>
+    <path class="d-f" ${D_PICO} d="M24 -18 L29 -16.5 L24 -15 Z"/>
+    <g ${D_CRESTA}><path class="d-f" d="M16 -23 Q 16 ${polla ? -26 : -29} 18.5 -25 Q 19.5 ${polla ? -27 : -30} 21.5 -25.5 Q 23 ${polla ? -27 : -29.5} 24 -23 Z"/>${polla ? "" : `<path class="d-f" d="M23.5 -13.5 Q 25 -9 22.5 -9 Q 21.5 -11 22 -13.5 Z"/>`}</g></g>`;
+}
+const dHuevo = (x, y) => `<g ${D_HUEVO}><ellipse class="d-f" cx="${x}" cy="${y}" rx="3.6" ry="4.7"/></g>`;
+// Vaca o toro de perfil, mirando a la derecha
+function dVaca(x, y, s, opc = {}) {
+  const { espejo = false, color = D_VACA, manchas = true, ubre = false, cuernos = false, robusto = false } = opc, k = robusto ? 1.1 : 1;
+  return `<g transform="translate(${x} ${y}) scale(${(espejo ? -s : s) * k} ${s})">${dSombra(0, 21, 26)}
+    <g ${color}><path class="d-f" d="M-26 -10 C -26 -15 -22 -16 -16 -16 L 14 -16 C 18 -16 20 -14 21 -11 L 22 -6 C 22 0 20 4 17 6 L16 19 L11.5 19 L11 8 L-12 8 L-13 19 L-17.5 19 L-18 6 C -23 4 -26 0 -26 -6 Z"/>
+    <path class="d-t" d="M-26 -9 C -30 -6 -30 2 -29 8"/><path class="d-f" d="M-29.5 7 q -1.5 3 .5 5 q 2 -2 .5 -5 z"/>
+    <path class="d-f" d="M18 -17 C 20 -22 26 -24 30 -22 C 34 -20 35 -14 34 -9 C 33 -6 30 -5 27 -6 C 23 -7 19 -11 18 -17 Z"/>
+    <path class="d-f" d="M18 -19 L 13 -22 L 16 -16 Z"/><circle class="d-s" cx="27" cy="-17" r="1.2"/>
+    <path class="d-det" d="M-20 -4 C -10 2 4 2 14 -2"/></g>
+    ${manchas ? `<g ${D_MANCHA}><path class="d-f" d="M-18 -16 C -12 -16 -8 -10 -12 -6 C -16 -3 -22 -6 -22 -11 C -22 -14 -20 -16 -18 -16 Z"/><path class="d-f" d="M2 -16 C 8 -16 9 -10 5 -8 C 1 -6 -2 -10 -1 -13 Z"/></g>` : ""}
+    <path class="d-f" ${D_HOCICO} d="M32 -11 C 35 -11 36 -8 35 -6 C 34 -4.5 31 -4.5 29.5 -6.5 C 29 -9 30 -11 32 -11 Z"/>
+    ${cuernos || robusto ? `<path class="d-f" ${D_CUERNO} d="M22 -22 Q 20 -28 24 -30 Q 22 -26 25 -22 Z M28 -23 Q 30 -29 34 -29 Q 31 -26 31 -22 Z"/>` : ""}
+    ${ubre ? `<path class="d-f" ${D_HOCICO} d="M-6 7.5 Q -5 14 0 14 Q 5 14 6 7.5 Z"/><path class="d-t" ${D_HOCICO} d="M-3 14 v2 M0 14.5 v2 M3 14 v2"/>` : ""}
+    <path class="d-s" ${color} d="M11.5 17.5 h4.5 v1.8 h-4.5 z M-17.5 17.5 h4.5 v1.8 h-4.5 z" opacity=".6"/></g>`;
+}
+const dCantina = (x, y) => `<g ${D_METAL}><path class="d-f" d="M${x - 5} ${y} h10 l-1 15 h-8 z"/><rect class="d-f" x="${x - 3}" y="${y - 3}" width="6" height="3" rx="1"/><path class="d-det" d="M${x - 4.5} ${y + 5} h9"/></g>`;
 
 const ETAPAS_DIBUJO = {
   "Café": {
-    "Vegetativa": () => dCafeto("", 0.7),
-    "Floración": () => dCafeto(dPuntos(PUNTOS_CAFE, "#C9C3B0", 3.4) + dPuntos(PUNTOS_CAFE, "#FFFFFF", 2.8) + dPuntos(PUNTOS_CAFE, "#E0B43A", 0.9)),
-    "Crecimiento del fruto": () => dCafeto(dPuntos(PUNTOS_CAFE, "#7CB342", 2.6)),
-    "Llenado del grano": () => dCafeto(dPuntos(PUNTOS_CAFE, "#C62828", 2.8)),
+    "Vegetativa": () => cafetoH("", 0.82),
+    "Floración": () => cafetoH("flor"),
+    "Crecimiento del fruto": () => cafetoH("verde"),
+    "Llenado del grano": () => cafetoH("madura"),
   },
   "Aguacate": {
-    "Floración": () => dArbol(dPuntos([[26, 40], [38, 30], [52, 36], [46, 48], [30, 52], [58, 50], [42, 22]], "#F3EBB0", 2.2)),
-    "Crecimiento del fruto": () => dArbol(dAguacate(28, 58) + dAguacate(46, 56) + dAguacate(58, 52) + dAguacate(36, 46)),
+    "Floración": () => dArbolAguacate(dCirculos([[22, 36], [30, 26], [40, 20], [50, 22], [58, 30], [56, 42], [46, 46], [32, 46], [24, 44], [42, 34]], COLOR("#A9A15A", "#F4EDB0"), 1.8)),
+    "Crecimiento del fruto": () => dArbolAguacate(dAguacate(26, 54) + dAguacate(37, 58) + dAguacate(50, 56) + dAguacate(58, 48)),
   },
   "Maíz": {
-    "Siembra y emergencia": () => `${D_SUELO}<path d="M40 92 V78" stroke="#3E8E41" stroke-width="3.5"/>${dHoja(40, 82, -10, -6, "#5DAA4E")}${dHoja(40, 79, 9, -7, "#5DAA4E")}`,
-    "Vegetativa": () => `${D_SUELO}<path d="M40 92 V44" stroke="#3E8E41" stroke-width="4"/>${dHoja(40, 80, -20, 4)}${dHoja(40, 70, 19, 2)}${dHoja(40, 60, -17, -2)}${dHoja(40, 51, 15, -6)}${dHoja(40, 46, -8, -10, "#5DAA4E")}`,
-    "Floración": () => `${D_SUELO}<path d="M40 92 V20" stroke="#3E8E41" stroke-width="4"/>${dHoja(40, 82, -22, 5)}${dHoja(40, 72, 21, 4)}${dHoja(40, 62, -20, 1)}${dHoja(40, 52, 19, -2)}${dHoja(40, 42, -15, -4)}
-       <path d="M40 22 V6 M40 14 l-7 -6 M40 14 l7 -6 M40 18 l-9 -3 M40 18 l9 -3" stroke="#D9A521" stroke-width="2.4" stroke-linecap="round"/>
-       <path d="M43 58 q7 -2 9 -9" stroke="#C9A08A" stroke-width="1.6" fill="none"/>`,
-    "Llenado del grano": () => `${D_SUELO}<path d="M40 92 V20" stroke="#4C8A3A" stroke-width="4"/>${dHoja(40, 82, -22, 5, "#5E9440")}${dHoja(40, 72, 21, 4, "#5E9440")}${dHoja(40, 62, -20, 1, "#5E9440")}${dHoja(40, 42, -15, -4, "#5E9440")}
-       <path d="M40 22 V6 M40 14 l-7 -6 M40 14 l7 -6" stroke="#B9873A" stroke-width="2.4" stroke-linecap="round"/>
-       <ellipse cx="51" cy="56" rx="6.5" ry="13" transform="rotate(22 51 56)" fill="#F2C230"/>
-       <path d="M41 66 q3 -16 14 -22 M41 66 q12 -4 16 -18" stroke="#6FA24A" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+    "Siembra y emergencia": () => `${dSuelo()}<ellipse class="d-f" ${D_MAZ} cx="40" cy="93" rx="3" ry="2"/>${dLinea("M40 92 V80", D_TALLO_V)}${dHojaLarga(40, 84, -11, -6)}${dHojaLarga(40, 81, 10, -8)}`,
+    "Vegetativa": () => `${dSuelo()}${dTallo(88, 44, 2.2, 1.3, D_TALLO_V)}${dHojaLarga(40, 80, -20, 2)}${dHojaLarga(40, 70, 19, 0)}${dHojaLarga(40, 60, -17, -4)}${dHojaLarga(40, 51, 14, -8)}${dHojaLarga(40, 46, -6, -12)}`,
+    "Floración": () => `${dSuelo()}${dTallo(88, 22, 2.2, 1.2, D_TALLO_V)}${dHojaLarga(40, 82, -22, 3)}${dHojaLarga(40, 72, 21, 1)}${dHojaLarga(40, 62, -20, -2)}${dHojaLarga(40, 52, 18, -5)}${dHojaLarga(40, 42, -14, -8)}${dEspiga(14)}`,
+    "Llenado del grano": () => `${dSuelo()}${dTallo(88, 22, 2.2, 1.2, D_TALLO_V)}${dHojaLarga(40, 82, -22, 3)}${dHojaLarga(40, 72, 21, 1)}${dHojaLarga(40, 42, -14, -8)}${dHojaLarga(40, 34, 12, -10)}${dEspiga(14)}${dMazorca(50, 60)}`,
   },
   "Yuca": {
-    "Establecimiento": () => `${D_TIERRA}<rect x="37" y="56" width="6" height="22" rx="2" fill="#8B5E3C"/>
-       <path d="M40 58 q-6 -6 -8 -12 M40 58 q6 -6 8 -12" stroke="#5DAA4E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-       ${dHojaYuca(31, 46, 9, -30, "#5DAA4E")}${dHojaYuca(49, 46, 9, 30, "#5DAA4E")}
-       <path d="M40 78 l-5 7 M40 78 l5 6 M40 78 v8" stroke="#C9A27A" stroke-width="1.4" fill="none"/>`,
-    "Desarrollo de hojas y raíces": () => `${D_TIERRA}${dTalloYuca(64, 30)}<path d="M40 44 l-12 -6 M40 38 l12 -6" stroke="#8B5E3C" stroke-width="2.5" stroke-linecap="round"/>
-       ${dHojaYuca(26, 37, 14, -40)}${dHojaYuca(54, 31, 14, 40)}${dHojaYuca(40, 24, 15, 0)}
-       <path d="M40 64 q-8 8 -14 16 M40 64 q1 10 0 20 M40 64 q8 8 14 14" stroke="#C9A27A" stroke-width="2.2" fill="none" stroke-linecap="round"/>`,
-    "Engrosamiento de raíces": () => `${D_TIERRA}${dTalloYuca(64, 18)}<path d="M40 40 l-14 -8 M40 30 l14 -8" stroke="#8B5E3C" stroke-width="2.5" stroke-linecap="round"/>
-       ${dHojaYuca(24, 30, 15, -40)}${dHojaYuca(56, 21, 15, 40)}${dHojaYuca(40, 12, 15, 0)}${dHojaYuca(28, 46, 11, -70, "#5E9440")}
-       <path d="M38 66 q-14 6 -20 24 M40 66 q1 14 -1 28 M42 66 q13 5 19 22" stroke="#7A4E2D" stroke-width="8.5" fill="none" stroke-linecap="round"/>
-       <path d="M38 66 q-14 6 -20 24 M40 66 q1 14 -1 28 M42 66 q13 5 19 22" stroke="#9C6B45" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+    "Establecimiento": () => `<g transform="translate(40 67) scale(.82) translate(-40 -67)">${dSuelo(67, 33)}<path class="d-f" ${D_TALLO} d="M37.6 60 L42.4 60 L42.8 80 L37.2 80 Z"/>
+       <path class="d-det" ${D_TALLO} d="M38 66 h4 M38 72 h4"/>${dLinea("M40 60 Q 36 55 34 50 M40 60 Q 44 55 46 51")}${dHojaYuca(34, 50, 7, -20)}${dHojaYuca(46, 51, 6, 22)}
+       ${dLinea("M38 80 q -3 4 -6 6 M40 80 q 0 5 -1 9 M42 80 q 3 4 6 5", D_RAIZ)}</g>`,
+    "Desarrollo de hojas y raíces": () => `<g transform="translate(40 67) scale(.92) translate(-40 -67)">${dSuelo(67, 33)}${dTallo(68, 30, 1.1, 0.55)}${dLinea("M40 46 Q 34 42 29 37 M40 40 Q 46 36 51 32")}
+       ${dHojaYuca(29, 37, 11, -38)}${dHojaYuca(51, 32, 11, 38)}${dHojaYuca(40, 29, 12, 0)}
+       ${dLinea("M39 68 Q 32 76 25 84 M40 68 Q 41 79 40 92 M41 68 Q 49 76 55 82", D_RAIZ)}${dRaiz(39, 69, 33, 80, 2)}${dRaiz(41, 69, 46, 81, 2)}</g>`,
+    "Engrosamiento de raíces": () => `${dSuelo(67, 33)}${dTallo(68, 12, 1.3, 0.6)}${dLinea("M40 40 Q 32 36 24 30 M40 30 Q 48 25 56 20 M40 50 Q 34 49 28 46")}
+       ${dHojaYuca(24, 30, 13, -42)}${dHojaYuca(56, 20, 13, 42)}${dHojaYuca(40, 11, 13, 0)}${dHojaYuca(28, 46, 10, -78)}
+       ${dRaiz(38, 69, 19, 92, 5.5)}${dRaiz(40, 69, 39, 98, 5.5)}${dRaiz(42, 69, 61, 90, 5.5)}`,
   },
   "Plátano": {
-    "Establecimiento": () => `${D_SUELO}<rect x="38" y="74" width="4" height="18" fill="#8DB55A"/>
-       <path d="M40 76 q-8 -8 -16 -6 M40 76 q8 -10 16 -10" stroke="#4E9C4A" stroke-width="5" fill="none" stroke-linecap="round"/>`,
-    "Crecimiento y floración": () => dPlatano(52, dBellota(54, 56)),
-    "Llenado del racimo": () => dPlatano(52, dRacimo(52, 46) + `<path d="M${55} 64 c3 0 4 6 0 9 c-4 -3 -3 -9 0 -9 z" fill="#7B2C5C"/>`),
+    "Establecimiento": () => `${dSuelo()}${dTallo(88, 70, 3, 2.2, D_TALLO_V)}${dHojaPlatano(40, 72, -16, -6)}${dHojaPlatano(40, 71, 15, -10)}${dHojaLarga(40, 70, 2, -14, D_HOJA, 1)}`,
+    "Crecimiento y floración": () => dPlanta(50, dBellota(56, 58)),
+    "Llenado del racimo": () => dPlanta(50, dRacimo(55, 52)),
   },
   "Cacao": {
-    "Floración": () => dCacao(dFlorCacao(37, 60) + dFlorCacao(43, 66) + dFlorCacao(36, 74) + dFlorCacao(44, 52) + dFlorCacao(38, 82)),
-    "Floración y mazorca": () => dCacao(dFlorCacao(37, 60) + dFlorCacao(43, 52) + dFlorCacao(37, 80) + dMazorca(47, 70, "#8BC34A", 0.7)),
-    "Mazorca": () => dCacao(dMazorca(31, 64, "#E8A317") + dMazorca(49, 72, "#D35400") + dMazorca(32, 82, "#E8A317", 0.8)),
+    "Floración": () => dArbolCacao(dFlorCacao(36, 58) + dFlorCacao(44, 64) + dFlorCacao(35.5, 72) + dFlorCacao(44.5, 50) + dFlorCacao(37, 82) + dFlorCacao(43.5, 78)),
+    "Floración y mazorca": () => dArbolCacao(dFlorCacao(36, 58) + dFlorCacao(44.5, 50) + dFlorCacao(36, 80) + dMazorcaCacao(48, 70, D_CACAO_V, 0.62)),
+    "Mazorca": () => dArbolCacao(dMazorcaCacao(30, 60, D_CACAO) + dMazorcaCacao(51, 70, D_CACAO) + dMazorcaCacao(31, 80, D_CACAO_V, 0.75)),
   },
   "Porcicultura": {
-    "Precebo": () => `${D_SUELO}${dCerdo(36, 80, 0.75)}`,
-    "Levante y ceba": () => `${D_SUELO}${dCerdo(36, 72, 1.25)}`,
-    "Cerdas gestantes y verracos": () => `${D_SUELO}${dCerdo(30, 70, 1.3, "#EE97A8")}${dCorazon(60, 40)}`,
-    "Cerdas lactantes": () => `${D_SUELO}${dCerdo(34, 68, 1.25, "#EE97A8")}${dCerdo(22, 86, 0.42)}${dCerdo(44, 86, 0.42)}${dCerdo(62, 86, 0.42)}`,
+    "Precebo": () => `${dSuelo(90, 8)}${dCerdo(40, 80, 0.52, { cria: true })}`,
+    "Levante y ceba": () => `${dSuelo(90, 8)}${dCerdo(37, 72, 0.98)}`,
+    "Cerdas gestantes y verracos": () => `${dSuelo(90, 8)}${dCerdo(20, 78, 0.56)}${dCerdo(60, 74, 0.66, { espejo: true, color: D_ROSA2, robusto: true })}${dCorazon(40, 46)}`,
+    "Cerdas lactantes": () => `${dSuelo(90, 8)}${dCerdo(38, 62, 0.92, { ubre: true })}${dCerdo(16, 88, 0.3, { cria: true })}${dCerdo(40, 90, 0.3, { cria: true, espejo: true })}${dCerdo(62, 88, 0.3, { cria: true })}`,
   },
   "Gallinas ponedoras": {
-    "Levante": () => `${D_SUELO}${dGallina(38, 72, 0.8, "#C98A4B")}`,
-    "Producción": () => `${D_SUELO}${dGallina(34, 64, 1.15)}${dHuevo(58, 86)}${dHuevo(67, 87)}${dHuevo(62, 79)}`,
+    "Levante": () => `${dSuelo(90, 8)}${dGallina(38, 70, 0.82, { color: D_POLLA, polla: true })}`,
+    "Producción": () => `${dSuelo(90, 8)}${dGallina(32, 64, 1.08)}<g ${D_PAJA}><path class="d-f" d="M50 90 Q 50 80 62 80 Q 74 80 74 90 Z"/><path class="d-det" d="M52 86 l20 -2 M53 89 l19 -3"/></g>${dHuevo(57, 79)}${dHuevo(65, 78)}${dHuevo(61, 74)}`,
   },
   "Ganadería": {
-    "Ceba y levante": () => `${D_SUELO}${dVaca(36, 66, 1.05, "#A0522D", "")}`,
-    "Vacas en servicio": () => `${D_SUELO}${dVaca(22, 74, 0.62)}<g transform="translate(58 72) scale(-1 1) translate(-58 -72)">${dVaca(58, 72, 0.7, "#5A3A26", "")}</g>${dCorazon(40, 38)}`,
-    "Vacas en lactancia": () => `${D_SUELO}${dVaca(32, 66, 1.05, "#FFFFFF", "#3A2E2A", true)}${dCantina(66, 76)}`,
+    "Ceba y levante": () => `${dSuelo(90, 8)}${dVaca(36, 66, 1, { color: D_NOVILLO, manchas: false, cuernos: true })}`,
+    "Vacas en servicio": () => `${dSuelo(90, 8)}${dVaca(20, 76, 0.56)}${dVaca(60, 74, 0.6, { espejo: true, color: D_TORO, manchas: false, robusto: true })}${dCorazon(40, 44)}`,
+    "Vacas en lactancia": () => `${dSuelo(90, 8)}${dVaca(32, 66, 0.95, { ubre: true })}${dCantina(68, 74)}`,
   },
 };
 // Nombre que ve el productor para cada grupo de animales (en el CSV se usa el nombre corto).
