@@ -7,7 +7,7 @@
 <meta name="description" content="Sistema de monitoreo, pronóstico y medidas anticipatorias frente al Fenómeno de El Niño en La Guajira, Cesar, Sucre y Tolima.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --color-bg: #F3F5EE;
@@ -20,109 +20,175 @@
     --color-temp: #D97F2B;
     --color-max: #B23A3A;
     --color-ok: #2E7D4F;
+    --color-activo: #1F3D2E;
+    /* Colores de los módulos (tonos de la franja del encabezado) */
+    --mod-1: #2F7D5B; --mod-2: #C08A12; --mod-3: #B0562F;
     --radius: 6px;
     --font-display: "Zilla Slab", Georgia, serif;
     --font-body: "Work Sans", -apple-system, sans-serif;
+    /* Colores del mapa de cobertura */
+    --mapa-mar: #E4EEF2; --mapa-vecino: #ECEDE6; --mapa-borde: #D3D6CB;
+    --mapa-pais: #F7F6F0; --mapa-borde-pais: #9AA08C; --mapa-depto: #DCE8D0; --mapa-sitio: #4C9A2A;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --color-bg: #1C1E18; --color-panel: #262920; --color-ink: #EDEFE6;
       --color-ink-soft: #A9AD9C; --color-line: #3A3E30;
       --color-rain: #5B9BD5; --color-relhum: #7FC4E0; --color-temp: #E8A15C;
-      --color-ok: #6FBF8B;
+      --color-ok: #6FBF8B; --color-activo: #6FBF8B;
+      --mod-1: #5FB487; --mod-2: #E0B040; --mod-3: #E0875E;
+      --mapa-mar: #1E2A2E; --mapa-vecino: #23261F; --mapa-borde: #3A3E30;
+      --mapa-pais: #2C3026; --mapa-borde-pais: #6B705E; --mapa-depto: #34452C; --mapa-sitio: #7FBF5A;
     }
   }
   :root[data-theme="dark"] {
     --color-bg: #1C1E18; --color-panel: #262920; --color-ink: #EDEFE6;
     --color-ink-soft: #A9AD9C; --color-line: #3A3E30;
     --color-rain: #5B9BD5; --color-relhum: #7FC4E0; --color-temp: #E8A15C;
-    --color-ok: #6FBF8B;
+    --color-ok: #6FBF8B; --color-activo: #6FBF8B;
+    --mod-1: #5FB487; --mod-2: #E0B040; --mod-3: #E0875E;
+    --mapa-mar: #1E2A2E; --mapa-vecino: #23261F; --mapa-borde: #3A3E30;
+    --mapa-pais: #2C3026; --mapa-borde-pais: #6B705E; --mapa-depto: #34452C; --mapa-sitio: #7FBF5A;
   }
 
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--color-bg); color: var(--color-ink);
          font-family: var(--font-body); line-height: 1.5; }
-  .wrap { max-width: min(1680px, 100% - 2.5rem); margin: 0 auto; padding: 32px 0 60px; }
-  @media (max-width: 40rem) { .wrap { max-width: 100%; padding: 24px 16px 48px; } }
+  .wrap { max-width: min(1680px, 100% - 2.5rem); margin: 0 auto; padding: 28px 0 60px; }
+  @media (max-width: 40rem) { .wrap { max-width: 100%; padding: 20px 16px 48px; } }
 
-  /* ---- Barra de modulos ---- */
-  .modulos { display: flex; gap: 2px; flex-wrap: wrap;
-             border-bottom: 1px solid var(--color-line); margin: 0 0 28px; }
-  .modulos a { font-family: var(--font-body); font-size: 0.9rem; font-weight: 500;
-               color: var(--color-ink-soft); text-decoration: none;
-               padding: 10px 18px; border-bottom: 2px solid transparent;
-               margin-bottom: -1px; white-space: nowrap; }
-  .modulos a:hover { color: var(--color-ink); background: var(--color-panel); }
-  .modulos a[aria-current="page"] { color: var(--color-ink);
-               border-bottom-color: var(--color-temp); font-weight: 600; }
-  .modulos a .num { font-family: var(--font-display); font-size: 0.78rem;
-               color: var(--color-ink-soft); margin-right: 7px; }
-  .modulos a[aria-current="page"] .num { color: var(--color-temp); }
-  .modulos .marca { font-family: var(--font-display); font-weight: 700; font-size: 0.9rem;
-               padding: 10px 16px 10px 0; color: var(--color-ink); text-decoration: none;
-               border-right: 1px solid var(--color-line); margin-right: 8px;
-               white-space: nowrap; }
+  /* ---- Barra de módulos: botones. El de la página actual va relleno. ---- */
+  .modulos { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 22px; }
+  .modulos a { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-body);
+               font-size: 0.95rem; font-weight: 600; color: var(--color-ink); text-decoration: none;
+               padding: 9px 18px 9px 12px; border-radius: 999px; white-space: nowrap;
+               background: var(--color-panel); border: 1px solid var(--color-line);
+               box-shadow: 0 1px 2px rgba(0,0,0,.06); transition: transform .15s, box-shadow .15s, border-color .15s; }
+  .modulos a:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.10); border-color: var(--color-ink-soft); }
+  .modulos a .num { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+               font-size: 0.8rem; font-weight: 700; background: var(--color-bg); color: var(--color-ink-soft); }
+  .modulos a[aria-current="page"] { background: var(--color-activo); border-color: var(--color-activo); color: #FFFFFF;
+               box-shadow: 0 4px 12px rgba(31,61,46,.30); }
+  .modulos a[aria-current="page"] .num { background: rgba(255,255,255,.2); color: #FFFFFF; }
+  @media (max-width: 40rem) {
+    .modulos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .modulos a { justify-content: center; padding: 9px 10px; font-size: 0.9rem; }
+  }
 
-  header h1 { font-family: var(--font-display); font-weight: 600;
-              font-size: clamp(1.7rem, 3.4vw, 2.4rem); margin: 0 0 10px; line-height: 1.2; }
-  header .bajada { color: var(--color-ink-soft); margin: 0 0 4px; max-width: 72ch;
-                   font-size: 1.02rem; }
-  header .institucional { color: var(--color-ink-soft); font-size: 0.88rem;
-                          margin: 14px 0 0; }
+  /* ---- Encabezado con foto (img/inicio.jpg), igual al de Monitoreo ---- */
+  header {
+    position: relative; overflow: hidden; border-radius: 14px; color: #FFFFFF;
+    padding: clamp(44px, 7vw, 96px) clamp(20px, 5vw, 64px) clamp(52px, 8vw, 104px);
+    background:
+      linear-gradient(90deg, rgba(8, 22, 18, 0.80) 0%, rgba(8, 22, 18, 0.55) 55%, rgba(8, 22, 18, 0.30) 100%),
+      url("img/inicio.jpg") center 45% / cover no-repeat,
+      #1F3D2E;
+  }
+  header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 6px;
+    background: linear-gradient(90deg, #4C9A2A 0%, #A6C34A 30%, #fec44f 55%, #ec7014 78%, #d7301f 100%); }
+  /* El título usa todo el ancho y se reparte en líneas parejas. */
+  header h1 { font-family: var(--font-body); font-weight: 700; font-size: clamp(2rem, 4.7vw, 5.2rem); line-height: 1.06;
+    letter-spacing: -0.02em; margin: 0; text-shadow: 0 2px 14px rgba(0,0,0,.35); text-wrap: balance; }
+  header .bajada { color: rgba(255,255,255,.92); margin: 22px 0 0; max-width: none; font-size: clamp(1.02rem, 1.3vw, 1.25rem); line-height: 1.6;
+    text-shadow: 0 1px 8px rgba(0,0,0,.35); }
+  header .institucional { color: rgba(255,255,255,.78); font-size: 0.9rem; margin: 18px 0 0; }
 
-  /* ---- Estado del evento ---- */
-  .evento { background: var(--color-panel); border: 1px solid var(--color-line);
-            border-left: 3px solid var(--color-temp); border-radius: var(--radius);
-            padding: 18px 20px; margin: 28px 0; display: flex; flex-wrap: wrap;
-            gap: 10px 32px; align-items: baseline; }
-  .evento .dato { font-family: var(--font-display); font-size: 1.6rem;
-                  font-weight: 700; color: var(--color-temp); }
-  .evento .etiqueta { font-size: 0.88rem; color: var(--color-ink-soft);
-                      display: block; font-family: var(--font-body); font-weight: 400; }
-  .evento .nota { font-size: 0.9rem; color: var(--color-ink-soft); max-width: 60ch; }
-
-  /* ---- Tarjetas de modulo ---- */
-  .tarjetas { display: grid; gap: 18px; margin: 32px 0;
+  /* ---- Tarjetas de módulo: toda la tarjeta es el enlace ---- */
+  .tarjetas { display: grid; gap: 20px; margin: 32px 0;
               grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
-  .tarjeta { background: var(--color-panel); border: 1px solid var(--color-line);
-             border-left: 3px solid var(--acento, var(--color-rain));
-             border-radius: var(--radius); padding: 20px 22px;
-             display: flex; flex-direction: column; text-decoration: none;
-             color: inherit; }
-  a.tarjeta:hover { border-color: var(--acento); }
-  .tarjeta[aria-disabled="true"] { opacity: 0.72; }
-  .tarjeta .orden { font-family: var(--font-display); font-size: 0.8rem;
-                    color: var(--color-ink-soft); letter-spacing: 0.04em; }
-  .tarjeta h2 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 600;
-                margin: 2px 0 8px; }
-  .tarjeta p { margin: 0 0 14px; font-size: 0.93rem; color: var(--color-ink-soft); }
-  .tarjeta ul { margin: 0 0 16px; padding-left: 1.1rem; font-size: 0.88rem;
-                color: var(--color-ink-soft); }
-  .tarjeta li { margin-bottom: 3px; }
-  .tarjeta .pie { margin-top: auto; display: flex; align-items: center;
-                  gap: 10px; flex-wrap: wrap; font-size: 0.85rem; }
+  .tarjeta { position: relative; background: var(--color-panel); border: 1px solid var(--color-line);
+             border-radius: 14px; padding: 26px 26px 22px; overflow: hidden;
+             display: flex; flex-direction: column; text-decoration: none; color: inherit; cursor: pointer;
+             box-shadow: 0 1px 3px rgba(0,0,0,.05); transition: transform .18s, box-shadow .18s, border-color .18s; }
+  .tarjeta::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: var(--acento); }
+  .tarjeta:hover, .tarjeta:focus-visible { transform: translateY(-4px); border-color: var(--acento);
+             box-shadow: 0 12px 28px rgba(0,0,0,.12); outline: none; }
+  .tarjeta .cab { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+  .tarjeta .numero { width: 48px; height: 48px; border-radius: 50%; flex: none; display: grid; place-items: center;
+             font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: #FFFFFF; background: var(--acento); }
+  .tarjeta .orden { font-size: 0.75rem; font-weight: 600; letter-spacing: .1em; color: var(--color-ink-soft); }
+  .tarjeta h2 { font-family: var(--font-display); font-size: 1.55rem; font-weight: 700; margin: 0; line-height: 1.1; }
+  .tarjeta p { margin: 0 0 14px; font-size: 0.96rem; color: var(--color-ink-soft); }
+  .tarjeta ul { margin: 0 0 18px; padding-left: 1.1rem; font-size: 0.9rem; color: var(--color-ink-soft); }
+  .tarjeta li { margin-bottom: 4px; }
+  .tarjeta .pie { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .tarjeta .flecha { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none;
+             background: color-mix(in srgb, var(--acento) 14%, var(--color-panel)); color: var(--acento);
+             font-size: 1.2rem; font-weight: 700; transition: background .18s, color .18s, transform .18s; }
+  .tarjeta:hover .flecha { background: var(--acento); color: #FFFFFF; transform: translateX(3px); }
   .estado { display: inline-flex; align-items: center; gap: 6px;
-            font-size: 0.78rem; font-weight: 600; padding: 3px 9px;
+            font-size: 0.78rem; font-weight: 600; padding: 4px 10px;
             border-radius: 99px; border: 1px solid var(--color-line); }
+  .estado::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
   .estado--activo { color: var(--color-ok); border-color: var(--color-ok); }
   .estado--pendiente { color: var(--color-ink-soft); }
-  .tarjeta .ir { color: var(--acento); font-weight: 600; }
+
+  /* ---- El proyecto: introducción, cifras en una fila y "el reto / la respuesta" ---- */
+  .proyecto { margin: 36px 0 0; background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 14px;
+              padding: clamp(22px, 3vw, 36px); }
+  .proyecto h2 { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; margin: 0 0 8px; }
+  .proyecto .entrada { font-size: clamp(1.05rem, 1.4vw, 1.25rem); line-height: 1.55; margin: 0 0 22px; max-width: none; }
+  .cifras { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+  .cifra { display: flex; gap: 14px; align-items: center; padding: 16px 18px; border-radius: 12px; background: var(--color-bg); }
+  .cifra i { font-style: normal; flex: none; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center;
+             font-size: 1.4rem; background: var(--color-panel); }
+  .cifra b { display: block; font-family: var(--font-display); font-size: clamp(1.4rem, 2vw, 1.9rem); line-height: 1.1; }
+  .cifra span { font-size: 0.86rem; color: var(--color-ink-soft); line-height: 1.35; display: block; }
+  .reto { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 22px; }
+  .reto > div { padding: 20px 22px; border-radius: 12px; border: 1px solid var(--color-line); }
+  .reto h3 { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-size: 1.2rem; margin: 0 0 8px; }
+  .reto h3 i { font-style: normal; font-size: 1.2rem; }
+  .reto p { margin: 0; font-size: 0.98rem; line-height: 1.65; color: var(--color-ink-soft); }
+  .reto .respuesta { background: color-mix(in srgb, var(--mod-1) 10%, var(--color-panel)); border-color: color-mix(in srgb, var(--mod-1) 35%, transparent); }
+  .reto .respuesta p { color: var(--color-ink); font-weight: 500; }
+  @media (max-width: 64rem) { .cifras { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 40rem) { .cifras, .reto { grid-template-columns: 1fr; } }
 
   /* ---- Resumen del proyecto ---- */
   .seccion { margin: 44px 0 0; }
-  .seccion h2 { font-family: var(--font-display); font-size: 1.35rem;
-                font-weight: 600; margin: 0 0 12px; }
-  .seccion p { max-width: 80ch; margin: 0 0 14px; font-size: 0.96rem; }
-  .cobertura { width: 100%; border-collapse: collapse; margin: 18px 0;
-               font-size: 0.9rem; background: var(--color-panel);
-               border: 1px solid var(--color-line); border-radius: var(--radius); }
-  .cobertura th, .cobertura td { text-align: left; padding: 9px 14px;
-               border-bottom: 1px solid var(--color-line); }
-  .cobertura th { font-family: var(--font-body); font-weight: 600;
-               font-size: 0.82rem; text-transform: uppercase;
-               letter-spacing: 0.04em; color: var(--color-ink-soft); }
+  .seccion h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; margin: 0 0 12px; }
+  .seccion p { max-width: 80ch; margin: 0 0 14px; font-size: 0.98rem; }
+
+  /* ---- Mapa de cobertura ---- */
+  .cobertura-caja { background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 14px; padding: 16px; }
+  .mapa { display: block; width: 100%; height: auto; border-radius: 10px; }
+  .mapa-guia { stroke: var(--color-ink-soft); stroke-width: 1.2; stroke-dasharray: 3 3; fill: none; }
+  .mapa-punto { fill: var(--color-temp); stroke: #FFFFFF; stroke-width: 3; }
+  .mapa-etq rect { fill: var(--color-panel); stroke: var(--color-line); stroke-width: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,.10)); }
+  .mapa-mun { font-family: var(--font-body); font-weight: 700; font-size: 14px; fill: var(--color-ink); }
+  .mapa-dep { font-family: var(--font-body); font-size: 11px; fill: var(--color-ink-soft); }
+  .mapa-chip { fill: var(--color-bg); }
+  .mapa-depto-txt { font-family: var(--font-body); font-size: 11px; font-weight: 700; letter-spacing: .1em; fill: #4C6B3C; }
+  .mapa-mar-txt { font-family: var(--font-display); font-style: italic; font-size: 15px; fill: var(--color-ink-soft); opacity: .7; }
+  .cobertura { width: 100%; border-collapse: collapse; margin: 16px 0 0; font-size: 0.92rem; }
+  /* El mapa se limita a un ancho cómodo y va centrado; la tabla ocupa todo el ancho debajo. */
+  .mapa { max-width: 1100px; margin: 0 auto; }
+  .cobertura th, .cobertura td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--color-line); vertical-align: middle; }
+  .cobertura th { font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-ink-soft); }
   .cobertura tr:last-child td { border-bottom: none; }
-  .cobertura td:first-child { font-weight: 500; }
+  .cobertura td:first-child, .cobertura th:first-child { width: 44px; }
+  .tabla-sistemas { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tabla-sistemas span { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 6px; border-radius: 999px; background: var(--color-bg); }
+  .tabla-sistemas i { font-style: normal; font-size: 1rem; }
+  .lista-num { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--color-temp); color: #FFFFFF; font-size: 0.78rem; font-weight: 700; }
+  .mapa-leyenda { display: flex; flex-wrap: wrap; gap: 8px 10px; margin-top: 14px; font-size: 0.86rem; color: var(--color-ink-soft); }
+  .mapa-leyenda span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: 999px; background: var(--color-bg); }
+  .mapa-leyenda b { font-size: 1rem; font-weight: 400; }
+  .mapa-punto { r: 9; }
+  .mapa-num { font-family: var(--font-body); font-size: 10px; font-weight: 700; fill: #FFFFFF; pointer-events: none; }
+  /* En celular las etiquetas no caben: el mapa muestra solo los puntos numerados
+     y la tabla de abajo trae el nombre y los íconos de cada municipio. */
+  @media (max-width: 40rem) {
+    .mapa-etq, .mapa-guia { display: none; }
+    .cobertura thead { display: none; }
+    .cobertura tr { display: grid; grid-template-columns: 36px 1fr; column-gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--color-line); }
+    .cobertura td { border: 0; padding: 0; }
+    .cobertura td:first-child { grid-row: span 3; }
+    .cobertura td:nth-child(3) { font-size: 0.82rem; color: var(--color-ink-soft); }
+    .cobertura td:nth-child(4) { margin-top: 6px; }
+    .tabla-sistemas span { font-size: 0.82rem; }
+  }
 
   footer { margin-top: 52px; padding-top: 22px;
            border-top: 1px solid var(--color-line);
@@ -134,16 +200,16 @@
 <body>
 <div class="wrap">
 
+  <!-- Barra de módulos: la página actual lleva aria-current="page" y se ve rellena. -->
   <nav class="modulos" aria-label="Módulos del sistema">
-    <a class="marca" href="./">Fenómeno el niño, PMA</a>
-    <a href="./" aria-current="page">Inicio</a>
+    <a href="./" aria-current="page"><span class="num">⌂</span>Inicio</a>
     <a href="./monitoreo.html"><span class="num">1</span>Monitoreo</a>
     <a href="./pronostico.html"><span class="num">2</span>Pronóstico</a>
     <a href="./medidas.html"><span class="num">3</span>Medidas</a>
   </nav>
 
   <header>
-    <h1>Sistema de información y analítica climática</h1>
+    <h1>Sistema de información agroclimática para el Fenómeno de El Niño</h1>
     <p class="bajada">
       Monitoreo, pronóstico y medidas anticipatorias frente al Fenómeno de El
       Niño en siete municipios de La Guajira, Cesar, Sucre y Tolima.
@@ -154,19 +220,45 @@
     </p>
   </header>
 
-  <section class="evento" aria-label="Estado del evento">
-    <div>
-      <span class="dato" id="oni-valor">—</span>
-      <span class="etiqueta" id="oni-etiqueta">Índice ENSO</span>
+  <!-- El proyecto: contexto en cifras y por qué existe el sistema. -->
+  <section class="proyecto" aria-labelledby="tit-proyecto">
+    <h2 id="tit-proyecto">El proyecto</h2>
+    <p class="entrada">
+      El evento El Niño 2026-2027 incide sobre territorios con vulnerabilidad
+      estructural previa. Estas son algunas de sus afectaciones consolidadas:
+    </p>
+    <div class="cifras">
+      <div class="cifra"><i aria-hidden="true">🐄</i><div><b>8.508</b><span>bovinos muertos en la región Caribe</span></div></div>
+      <div class="cifra"><i aria-hidden="true">🌾</i><div><b>975.844</b><span>hectáreas comprometidas en la región Caribe</span></div></div>
+      <div class="cifra"><i aria-hidden="true">💧</i><div><b>La Guajira</b><span>mayor superficie afectada por déficit hídrico</span></div></div>
+      <div class="cifra"><i aria-hidden="true">🔥</i><div><b>Tolima</b><span>predomina la afectación por incendios forestales</span></div></div>
     </div>
-    <p class="nota" id="oni-nota">Cargando el estado del evento…</p>
+    <div class="reto">
+      <div>
+        <h3><i aria-hidden="true">🔎</i>El reto</h3>
+        <p>
+          El hallazgo transversal del diagnóstico participativo es una brecha
+          entre reconocer el riesgo y poder anticiparse a él. Las personas
+          productoras identifican el fenómeno e implementan respuestas autónomas,
+          pero una proporción alta declara baja preparación y la restricción de
+          recursos es la principal barrera.
+        </p>
+      </div>
+      <div class="respuesta">
+        <h3><i aria-hidden="true">🎯</i>La respuesta</h3>
+        <p>
+          Este sistema existe para cerrar una parte de esa brecha: traducir
+          pronósticos y alertas en decisiones concretas, oportunas y de bajo costo.
+        </p>
+      </div>
+    </div>
   </section>
 
+  <!-- Cada tarjeta completa es un enlace al módulo. -->
   <div class="tarjetas">
 
-    <a class="tarjeta" href="./monitoreo.html" style="--acento: var(--color-rain)">
-      <span class="orden">MÓDULO 1</span>
-      <h2>Monitoreo</h2>
+    <a class="tarjeta" href="./monitoreo.html" style="--acento: var(--mod-1)">
+      <div class="cab"><span class="numero">1</span><div><span class="orden">MÓDULO 1</span><h2>Monitoreo</h2></div></div>
       <p>
         Qué ha pasado. Lluvia, temperatura y humedad de los últimos 60 días
         en cada municipio, con indicadores listos para decidir.
@@ -178,13 +270,12 @@
       </ul>
       <div class="pie">
         <span class="estado estado--activo">En operación</span>
-        <span class="ir">Abrir →</span>
+        <span class="flecha" aria-hidden="true">→</span>
       </div>
     </a>
 
-    <a class="tarjeta" href="./pronostico.html" style="--acento: var(--color-temp)">
-      <span class="orden">MÓDULO 2</span>
-      <h2>Pronóstico</h2>
+    <a class="tarjeta" href="./pronostico.html" style="--acento: var(--mod-2)">
+      <div class="cab"><span class="numero">2</span><div><span class="orden">MÓDULO 2</span><h2>Pronóstico</h2></div></div>
       <p>
         Qué viene. Dos escalas con fuentes de predictibilidad distintas:
         el día a día y la señal estacional de El Niño.
@@ -196,13 +287,12 @@
       </ul>
       <div class="pie">
         <span class="estado estado--pendiente">En desarrollo</span>
-        <span class="ir">Ver avance →</span>
+        <span class="flecha" aria-hidden="true">→</span>
       </div>
     </a>
 
-    <a class="tarjeta" href="./medidas.html" style="--acento: var(--color-relhum)">
-      <span class="orden">MÓDULO 3</span>
-      <h2>Medidas de adaptación</h2>
+    <a class="tarjeta" href="./medidas.html" style="--acento: var(--mod-3)">
+      <div class="cab"><span class="numero">3</span><div><span class="orden">MÓDULO 3</span><h2>Medidas de adaptación</h2></div></div>
       <p>
         Qué hacer. Las medidas anticipatorias que cada asociación codiseñó
         en los talleres, con su costo y su tiempo de implementación.
@@ -214,55 +304,29 @@
       </ul>
       <div class="pie">
         <span class="estado estado--pendiente">En desarrollo</span>
-        <span class="ir">Ver avance →</span>
+        <span class="flecha" aria-hidden="true">→</span>
       </div>
     </a>
 
   </div>
 
-  <section class="seccion">
-    <h2>El proyecto</h2>
-    <p>
-      El evento El Niño 2026-2027 incide sobre territorios con vulnerabilidad
-      estructural previa. En la región Caribe se registra una afectación
-      consolidada de 8.508 bovinos muertos y 975.844 hectáreas comprometidas;
-      La Guajira concentra la mayor superficie por déficit hídrico y en Tolima
-      predomina la afectación por incendios forestales.
-    </p>
-    <p>
-      El hallazgo transversal del diagnóstico participativo es una brecha
-      entre reconocer el riesgo y poder anticiparse a él. Las personas
-      productoras identifican el fenómeno e implementan respuestas autónomas,
-      pero una proporción alta declara baja preparación y la restricción de
-      recursos es la principal barrera. Este sistema existe para cerrar una
-      parte de esa brecha: traducir pronósticos y alertas en decisiones
-      concretas, oportunas y de bajo costo.
-    </p>
-  </section>
 
   <section class="seccion">
     <h2>Cobertura</h2>
-    <table class="cobertura">
-      <thead>
-        <tr><th>Municipio</th><th>Departamento</th><th>Sistemas productivos</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Los Palmitos</td><td>Sucre</td><td>Porcicultura</td></tr>
-        <tr><td>San José de Toluviejo</td><td>Sucre</td><td>Yuca, procesamiento agroalimentario</td></tr>
-        <tr><td>Icononzo</td><td>Tolima</td><td>Café</td></tr>
-        <tr><td>Planadas</td><td>Tolima</td><td>Café, aguacate</td></tr>
-        <tr><td>Fonseca</td><td>La Guajira</td><td>Café, ganadería, maíz</td></tr>
-        <tr><td>Manaure Balcón del Cesar</td><td>Cesar</td><td>Porcicultura, cacao, frutales, maderables</td></tr>
-        <tr><td>El Paso</td><td>Cesar</td><td>Gallinas ponedoras, ganadería</td></tr>
-      </tbody>
-    </table>
+    <p>Siete municipios en cuatro departamentos. Los números del mapa corresponden a los de la tabla.</p>
+    <div class="cobertura-caja">
+      <div class="cobertura-scroll">
+      <svg class="mapa" data-vista-cel="-20 -10 620 690" viewBox="-296 -10 1184 690" role="img" aria-label="Mapa de Colombia con los siete municipios monitoreados y sus sistemas productivos"><rect x="-296" y="-10" width="1184" height="690" fill="var(--mapa-mar)"/><path d="M904 208 L904 210 L904 208 L904 205 L904 203 L904 205 L904 208ZM904 88 L904 96 L904 97 L904 103 L904 102 L904 99 L904 100 L895 98 L893 97 L896 93 L902 91 L904 91 L904 93 L904 96 L904 92 L904 86 L904 88ZM845 102 L842 103 L836 102 L833 100 L835 98 L840 98 L844 100 L845 102ZM904 224 L904 225 L904 219 L904 218 L904 213 L904 212 L904 213 L904 214 L904 216 L904 219 L904 222 L904 224ZM904 243 L904 258 L904 259 L904 261 L904 265 L904 266 L904 273 L904 276 L904 281 L904 285 L904 286 L904 287 L904 290 L904 297 L904 300 L904 304 L904 306 L904 314 L904 317 L904 321 L904 323 L904 327 L904 328 L904 330 L904 336 L904 339 L904 345 L904 348 L904 350 L904 349 L904 351 L904 352 L904 353 L904 354 L904 357 L904 361 L904 365 L904 369 L904 373 L904 383 L904 386 L904 388 L904 393 L904 400 L904 402 L904 416 L904 430 L904 444 L904 446 L904 451 L904 456 L904 459 L904 462 L904 466 L904 470 L904 472 L904 475 L904 482 L904 484 L904 485 L904 486 L904 485 L904 490 L904 492 L904 499 L904 504 L904 508 L904 510 L904 507 L904 508 L904 511 L904 513 L904 515 L904 520 L904 536 L904 540 L904 535 L904 531 L904 521 L904 519 L904 522 L904 521 L904 520 L904 518 L904 512 L904 510 L904 508 L902 508 L886 508 L883 508 L880 506 L877 502 L874 500 L870 499 L868 502 L875 511 L877 515 L883 522 L901 536 L904 541 L904 546 L903 555 L904 564 L904 576 L904 588 L904 596 L904 601 L904 605 L904 606 L904 607 L904 609 L904 610 L904 611 L904 616 L904 623 L904 627 L904 628 L904 629 L904 633 L904 637 L904 639 L904 640 L904 642 L904 650 L904 659 L904 664 L899 669 L893 669 L888 669 L886 670 L882 674 L877 678 L874 681 L868 681 L863 683 L856 686 L851 690 L847 690 L842 690 L836 690 L833 690 L829 690 L825 690 L826 690 L824 690 L819 690 L817 690 L815 690 L809 690 L802 690 L798 690 L795 690 L787 690 L780 690 L777 690 L772 690 L761 690 L746 683 L745 679 L745 675 L743 668 L741 662 L740 660 L739 655 L736 647 L733 640 L731 636 L732 633 L731 630 L729 627 L726 620 L727 616 L726 613 L723 610 L720 608 L715 602 L709 597 L707 595 L705 595 L703 590 L702 588 L699 588 L693 586 L687 588 L687 585 L689 582 L708 565 L717 557 L718 555 L719 554 L720 551 L718 548 L709 535 L706 532 L703 530 L699 524 L695 511 L692 504 L691 499 L691 493 L690 489 L688 486 L688 476 L690 460 L691 448 L689 440 L692 433 L697 429 L700 422 L701 413 L704 406 L710 400 L712 394 L710 389 L710 385 L705 382 L695 379 L687 379 L683 382 L670 384 L651 387 L635 387 L623 384 L614 385 L608 389 L603 390 L601 388 L598 387 L594 389 L593 388 L584 377 L575 366 L566 354 L554 340 L552 339 L549 339 L544 339 L537 338 L532 336 L528 334 L521 331 L516 331 L512 331 L499 336 L493 337 L487 337 L473 334 L463 334 L452 336 L447 337 L440 334 L436 330 L431 321 L428 314 L423 312 L417 311 L414 309 L413 305 L412 299 L413 290 L413 287 L414 278 L417 273 L419 271 L419 267 L417 259 L416 253 L409 247 L401 238 L397 225 L393 209 L390 208 L387 209 L384 208 L381 202 L378 200 L373 203 L370 204 L361 206 L359 204 L360 202 L364 197 L368 189 L373 183 L377 176 L381 169 L383 154 L385 144 L389 127 L397 112 L400 106 L407 97 L410 93 L414 89 L426 84 L440 60 L443 56 L457 52 L468 50 L476 47 L479 45 L481 44 L479 47 L475 51 L471 53 L448 58 L446 60 L443 62 L443 67 L444 71 L451 85 L453 88 L462 95 L460 96 L457 96 L459 106 L465 112 L465 117 L461 129 L453 137 L448 146 L443 150 L434 167 L441 178 L442 183 L448 190 L452 193 L455 196 L454 201 L456 208 L459 212 L463 213 L468 213 L483 208 L486 206 L488 203 L495 195 L496 185 L497 174 L495 166 L488 155 L485 147 L477 140 L473 128 L471 124 L469 119 L468 109 L473 106 L472 98 L484 96 L511 84 L527 80 L546 74 L550 70 L554 65 L557 64 L567 69 L571 68 L573 64 L571 56 L565 56 L548 59 L547 55 L547 52 L543 43 L545 36 L548 30 L552 28 L560 25 L565 29 L568 33 L570 36 L571 46 L574 55 L577 62 L582 67 L585 67 L588 66 L605 65 L616 68 L630 70 L642 77 L655 86 L658 93 L660 99 L663 103 L660 107 L661 115 L665 122 L671 126 L686 128 L704 125 L731 122 L739 119 L783 118 L792 122 L793 125 L793 128 L807 141 L819 142 L828 146 L839 149 L850 152 L856 151 L861 150 L867 150 L904 129 L904 128 L904 126 L904 122 L904 121 L902 123 L899 118 L904 118 L904 116 L904 117 L904 113 L904 111 L904 114 L904 112 L904 115 L904 117 L904 123 L904 122 L904 124 L904 126 L904 131 L904 132 L904 136 L904 139 L904 144 L904 150 L904 153 L904 152 L904 149 L904 146 L904 143 L904 144 L904 145 L904 161 L904 169 L904 167 L904 163 L904 165 L904 166 L904 163 L904 159 L904 157 L904 159 L904 164 L904 169 L904 172 L904 174 L904 175 L904 178 L904 174 L904 171 L904 167 L904 162 L904 165 L904 178 L904 180 L904 183 L904 189 L904 194 L904 200 L904 203 L904 207 L904 210 L904 214 L904 218 L904 220 L904 225 L904 232 L904 240 L904 243 L904 245 L904 251 L904 247 L904 241 L904 240 L904 243 L904 239 L904 238 L904 243Z" fill="var(--mapa-vecino)" stroke="var(--mapa-borde)" stroke-width="1"/><path d="M562 690 L560 690 L557 690 L552 690 L549 690 L546 690 L541 690 L539 690 L536 690 L528 690 L522 690 L517 690 L512 690 L508 690 L505 690 L502 690 L492 690 L486 690 L481 690 L474 690 L469 690 L460 690 L450 690 L444 690 L442 690 L436 690 L425 690 L420 690 L413 690 L405 690 L399 690 L391 690 L388 690 L387 690 L384 690 L382 690 L377 690 L372 690 L369 690 L367 690 L369 690 L371 690 L373 690 L371 690 L367 690 L362 690 L351 690 L340 690 L336 690 L335 690 L333 690 L334 690 L336 690 L338 690 L337 690 L333 690 L330 690 L328 690 L326 690 L324 690 L323 690 L322 690 L323 690 L325 690 L328 690 L332 690 L335 690 L338 690 L335 690 L338 690 L340 690 L343 690 L345 690 L347 690 L348 690 L352 690 L355 690 L357 690 L360 690 L363 690 L369 690 L374 690 L377 690 L383 690 L376 690 L369 690 L380 690 L392 690 L405 690 L413 690 L418 690 L422 690 L423 690 L425 690 L430 690 L432 690 L447 690 L464 690 L480 690 L486 690 L493 690 L498 690 L502 690 L507 690 L511 690 L515 690 L520 690 L522 690 L524 690 L528 690 L526 690 L525 690 L526 690 L524 690 L522 690 L524 690 L528 690 L533 690 L536 690 L539 690 L543 690 L547 690 L556 690 L562 690 L569 690 L579 690 L585 690 L592 690 L598 690 L604 690 L609 690 L617 690 L623 690 L630 690 L638 690 L636 690 L633 690 L630 690 L627 690 L623 690 L621 690 L618 690 L616 690 L615 690 L618 690 L621 690 L623 690 L626 690 L627 690 L621 690 L619 690 L616 690 L612 690 L610 690 L608 690 L605 690 L604 690 L603 690 L598 690 L597 690 L600 690 L608 690 L609 690 L604 690 L601 690 L594 690 L596 690 L606 690 L608 690 L611 690 L617 690 L624 690 L628 690 L624 690 L619 690 L617 690 L616 690 L611 690 L608 690 L603 690 L597 690 L594 690 L593 690 L589 690 L582 690 L581 690 L582 690 L586 690 L588 690 L584 690 L579 690 L571 690 L569 690 L572 690 L569 690 L564 690 L556 690 L549 690 L543 690 L537 690 L535 690 L531 690 L511 690 L504 690 L497 690 L480 690 L478 690 L477 690 L474 690 L469 690 L454 690 L448 690 L443 690 L434 690 L425 690 L419 690 L413 690 L393 690 L384 690 L366 690 L357 690 L338 690 L332 690 L313 690 L299 690 L289 690 L256 690 L251 690 L246 690 L238 690 L230 690 L218 690 L206 690 L202 690 L194 690 L192 690 L185 690 L180 690 L183 690 L187 690 L192 690 L189 690 L177 690 L173 690 L169 690 L165 690 L157 690 L153 690 L143 690 L141 690 L139 690 L134 690 L130 690 L125 690 L105 690 L103 690 L99 690 L78 690 L72 690 L67 690 L62 690 L57 690 L49 690 L44 690 L38 690 L28 690 L23 690 L14 690 L5 690 L1 690 L-11 690 L-13 690 L-21 690 L-30 690 L-35 690 L-42 690 L-84 690 L-99 690 L-104 690 L-106 690 L-105 690 L-101 690 L-95 690 L-91 690 L-88 690 L-92 690 L-105 690 L-104 690 L-102 690 L-107 690 L-113 690 L-115 690 L-112 690 L-109 690 L-89 690 L-83 690 L-75 690 L-66 690 L-55 690 L-53 690 L-52 690 L-50 690 L-49 690 L-46 690 L-47 690 L-50 690 L-52 690 L-54 690 L-57 690 L-62 690 L-65 690 L-66 690 L-65 690 L-63 690 L-57 690 L-62 690 L-65 690 L-61 690 L-59 690 L-53 690 L-50 690 L-47 690 L-44 690 L-39 690 L-33 690 L-26 690 L-24 690 L-18 690 L-14 690 L-11 690 L-7 690 L-6 690 L-3 690 L-0 690 L4 690 L8 690 L13 690 L19 690 L22 690 L24 690 L25 690 L29 690 L32 690 L39 690 L42 690 L43 690 L45 690 L43 690 L45 690 L47 690 L50 690 L51 690 L53 690 L54 690 L55 690 L58 690 L60 690 L63 690 L64 690 L66 690 L68 690 L70 690 L72 690 L74 690 L72 690 L76 690 L79 690 L87 690 L92 690 L104 690 L113 690 L122 690 L133 690 L150 690 L162 690 L173 690 L181 690 L188 690 L197 690 L209 690 L218 690 L224 690 L228 690 L232 690 L235 690 L237 690 L239 690 L241 690 L244 690 L246 690 L247 690 L245 690 L247 690 L243 690 L237 690 L234 690 L233 690 L229 690 L224 690 L227 690 L234 690 L238 690 L242 690 L245 690 L249 690 L251 690 L254 690 L259 690 L262 690 L265 690 L269 690 L272 690 L274 690 L275 690 L277 690 L280 690 L285 690 L289 690 L291 690 L294 690 L297 690 L299 690 L301 690 L302 690 L305 690 L307 690 L311 690 L318 690 L322 690 L326 690 L330 690 L333 690 L337 690 L341 690 L345 690 L347 690 L350 690 L352 690 L350 690 L352 690 L355 690 L360 690 L365 690 L368 690 L369 690 L370 690 L373 690 L374 690 L372 690 L377 690 L382 690 L385 690 L388 690 L392 690 L398 690 L401 690 L403 690 L406 690 L411 690 L417 690 L423 690 L428 690 L433 690 L438 690 L442 690 L445 690 L449 690 L452 690 L455 690 L460 690 L467 690 L471 690 L474 690 L477 690 L482 690 L489 690 L493 690 L499 690 L502 690 L505 690 L518 690 L521 690 L525 690 L529 690 L535 690 L538 690 L542 690 L545 690 L550 690 L554 690 L556 690 L551 690 L543 690 L535 690 L523 690 L516 690 L518 690 L528 690 L531 690 L535 690 L537 690 L540 690 L542 690 L546 690 L548 690 L550 690 L554 690 L559 690 L562 690Z" fill="var(--mapa-vecino)" stroke="var(--mapa-borde)" stroke-width="1"/><path d="M121 237 L120 237 L116 242 L114 246 L119 250 L120 255 L122 260 L126 265 L130 274 L131 278 L130 280 L126 282 L122 286 L121 291 L122 294 L111 302 L108 303 L106 302 L104 298 L101 295 L99 293 L98 293 L98 294 L97 296 L99 304 L97 307 L94 309 L89 322 L88 321 L73 303 L61 282 L58 272 L61 272 L64 272 L66 270 L68 268 L67 261 L73 256 L75 253 L77 253 L81 259 L86 262 L93 267 L98 268 L92 263 L83 257 L80 252 L77 246 L74 249 L72 251 L70 252 L68 251 L68 249 L63 248 L61 247 L60 246 L60 249 L61 252 L61 255 L59 255 L57 252 L55 249 L53 238 L46 233 L43 232 L41 231 L37 227 L33 225 L27 220 L19 216 L9 215 L-2 216 L-6 218 L-9 221 L-10 222 L-17 225 L-20 229 L-21 233 L-25 238 L-21 240 L-43 255 L-48 257 L-58 259 L-60 260 L-63 263 L-63 268 L-63 271 L-60 274 L-57 276 L-51 285 L-40 296 L-38 300 L-36 306 L-40 309 L-42 310 L-53 310 L-56 313 L-58 317 L-62 320 L-76 322 L-86 323 L-89 319 L-90 310 L-97 293 L-99 282 L-101 283 L-105 285 L-106 288 L-107 296 L-108 299 L-111 298 L-117 295 L-125 293 L-136 275 L-137 272 L-139 268 L-146 266 L-153 263 L-161 263 L-164 264 L-168 262 L-169 257 L-176 260 L-187 259 L-195 257 L-201 258 L-206 261 L-206 270 L-207 272 L-207 268 L-209 264 L-211 261 L-216 257 L-216 256 L-214 254 L-206 249 L-205 247 L-205 242 L-206 238 L-209 232 L-207 228 L-203 225 L-199 222 L-198 221 L-199 219 L-202 217 L-207 213 L-211 212 L-211 201 L-211 189 L-210 188 L-208 187 L-206 185 L-205 182 L-203 180 L-198 183 L-193 186 L-191 185 L-190 184 L-189 182 L-188 181 L-185 185 L-177 190 L-176 193 L-177 196 L-175 203 L-171 205 L-167 203 L-166 205 L-167 206 L-169 207 L-169 214 L-163 217 L-160 220 L-149 219 L-145 219 L-142 219 L-145 213 L-149 209 L-149 208 L-145 209 L-143 212 L-138 215 L-128 226 L-116 229 L-107 229 L-99 227 L-86 223 L-76 215 L-68 211 L-43 203 L-34 195 L-31 194 L-27 193 L-19 187 L-15 182 L-11 180 L3 182 L11 184 L17 184 L23 185 L25 189 L28 190 L42 190 L53 192 L78 202 L93 212 L101 223 L121 237ZM30 260 L29 262 L26 256 L26 255 L26 250 L29 248 L31 248 L32 249 L33 255 L33 258 L30 260ZM-131 316 L-134 316 L-141 314 L-146 309 L-146 307 L-146 306 L-144 300 L-140 299 L-139 299 L-135 305 L-138 307 L-137 310 L-132 313 L-131 316ZM-169 193 L-169 196 L-174 191 L-171 190 L-170 190 L-169 193ZM20 261 L17 263 L16 261 L18 258 L20 261Z" fill="var(--mapa-vecino)" stroke="var(--mapa-borde)" stroke-width="1"/><path d="M245 690 L242 690 L238 690 L234 690 L227 690 L225 690 L229 690 L233 690 L234 690 L237 690 L243 690 L246 690 L245 690 L247 690 L246 690 L244 690 L241 690 L239 690 L238 690 L235 690 L232 690 L228 690 L224 690 L218 690 L209 690 L197 690 L188 690 L181 690 L173 690 L162 690 L150 690 L133 690 L122 690 L113 690 L104 690 L92 690 L87 690 L79 690 L76 690 L72 690 L74 690 L72 690 L70 690 L69 690 L66 690 L64 690 L63 690 L60 690 L58 690 L55 690 L54 690 L53 690 L51 690 L50 690 L47 690 L45 690 L43 690 L44 690 L42 690 L39 690 L32 690 L29 690 L28 690 L25 690 L24 690 L22 690 L19 690 L13 690 L8 690 L4 690 L-0 690 L-3 690 L-6 690 L-7 690 L-11 690 L-14 690 L-18 690 L-24 690 L-26 690 L-33 690 L-39 690 L-44 690 L-47 690 L-50 690 L-53 690 L-59 690 L-61 690 L-64 690 L-62 690 L-57 690 L-63 690 L-65 690 L-66 690 L-65 690 L-62 690 L-57 690 L-54 690 L-52 690 L-50 690 L-47 690 L-46 690 L-49 690 L-50 690 L-51 690 L-53 690 L-55 690 L-54 690 L-45 690 L-42 690 L-37 690 L-33 690 L-31 690 L-25 690 L-20 690 L-21 690 L-25 690 L-26 690 L-29 690 L-29 690 L-31 690 L-35 690 L-38 690 L-36 690 L-39 690 L-43 690 L-51 690 L-53 690 L-58 690 L-63 690 L-77 690 L-86 690 L-91 690 L-92 690 L-88 690 L-82 690 L-85 690 L-83 690 L-85 690 L-89 690 L-86 690 L-73 690 L-69 690 L-66 690 L-63 690 L-57 690 L-53 690 L-59 690 L-64 690 L-55 690 L-50 690 L-44 690 L-38 690 L-37 690 L-39 690 L-41 690 L-38 690 L-30 690 L-24 690 L-20 690 L-13 690 L-4 690 L10 690 L30 684 L34 678 L32 669 L34 670 L39 675 L43 679 L48 682 L53 684 L65 690 L73 690 L81 690 L93 690 L101 690 L103 690 L104 690 L107 690 L112 690 L114 690 L115 690 L118 690 L119 690 L126 690 L133 690 L136 690 L143 690 L148 690 L153 690 L157 690 L158 690 L162 690 L167 690 L173 690 L177 690 L178 690 L179 690 L184 690 L186 690 L198 690 L201 690 L204 690 L210 690 L216 690 L225 690 L234 690 L245 690ZM-44 690 L-45 690 L-50 690 L-52 690 L-51 690 L-49 690 L-44 690 L-41 690 L-36 690 L-30 690 L-36 690 L-40 690 L-41 690 L-44 690ZM29 681 L26 681 L24 678 L28 675 L30 674 L29 681Z" fill="var(--mapa-vecino)" stroke="var(--mapa-borde)" stroke-width="1"/><path d="M746 683 L761 690 L772 690 L777 690 L780 690 L787 690 L795 690 L798 690 L802 690 L809 690 L815 690 L817 690 L819 690 L824 690 L826 690 L824 690 L829 690 L833 690 L836 690 L842 690 L847 690 L851 690 L856 686 L863 683 L868 681 L874 681 L877 678 L882 674 L886 670 L888 669 L893 669 L899 669 L904 664 L904 659 L904 650 L904 642 L904 640 L904 639 L904 638 L904 633 L904 629 L904 628 L904 627 L904 623 L904 616 L904 611 L904 610 L904 609 L904 607 L904 606 L904 605 L904 601 L904 596 L904 588 L904 576 L904 564 L903 555 L904 546 L904 541 L901 536 L883 522 L877 515 L875 511 L868 502 L870 499 L874 500 L877 502 L880 506 L883 508 L886 508 L902 508 L904 508 L904 510 L904 512 L904 518 L904 520 L904 521 L904 522 L904 519 L904 521 L904 531 L904 535 L904 540 L904 536 L904 520 L904 515 L904 514 L904 511 L904 508 L904 507 L904 510 L904 508 L904 504 L904 499 L904 492 L904 490 L904 485 L904 486 L904 485 L904 484 L904 482 L904 475 L904 472 L904 470 L904 466 L904 462 L904 459 L904 456 L904 451 L904 446 L904 445 L904 443 L904 444 L904 443 L904 441 L904 442 L904 444 L904 447 L904 451 L904 457 L904 462 L904 467 L904 472 L904 476 L904 480 L904 482 L904 484 L904 485 L904 487 L904 491 L904 493 L904 495 L904 499 L904 502 L904 505 L904 506 L904 515 L904 517 L904 518 L904 520 L904 523 L904 527 L904 531 L904 534 L904 536 L904 541 L904 548 L904 552 L904 555 L904 559 L904 571 L904 577 L904 590 L904 595 L904 601 L904 614 L904 616 L904 620 L904 629 L904 638 L904 642 L904 644 L904 645 L904 648 L904 651 L904 653 L904 654 L904 658 L904 664 L904 666 L904 668 L904 673 L904 675 L904 678 L904 681 L904 684 L904 681 L904 679 L904 677 L904 675 L904 670 L904 668 L904 667 L904 664 L904 663 L904 661 L904 662 L904 663 L904 665 L904 664 L904 661 L904 657 L904 656 L904 654 L904 652 L904 650 L904 641 L904 640 L904 638 L904 637 L904 635 L904 640 L904 641 L904 643 L904 641 L904 640 L904 640 L904 641 L904 643 L904 645 L904 645 L904 643 L904 637 L904 634 L904 630 L904 626 L904 622 L904 620 L904 618 L904 616 L904 614 L904 612 L904 606 L904 605 L904 607 L904 612 L904 610 L904 607 L904 603 L904 600 L904 603 L904 606 L904 609 L904 612 L904 614 L904 616 L904 617 L904 618 L904 621 L904 624 L904 627 L904 628 L904 629 L904 627 L904 622 L904 619 L904 617 L904 615 L904 618 L904 618 L904 620 L904 619 L904 617 L904 616 L904 618 L904 622 L904 624 L904 625 L904 623 L904 620 L904 617 L904 614 L904 610 L904 604 L904 602 L904 597 L904 584 L904 582 L904 578 L904 573 L904 569 L904 565 L904 562 L904 560 L904 554 L904 549 L904 537 L904 534 L904 532 L904 529 L904 526 L904 524 L904 520 L904 516 L904 514 L904 512 L904 502 L904 497 L904 503 L904 510 L904 536 L904 559 L904 571 L904 597 L904 602 L904 607 L904 613 L904 623 L904 625 L904 628 L904 630 L904 636 L904 640 L904 646 L904 648 L904 652 L904 656 L904 671 L904 680 L904 686 L904 689 L904 690 L902 690 L892 690 L888 690 L886 690 L881 690 L876 690 L870 690 L868 690 L863 690 L858 690 L856 690 L852 690 L851 690 L849 690 L848 690 L847 690 L845 690 L841 690 L838 690 L837 690 L835 690 L834 690 L835 690 L838 690 L834 690 L831 690 L834 690 L839 690 L840 690 L838 690 L839 690 L837 690 L834 690 L832 690 L828 690 L824 690 L820 690 L816 690 L802 690 L782 690 L774 690 L769 690 L764 690 L755 690 L732 690 L727 690 L722 690 L719 690 L714 690 L704 690 L699 690 L695 690 L692 690 L689 690 L679 690 L675 690 L670 690 L663 690 L660 690 L655 690 L649 690 L642 690 L638 690 L636 690 L633 690 L632 690 L628 690 L619 690 L606 690 L592 690 L585 690 L579 690 L569 690 L562 690 L556 690 L547 690 L543 690 L539 690 L536 690 L533 690 L528 690 L524 690 L522 690 L524 690 L526 690 L524 690 L526 690 L528 690 L524 690 L522 690 L520 690 L515 690 L511 690 L507 690 L502 690 L498 690 L493 690 L486 690 L480 690 L464 690 L447 690 L432 690 L430 690 L425 690 L423 690 L422 690 L418 690 L413 690 L405 690 L392 690 L380 690 L369 690 L376 690 L383 690 L377 690 L374 690 L369 690 L363 690 L360 690 L357 690 L355 690 L352 690 L348 690 L347 690 L345 690 L343 690 L340 690 L338 690 L335 690 L338 690 L338 690 L335 690 L332 690 L328 690 L325 690 L323 690 L322 690 L323 690 L324 690 L326 690 L328 690 L330 690 L333 690 L337 690 L338 690 L336 690 L334 690 L333 690 L335 690 L336 690 L340 690 L351 690 L362 690 L367 690 L371 690 L373 690 L371 690 L369 690 L367 690 L369 690 L372 690 L377 690 L382 690 L384 690 L386 690 L387 690 L391 690 L399 690 L405 690 L413 690 L420 690 L425 690 L436 690 L442 690 L444 690 L450 690 L460 690 L469 690 L474 690 L481 690 L486 690 L492 690 L502 690 L505 690 L508 690 L512 690 L517 690 L522 690 L528 690 L536 690 L539 690 L541 690 L546 690 L549 690 L552 690 L557 690 L560 690 L561 690 L563 690 L565 690 L569 690 L572 690 L576 690 L579 690 L583 690 L587 690 L589 690 L591 690 L593 690 L594 690 L596 690 L593 690 L590 690 L588 690 L587 690 L585 690 L583 690 L584 690 L583 690 L582 690 L580 690 L575 690 L570 690 L564 690 L557 690 L556 690 L557 690 L561 690 L564 690 L568 690 L571 690 L574 690 L576 690 L579 690 L581 690 L583 690 L586 690 L588 690 L591 690 L594 690 L596 690 L598 690 L600 690 L601 690 L602 690 L604 690 L607 690 L609 690 L610 690 L609 690 L610 690 L608 690 L606 690 L604 690 L601 690 L598 690 L595 690 L593 690 L591 690 L588 690 L585 690 L582 690 L577 690 L575 690 L572 690 L569 690 L569 677 L569 663 L569 653 L572 654 L575 652 L581 652 L585 650 L587 650 L591 651 L596 652 L600 653 L612 653 L624 653 L638 653 L653 653 L665 653 L668 653 L666 650 L664 645 L665 642 L666 639 L667 637 L671 639 L674 644 L677 649 L680 651 L683 651 L686 650 L690 649 L696 641 L702 634 L705 632 L709 630 L711 629 L715 629 L718 631 L719 634 L726 645 L731 654 L733 659 L733 672 L733 683 L734 685 L734 685 L746 683ZM904 640 L904 642 L904 641 L904 634 L904 628 L904 626 L904 628 L904 637 L904 640Z" fill="var(--mapa-vecino)" stroke="var(--mapa-borde)" stroke-width="1"/><path d="M481 44 L479 45 L476 47 L468 50 L457 52 L443 56 L440 60 L426 84 L414 89 L410 93 L407 97 L400 106 L397 112 L389 127 L385 144 L383 154 L381 169 L377 176 L373 183 L368 189 L364 197 L360 202 L359 204 L361 206 L370 204 L373 203 L378 200 L381 202 L384 208 L387 209 L390 208 L393 209 L397 225 L401 238 L409 247 L416 253 L417 259 L419 267 L419 271 L417 273 L414 278 L413 287 L413 290 L412 299 L413 305 L414 309 L417 311 L423 312 L428 314 L431 321 L436 330 L440 334 L447 337 L452 336 L463 334 L473 334 L487 337 L493 337 L499 336 L512 331 L516 331 L521 331 L528 334 L532 336 L537 338 L544 339 L549 339 L552 339 L554 340 L566 354 L575 366 L584 377 L593 388 L594 389 L598 387 L601 388 L603 390 L608 389 L614 385 L623 384 L635 387 L651 387 L670 384 L683 382 L687 379 L695 379 L705 382 L710 385 L710 389 L712 394 L710 400 L704 406 L701 413 L700 422 L697 429 L692 433 L689 440 L691 448 L690 460 L688 476 L688 486 L690 489 L691 493 L691 499 L692 504 L695 511 L699 524 L703 530 L706 532 L709 535 L718 548 L720 551 L719 554 L718 555 L717 557 L708 565 L689 582 L687 585 L687 588 L693 586 L699 588 L702 588 L703 590 L705 595 L707 595 L709 597 L715 602 L720 608 L723 610 L726 613 L727 616 L726 620 L729 627 L731 630 L732 633 L731 636 L733 640 L736 647 L739 655 L740 660 L741 662 L743 668 L745 675 L745 679 L746 683 L734 685 L734 685 L733 683 L733 672 L733 659 L731 654 L726 645 L719 634 L718 631 L715 629 L711 629 L709 630 L705 632 L702 634 L696 641 L690 649 L686 650 L683 651 L680 651 L677 649 L674 644 L671 639 L667 637 L666 639 L665 642 L664 645 L666 650 L668 653 L665 653 L653 653 L638 653 L624 653 L612 653 L600 653 L596 652 L591 651 L587 650 L585 650 L581 652 L575 652 L572 654 L569 653 L569 663 L569 677 L569 690 L572 690 L575 690 L577 690 L582 690 L585 690 L588 690 L591 690 L593 690 L595 690 L598 690 L601 690 L604 690 L606 690 L608 690 L610 690 L609 690 L610 690 L607 690 L604 690 L602 690 L601 690 L600 690 L598 690 L596 690 L594 690 L591 690 L588 690 L586 690 L583 690 L581 690 L579 690 L576 690 L574 690 L571 690 L568 690 L564 690 L561 690 L557 690 L556 690 L557 690 L564 690 L570 690 L575 690 L580 690 L582 690 L583 690 L584 690 L582 690 L585 690 L586 690 L588 690 L590 690 L593 690 L595 690 L593 690 L591 690 L589 690 L587 690 L583 690 L579 690 L576 690 L572 690 L569 690 L565 690 L563 690 L562 690 L559 690 L554 690 L550 690 L548 690 L546 690 L542 690 L540 690 L537 690 L535 690 L531 690 L528 690 L518 690 L516 690 L523 690 L535 690 L543 690 L551 690 L555 690 L554 690 L550 690 L545 690 L542 690 L538 690 L535 690 L529 690 L525 690 L521 690 L518 690 L505 690 L502 690 L499 690 L493 690 L489 690 L482 690 L477 690 L474 690 L471 690 L467 690 L460 690 L455 690 L452 690 L449 690 L445 690 L442 690 L438 690 L433 690 L428 690 L423 690 L417 690 L411 690 L406 690 L403 690 L401 690 L398 690 L392 690 L388 690 L385 690 L382 690 L377 690 L372 690 L371 690 L374 690 L373 690 L370 690 L369 690 L368 690 L365 690 L360 690 L355 690 L352 690 L350 690 L352 690 L350 690 L347 690 L345 690 L341 690 L337 690 L333 690 L330 690 L326 690 L322 690 L318 690 L311 690 L307 690 L305 690 L302 690 L301 690 L299 690 L297 690 L294 690 L291 690 L289 690 L285 690 L280 690 L277 690 L275 690 L274 690 L272 690 L269 690 L265 690 L262 690 L259 690 L254 690 L251 690 L249 690 L245 690 L234 690 L225 690 L216 690 L210 690 L204 690 L201 690 L198 690 L186 690 L184 690 L179 690 L178 690 L177 690 L173 690 L167 690 L162 690 L159 690 L157 690 L153 690 L148 690 L143 690 L136 690 L133 690 L126 690 L119 690 L118 690 L115 690 L114 690 L112 690 L107 690 L104 690 L103 690 L101 690 L93 690 L81 690 L73 690 L65 690 L53 684 L48 682 L43 679 L39 675 L34 670 L32 669 L30 665 L22 659 L26 651 L36 645 L49 650 L51 641 L46 633 L47 618 L48 615 L52 611 L56 608 L58 607 L63 608 L66 605 L76 607 L80 605 L82 603 L84 602 L87 598 L89 594 L91 592 L95 593 L95 591 L97 589 L103 583 L103 581 L101 576 L102 574 L105 573 L110 571 L112 566 L115 562 L118 555 L122 555 L124 548 L128 541 L138 521 L135 522 L133 524 L130 524 L127 522 L128 514 L126 513 L122 519 L117 512 L117 508 L119 504 L119 501 L112 503 L112 501 L116 498 L118 495 L122 492 L123 488 L124 480 L126 473 L125 469 L123 466 L121 451 L122 443 L121 437 L119 431 L111 424 L124 415 L128 409 L122 396 L115 385 L115 379 L117 380 L119 380 L122 366 L121 362 L117 355 L112 354 L107 346 L104 344 L102 338 L95 328 L89 322 L94 309 L97 307 L99 304 L97 296 L98 294 L98 293 L99 293 L101 295 L104 298 L106 302 L108 303 L111 302 L122 294 L121 291 L122 286 L126 282 L130 280 L131 278 L130 274 L126 265 L122 260 L120 255 L119 250 L114 246 L116 242 L120 237 L121 237 L122 238 L127 246 L135 252 L143 261 L147 267 L149 268 L152 271 L151 272 L148 274 L147 278 L149 280 L151 281 L156 280 L158 276 L156 257 L154 248 L150 245 L148 242 L150 239 L155 238 L161 234 L186 217 L194 200 L201 194 L208 190 L217 191 L224 189 L226 184 L224 177 L221 172 L224 166 L227 156 L227 149 L230 144 L229 142 L224 146 L220 147 L222 144 L229 136 L233 124 L235 119 L245 112 L247 109 L255 104 L267 93 L271 89 L295 97 L302 96 L301 98 L297 98 L292 100 L291 104 L294 109 L298 110 L301 107 L304 99 L308 90 L310 80 L313 77 L318 76 L327 77 L334 79 L341 80 L363 78 L398 53 L414 48 L424 43 L431 32 L433 25 L437 22 L442 22 L445 20 L445 17 L458 11 L465 10 L471 10 L485 16 L491 26 L492 33 L483 41 L481 44ZM77 603 L75 605 L72 602 L71 599 L73 597 L75 598 L76 600 L77 603Z" fill="var(--mapa-pais)" stroke="var(--mapa-borde-pais)" stroke-width="1.4"/><path d="M266 189 L267 190 L269 190 L267 192 L266 193 L265 195 L265 196 L266 197 L266 199 L266 200 L266 201 L267 201 L268 203 L267 203 L265 201 L265 201 L263 199 L262 197 L262 196 L262 195 L264 194 L265 193 L265 191 L264 190 L266 189ZM249 221 L250 221 L251 221 L252 222 L254 223 L256 223 L258 226 L259 226 L260 227 L262 227 L262 229 L261 230 L261 232 L261 232 L261 234 L261 234 L262 235 L264 235 L263 235 L263 236 L262 236 L261 237 L262 239 L261 239 L260 238 L259 239 L258 237 L258 235 L258 233 L256 233 L255 233 L255 233 L253 233 L252 232 L249 232 L248 231 L247 231 L247 230 L248 229 L249 228 L248 226 L247 224 L248 224 L249 224 L250 223 L249 222ZM240 178 L241 178 L241 177 L242 179 L242 179 L243 180 L244 180 L245 181 L245 182 L245 184 L245 186 L244 186 L243 185 L242 183 L241 181 L242 180 L240 179ZM240 178 L241 179 L241 181 L241 182 L242 184 L243 186 L245 186 L244 186 L243 188 L243 188 L241 189 L240 189 L239 189 L239 187 L238 187 L238 186 L239 184 L240 183 L239 182 L239 181 L238 181 L237 180 L238 178 L239 178ZM253 206 L252 208 L254 210 L254 211 L253 212 L253 212 L252 211 L252 209 L251 209 L249 210 L247 208 L245 207 L245 207 L245 206 L243 204 L243 204 L242 205 L243 206 L242 205 L241 203 L241 203 L241 202 L242 201 L242 200 L242 199 L242 199 L242 198 L244 196 L244 197 L245 198 L245 197 L244 196 L245 196 L248 196 L247 197 L247 198 L246 198 L246 198 L245 199 L246 200 L246 202 L247 203 L249 204 L249 205 L251 205 L253 205 L253 205ZM222 196 L221 194 L220 195 L221 193 L222 192 L224 191 L226 188 L226 189 L225 190 L225 192 L225 193 L223 194 L223 195 L222 196ZM250 214 L249 213 L247 211 L247 209 L246 208 L247 207 L247 208 L248 210 L249 210 L251 209 L252 209 L252 211 L253 212 L253 212 L254 211 L254 210 L253 208 L253 206 L254 206 L254 208 L256 209 L255 210 L257 210 L258 210 L259 211 L260 211 L261 211 L261 212 L261 213 L259 214 L259 214 L258 215 L256 214 L256 214 L255 214 L255 215 L254 215 L253 216 L253 215 L250 215 L250 214ZM268 204 L268 204 L268 206 L269 206 L271 207 L271 210 L269 210 L267 209 L266 211 L263 212 L263 215 L261 213 L260 211 L259 211 L257 209 L256 207 L257 205 L258 204 L260 204 L262 204 L265 204 L268 204ZM288 245 L289 245 L290 249 L290 250 L288 253 L286 252 L286 252 L285 253 L285 255 L284 256 L283 259 L282 259 L278 258 L278 259 L278 258 L277 258 L276 259 L274 258 L274 256 L274 254 L272 253 L272 252 L273 251 L275 250 L276 253 L276 255 L277 255 L282 253 L282 251 L283 250 L283 249 L284 248 L285 248 L286 247 L287 246ZM246 222 L247 223 L249 221 L250 222 L250 224 L249 224 L247 225 L248 226 L249 228 L248 229 L247 230 L247 231 L248 231 L249 232 L248 233 L245 232 L244 232 L242 232 L243 231 L242 230 L241 230 L240 229 L240 227 L239 226 L239 225 L240 225 L242 225 L244 226 L244 224 L245 223 L246 223 L246 222ZM244 189 L245 186 L246 187 L247 187 L249 187 L250 188 L252 188 L253 188 L255 189 L255 190 L255 191 L254 192 L253 192 L253 192 L252 192 L248 195 L245 195 L246 194 L247 194 L246 194 L246 193 L247 191 L245 189 L245 189ZM285 232 L286 235 L286 237 L287 239 L288 241 L287 243 L288 244 L288 245 L285 246 L285 248 L284 248 L283 248 L283 249 L283 250 L282 251 L282 252 L277 254 L276 255 L276 253 L275 250 L273 251 L273 252 L271 252 L270 252 L269 250 L268 249 L268 249 L268 248 L269 247 L270 246 L271 246 L272 245 L272 244 L271 243 L271 242 L273 241 L274 239 L276 238 L277 238 L278 237 L277 236 L278 235 L278 234 L277 233 L277 232 L278 232 L279 233 L281 232 L282 231 L283 231 L282 231 L281 230 L282 230 L283 231 L285 232ZM240 190 L241 189 L243 188 L243 188 L244 188 L245 189 L245 189 L247 191 L246 193 L246 194 L247 194 L246 194 L245 195 L245 196 L244 196 L245 197 L244 198 L244 196 L242 197 L241 197 L240 196 L240 195 L240 194 L239 194 L239 194 L239 191 L239 191 L240 190ZM261 184 L261 185 L261 186 L260 187 L258 188 L257 190 L257 191 L255 189 L253 189 L252 188 L250 188 L249 187 L247 187 L246 187 L245 186 L245 185 L245 183 L245 182 L245 180 L245 180 L243 180 L243 178 L243 177 L244 176 L246 175 L246 176 L247 176 L248 177 L249 177 L251 177 L252 177 L251 178 L251 180 L253 180 L254 181 L257 184 L259 184 L260 184ZM246 210 L247 211 L246 211 L245 211 L244 210 L244 209 L243 209 L242 208 L240 208 L238 208 L237 208 L237 206 L235 205 L234 204 L234 203 L237 202 L239 201 L240 202 L241 202 L241 203 L241 203 L242 205 L242 206 L243 204 L243 203 L243 204 L244 205 L245 206 L246 209 L246 210ZM228 199 L228 198 L227 198 L226 196 L225 195 L223 196 L222 195 L223 194 L223 192 L225 192 L226 192 L229 192 L231 193 L231 194 L232 195 L233 196 L233 197 L231 200 L230 200 L229 200ZM271 210 L272 212 L275 213 L275 214 L274 214 L273 217 L271 218 L272 219 L271 220 L271 222 L270 222 L270 223 L271 226 L269 226 L269 228 L268 227 L268 229 L269 231 L269 232 L269 232 L269 233 L269 234 L270 235 L271 236 L270 239 L270 240 L270 240 L271 242 L271 243 L272 244 L271 244 L271 246 L270 246 L269 247 L268 248 L267 248 L266 248 L265 247 L264 247 L264 248 L262 247 L262 245 L262 242 L263 241 L263 240 L263 239 L262 239 L261 237 L262 236 L263 236 L263 235 L264 235 L262 235 L261 234 L261 234 L261 232 L261 231 L261 230 L262 229 L262 227 L260 227 L259 226 L258 226 L256 223 L254 223 L252 222 L251 221 L250 218 L252 218 L249 215 L249 214 L250 214 L250 215 L253 215 L253 216 L254 215 L255 215 L255 214 L255 214 L256 214 L258 215 L259 214 L259 214 L261 213 L261 213 L262 213 L263 215 L263 212 L266 211 L267 209 L269 210 L271 210ZM251 205 L249 205 L249 204 L247 203 L246 202 L246 200 L245 199 L246 198 L246 198 L247 198 L247 197 L248 196 L249 194 L251 193 L253 192 L254 195 L251 196 L251 198 L252 199 L250 200 L250 201 L251 202 L251 203 L250 203 L251 205ZM262 247 L262 247 L260 247 L260 248 L259 248 L259 248 L258 249 L257 249 L257 250 L255 251 L255 252 L254 252 L253 252 L252 252 L251 252 L250 251 L250 251 L249 250 L250 249 L250 248 L249 247 L248 247 L245 246 L244 246 L244 244 L243 243 L243 243 L243 242 L242 239 L242 238 L242 237 L241 235 L242 234 L242 232 L243 232 L245 233 L245 232 L247 233 L249 232 L252 232 L253 233 L255 233 L255 233 L256 233 L258 233 L258 235 L258 237 L259 239 L260 239 L261 239 L262 239 L263 239 L263 240 L263 241 L262 242 L262 245 L262 246ZM232 147 L230 154 L231 154 L232 154 L233 154 L233 155 L234 158 L234 159 L234 160 L234 161 L233 162 L235 161 L236 162 L240 164 L241 163 L241 162 L242 163 L243 164 L242 165 L242 167 L241 167 L242 168 L242 170 L242 171 L241 172 L241 173 L241 175 L240 177 L239 178 L238 178 L237 178 L235 178 L234 176 L232 176 L230 177 L229 178 L228 178 L227 177 L225 174 L223 173 L220 174 L221 173 L222 172 L224 170 L225 169 L225 167 L225 165 L225 163 L227 161 L227 159 L228 154 L232 147ZM260 187 L263 189 L264 189 L265 189 L266 189 L264 190 L265 191 L265 193 L264 194 L262 195 L262 196 L260 196 L257 195 L256 196 L256 195 L256 194 L255 191 L255 190 L257 191 L257 190 L258 188 L260 187ZM267 203 L268 204 L265 204 L264 204 L261 204 L259 204 L258 204 L257 207 L257 208 L258 210 L257 210 L255 210 L256 209 L254 208 L254 206 L254 206 L253 205 L253 205 L251 205 L250 204 L251 203 L251 202 L250 201 L250 200 L252 199 L251 198 L251 196 L254 195 L253 192 L254 192 L255 192 L256 193 L256 194 L256 196 L255 197 L256 196 L259 196 L261 196 L263 198 L264 200 L265 202 L266 203 L267 203ZM235 202 L235 201 L234 200 L233 201 L232 200 L232 200 L232 199 L233 197 L232 196 L233 196 L231 195 L231 194 L230 192 L229 191 L230 191 L232 191 L232 192 L233 193 L234 192 L234 193 L236 193 L237 193 L238 193 L239 193 L239 193 L240 194 L240 195 L240 195 L241 197 L241 198 L242 198 L242 199 L242 199 L242 200 L242 201 L241 202 L239 201 L238 202 L237 202 L235 201ZM288 226 L289 227 L289 228 L287 229 L287 230 L285 230 L286 231 L285 232 L283 231 L282 230 L281 230 L282 231 L283 231 L282 231 L281 232 L279 233 L278 232 L277 232 L277 233 L278 234 L278 235 L277 236 L278 237 L277 238 L276 238 L274 239 L273 241 L271 242 L271 241 L270 240 L270 239 L271 236 L270 235 L269 234 L269 233 L269 232 L269 232 L269 231 L268 229 L269 228 L269 228 L269 226 L271 226 L270 223 L270 222 L271 222 L271 220 L272 219 L271 218 L273 217 L274 214 L275 214 L277 214 L278 215 L281 215 L282 216 L283 217 L284 220 L286 220 L286 222 L287 224 L288 226ZM225 192 L226 189 L228 184 L228 180 L228 177 L229 177 L230 178 L231 177 L233 177 L235 178 L234 179 L235 179 L235 180 L234 180 L235 181 L235 182 L233 183 L233 185 L232 187 L232 187 L231 188 L231 190 L229 191 L229 192 L229 192 L226 192ZM238 178 L238 180 L238 181 L239 181 L239 182 L240 183 L239 184 L238 186 L238 187 L239 187 L239 189 L240 189 L239 190 L238 191 L238 192 L238 193 L237 193 L236 193 L234 192 L233 193 L232 193 L232 192 L231 189 L231 188 L232 187 L232 186 L233 186 L234 184 L234 182 L236 182 L234 181 L234 180 L235 179 L234 178 L237 179 L237 178 L238 178Z" fill="var(--mapa-depto)" stroke="var(--mapa-pais)" stroke-width=".6"/><path d="M267 559 L264 559 L262 559 L259 559 L258 558 L259 557 L259 556 L258 555 L259 554 L260 553 L260 552 L260 550 L262 549 L262 548 L262 546 L262 545 L264 546 L265 547 L266 546 L268 546 L269 546 L271 545 L272 547 L272 550 L273 551 L273 552 L272 553 L271 556 L269 556 L267 559ZM258 482 L258 482 L258 481 L259 480 L259 479 L260 478 L261 478 L260 476 L261 475 L263 474 L265 474 L265 476 L266 477 L266 477 L268 478 L269 478 L270 479 L269 481 L269 481 L268 482 L267 483 L267 483 L266 484 L265 484 L264 485 L263 487 L262 488 L261 488 L259 489 L258 487 L258 486 L259 485 L259 484 L258 483ZM277 464 L276 466 L277 469 L275 470 L274 471 L273 473 L272 472 L271 473 L270 473 L269 472 L270 471 L270 470 L270 468 L271 467 L272 466 L271 466 L273 464 L273 462 L272 461 L273 460 L275 460 L275 460 L277 460 L277 459 L278 461 L278 462 L278 462 L277 463 L277 464ZM239 474 L239 473 L240 474 L243 474 L245 473 L246 473 L248 473 L250 473 L252 474 L253 475 L253 476 L254 476 L257 477 L257 475 L259 474 L260 474 L261 474 L261 475 L260 476 L261 478 L260 478 L259 479 L259 480 L259 481 L257 482 L254 483 L253 483 L251 483 L249 484 L248 482 L246 482 L245 482 L245 479 L245 478 L244 478 L241 476 L240 476 L239 474ZM278 456 L280 457 L278 457 L277 459 L277 459 L276 460 L274 460 L272 460 L273 461 L273 463 L272 463 L271 463 L270 463 L268 459 L265 458 L263 458 L262 457 L261 456 L262 456 L262 455 L263 455 L264 455 L265 455 L266 454 L268 454 L268 454 L268 453 L268 452 L269 452 L268 451 L268 450 L268 450 L268 449 L268 448 L268 448 L269 447 L270 448 L271 449 L271 450 L273 451 L275 449 L276 452 L277 453 L278 455 L278 456ZM246 553 L244 552 L244 552 L243 551 L242 552 L241 552 L240 552 L240 553 L240 553 L238 554 L237 555 L236 555 L233 554 L233 555 L233 556 L232 556 L231 557 L230 559 L229 561 L228 562 L228 564 L228 565 L227 566 L227 567 L226 568 L227 566 L227 564 L226 561 L226 560 L226 558 L225 558 L223 559 L222 559 L220 559 L218 557 L218 556 L219 553 L220 552 L221 550 L222 549 L223 548 L224 549 L226 549 L228 548 L230 548 L233 547 L234 547 L235 547 L236 546 L237 544 L238 542 L239 540 L240 538 L241 537 L241 536 L243 536 L242 537 L243 538 L243 539 L245 540 L246 541 L245 542 L245 543 L245 544 L246 545 L247 546 L246 547 L245 548 L244 550 L245 550 L246 552 L246 553ZM227 491 L228 489 L229 488 L230 486 L231 485 L231 483 L232 482 L233 482 L234 483 L235 485 L237 484 L238 486 L238 488 L240 489 L240 491 L240 491 L240 492 L237 494 L236 495 L233 496 L231 501 L230 501 L228 502 L227 500 L226 499 L226 496 L227 494 L227 491ZM277 501 L277 503 L277 504 L278 504 L279 505 L279 506 L280 506 L281 506 L281 507 L281 508 L281 510 L280 511 L279 512 L277 513 L274 515 L274 513 L274 511 L275 505 L277 501ZM243 462 L242 460 L242 459 L243 458 L245 457 L248 456 L250 455 L252 453 L253 451 L254 451 L255 450 L255 449 L256 449 L258 449 L259 449 L259 450 L258 451 L259 452 L259 453 L258 454 L257 454 L257 453 L255 452 L255 453 L254 454 L252 455 L251 456 L249 457 L248 458 L246 459 L245 460 L244 461 L243 462ZM243 536 L242 536 L241 537 L240 539 L238 541 L237 542 L237 544 L235 547 L235 548 L233 547 L231 548 L229 548 L228 548 L227 546 L228 545 L227 542 L227 542 L227 541 L226 542 L225 541 L225 541 L224 539 L223 539 L221 537 L218 537 L217 535 L215 535 L214 534 L213 530 L211 529 L211 530 L210 531 L209 531 L208 532 L208 529 L209 528 L209 527 L211 525 L211 524 L212 521 L213 522 L214 521 L214 519 L215 517 L215 516 L216 515 L218 514 L218 515 L221 518 L222 518 L223 520 L225 520 L226 520 L227 522 L228 525 L230 525 L232 526 L233 525 L234 526 L235 526 L236 524 L238 524 L240 526 L241 528 L242 528 L243 528 L244 530 L245 530 L245 535 L244 535ZM271 496 L269 497 L270 497 L268 499 L267 501 L267 502 L265 503 L264 503 L263 502 L262 500 L261 500 L260 499 L261 496 L262 497 L262 498 L263 496 L264 494 L266 493 L266 494 L267 493 L267 492 L268 489 L268 488 L267 488 L270 486 L271 485 L272 485 L273 487 L274 486 L273 489 L272 491 L272 492 L272 493 L271 495ZM247 542 L245 540 L243 539 L243 538 L242 537 L243 536 L244 534 L245 532 L247 530 L247 529 L248 529 L249 530 L251 527 L251 525 L252 524 L253 523 L255 523 L256 521 L257 524 L257 525 L259 526 L260 527 L261 528 L263 531 L264 533 L262 534 L261 535 L260 535 L260 536 L258 536 L256 536 L256 535 L254 534 L253 536 L252 537 L251 539 L250 538 L248 538 L248 539 L248 540 L247 541 L247 542ZM275 515 L278 512 L280 511 L284 508 L284 509 L285 510 L287 511 L288 513 L289 515 L289 517 L285 516 L284 517 L283 518 L282 519 L282 521 L282 522 L281 523 L280 524 L280 525 L280 527 L279 528 L277 525 L276 524 L276 522 L275 522 L273 523 L273 523 L274 520 L273 518 L274 517ZM289 526 L289 527 L289 528 L288 531 L287 532 L285 533 L283 535 L282 536 L281 537 L280 539 L279 539 L278 540 L278 541 L278 542 L278 543 L276 544 L275 545 L275 547 L276 548 L276 550 L275 551 L273 551 L271 549 L272 546 L270 545 L268 547 L266 546 L266 547 L264 547 L263 546 L262 544 L264 542 L264 542 L266 541 L266 539 L267 538 L267 537 L268 536 L270 536 L271 536 L273 536 L274 536 L276 535 L276 533 L277 532 L278 532 L280 529 L280 533 L280 534 L285 532 L287 528 L289 526ZM262 501 L264 503 L265 504 L267 502 L267 502 L267 501 L268 502 L269 501 L270 502 L270 505 L271 505 L272 504 L273 504 L274 507 L273 508 L273 510 L271 510 L270 511 L268 510 L266 509 L264 506 L262 503 L262 502ZM268 447 L268 449 L268 449 L268 450 L269 451 L269 452 L269 453 L268 454 L268 454 L267 455 L266 454 L264 455 L264 455 L263 455 L262 455 L262 456 L261 455 L259 455 L258 454 L259 453 L260 453 L261 453 L263 453 L263 451 L263 449 L262 447 L264 447 L264 446 L265 446 L266 447 L267 447 L268 447ZM269 499 L272 499 L273 499 L275 499 L274 501 L274 504 L272 504 L271 505 L270 505 L270 502 L269 501 L268 502 L268 501 L268 500 L268 499ZM254 447 L255 446 L255 446 L256 445 L257 443 L258 441 L258 440 L260 439 L261 439 L262 438 L262 439 L261 442 L263 442 L263 444 L263 445 L264 446 L264 447 L262 447 L260 448 L259 449 L258 449 L257 449 L256 449 L255 450 L254 450 L254 449 L254 448ZM262 502 L262 503 L264 506 L267 509 L270 510 L271 511 L272 511 L272 514 L271 514 L270 516 L268 516 L267 517 L267 519 L265 519 L263 519 L262 518 L261 516 L258 517 L257 515 L257 512 L258 512 L259 510 L258 510 L257 509 L258 509 L258 508 L258 506 L259 503 L260 501 L260 500 L260 502 L262 502ZM243 454 L242 453 L242 452 L244 449 L246 448 L249 448 L249 447 L250 447 L250 446 L252 446 L253 446 L254 448 L254 449 L254 449 L254 451 L253 452 L251 454 L249 456 L247 456 L244 457 L242 459 L241 460 L242 462 L241 458 L242 457 L243 454ZM275 438 L276 439 L277 439 L277 439 L278 440 L278 442 L278 444 L279 445 L278 447 L279 449 L279 450 L278 453 L277 453 L276 454 L276 449 L274 450 L273 450 L271 449 L270 448 L269 448 L269 447 L270 446 L272 444 L274 443 L274 443 L274 442 L273 441 L272 440 L273 439 L272 438 L271 438 L270 438 L272 437 L275 438ZM233 481 L234 480 L236 480 L237 478 L238 474 L240 476 L241 476 L243 477 L244 478 L245 479 L245 481 L245 482 L247 482 L249 483 L250 484 L253 484 L254 483 L255 482 L258 482 L258 483 L259 483 L259 485 L258 486 L259 488 L259 489 L258 490 L259 492 L261 492 L262 493 L262 495 L264 494 L263 496 L262 498 L262 497 L261 496 L260 499 L259 499 L257 498 L256 497 L254 497 L251 497 L249 498 L248 497 L247 495 L245 495 L244 495 L243 495 L242 496 L240 498 L239 498 L232 500 L231 499 L235 495 L236 494 L239 494 L240 491 L240 489 L239 489 L238 487 L238 485 L237 484 L234 484 L233 483 L233 481ZM288 500 L291 502 L292 504 L293 505 L293 507 L293 508 L293 510 L291 511 L291 512 L290 513 L290 514 L290 516 L290 517 L289 517 L288 513 L288 512 L286 511 L284 510 L285 509 L287 507 L288 502 L288 500ZM273 463 L271 465 L272 466 L272 466 L270 467 L270 469 L269 469 L268 470 L266 469 L265 469 L263 468 L262 468 L262 467 L261 466 L262 465 L264 464 L263 462 L262 461 L262 460 L263 459 L263 458 L265 458 L268 459 L270 463 L272 463 L273 463ZM259 456 L262 457 L264 458 L263 459 L262 460 L262 461 L263 462 L264 464 L262 465 L261 466 L262 467 L259 469 L259 470 L258 471 L257 470 L255 470 L256 469 L256 467 L255 465 L256 465 L255 464 L256 463 L256 461 L256 460 L259 457ZM278 501 L279 502 L279 503 L280 503 L282 503 L283 503 L284 503 L285 501 L286 500 L286 500 L288 500 L288 501 L288 505 L285 509 L285 510 L284 509 L284 508 L281 510 L281 508 L281 507 L281 506 L281 506 L279 506 L279 505 L278 504 L277 504 L277 503 L277 502ZM240 468 L241 465 L243 464 L247 462 L249 461 L251 461 L252 461 L254 462 L255 462 L256 462 L255 464 L256 465 L255 465 L256 467 L256 469 L256 470 L258 471 L256 471 L255 472 L253 472 L252 472 L249 469 L247 470 L246 470 L245 470 L241 470ZM252 553 L250 552 L250 551 L248 551 L247 552 L247 553 L246 553 L246 552 L246 551 L245 550 L244 549 L246 547 L246 547 L247 546 L245 543 L245 542 L246 542 L247 542 L247 541 L248 540 L248 539 L248 538 L250 538 L251 539 L252 538 L252 537 L254 536 L255 534 L257 535 L257 536 L258 536 L259 537 L260 536 L261 535 L263 536 L263 537 L264 538 L266 538 L266 539 L265 540 L265 542 L264 542 L262 544 L262 546 L262 547 L262 548 L261 549 L260 550 L255 550 L253 550 L253 551 L252 551 L252 553ZM246 531 L246 530 L244 531 L244 528 L243 527 L242 528 L241 527 L239 525 L236 524 L236 521 L237 518 L237 516 L238 514 L239 513 L239 514 L241 513 L242 511 L245 509 L246 509 L247 510 L249 510 L251 509 L250 511 L249 513 L250 515 L252 516 L254 516 L254 517 L256 518 L257 520 L256 521 L255 522 L254 523 L252 523 L252 524 L250 526 L250 528 L248 530 L247 529 L248 530 L246 531ZM259 453 L259 452 L259 450 L259 450 L260 448 L261 448 L262 447 L263 449 L263 451 L263 453 L261 453 L260 453ZM273 479 L274 480 L273 481 L273 483 L274 484 L274 486 L273 487 L272 485 L271 485 L270 486 L267 487 L268 487 L268 489 L268 491 L267 493 L267 494 L266 494 L265 494 L263 495 L262 494 L263 492 L260 492 L258 492 L258 490 L260 489 L262 488 L263 487 L264 485 L265 485 L266 484 L266 483 L267 483 L267 482 L268 481 L268 481 L269 480 L270 479 L270 478 L271 479 L271 479 L272 479ZM196 570 L197 569 L198 568 L197 567 L198 566 L197 564 L198 565 L200 565 L204 565 L208 564 L210 563 L210 562 L212 561 L213 560 L214 559 L215 558 L216 557 L217 557 L218 557 L220 557 L221 559 L222 559 L223 559 L225 558 L226 558 L226 560 L226 563 L226 565 L226 566 L226 568 L227 569 L224 571 L220 574 L215 578 L213 584 L210 583 L208 582 L207 581 L206 581 L205 579 L204 579 L203 577 L201 578 L201 576 L200 575 L200 573 L198 573 L198 571 L196 570ZM261 535 L263 534 L263 532 L263 531 L265 528 L267 527 L270 526 L271 527 L271 529 L272 527 L272 528 L272 529 L273 529 L275 529 L278 530 L279 529 L279 530 L278 532 L277 532 L276 533 L276 535 L274 536 L273 536 L271 536 L270 536 L268 536 L267 537 L267 538 L266 538 L264 538 L264 537 L263 536 L262 535ZM263 531 L262 529 L260 527 L261 526 L262 525 L262 524 L262 523 L264 522 L266 521 L267 520 L267 519 L267 519 L266 518 L267 517 L269 516 L270 516 L270 518 L270 520 L272 522 L273 522 L273 523 L274 524 L274 523 L275 522 L276 522 L276 523 L277 525 L279 527 L279 529 L278 530 L275 529 L273 529 L272 529 L272 528 L272 527 L271 528 L271 527 L270 526 L269 526 L268 527 L265 528 L263 531ZM197 564 L198 564 L199 563 L200 561 L200 560 L200 558 L199 556 L199 555 L199 555 L200 554 L201 553 L200 552 L200 550 L200 549 L201 547 L202 545 L202 544 L203 541 L203 539 L203 538 L203 537 L204 537 L205 536 L205 534 L205 533 L206 532 L207 532 L209 531 L210 531 L211 530 L211 529 L213 530 L214 534 L215 535 L217 535 L218 537 L221 537 L223 539 L224 539 L225 541 L225 541 L226 542 L227 541 L227 542 L227 542 L228 545 L227 547 L228 549 L226 549 L224 549 L223 548 L222 549 L221 550 L220 552 L219 553 L218 556 L217 557 L216 557 L215 558 L214 559 L213 560 L212 561 L210 562 L210 563 L208 564 L204 565 L200 565 L198 565 L197 564ZM217 511 L218 510 L219 509 L221 508 L221 507 L222 504 L223 503 L223 503 L225 501 L225 500 L226 499 L228 500 L228 502 L230 503 L231 504 L235 506 L235 507 L236 507 L237 507 L239 508 L238 509 L237 509 L236 509 L235 511 L236 513 L234 513 L234 515 L231 515 L230 515 L229 517 L227 518 L225 518 L224 520 L224 520 L223 519 L221 518 L219 517 L218 514 L218 513 L218 513 L217 511ZM228 502 L231 501 L237 499 L239 497 L241 498 L242 495 L243 495 L245 496 L247 495 L248 497 L249 498 L250 498 L253 497 L253 497 L252 499 L250 502 L250 503 L248 505 L248 507 L248 509 L247 510 L245 509 L244 510 L241 512 L240 513 L239 513 L238 513 L239 510 L238 509 L238 508 L237 507 L236 507 L235 507 L235 506 L231 504 L230 503 L228 502ZM260 527 L258 525 L258 524 L256 524 L256 521 L257 520 L259 520 L261 520 L259 519 L258 517 L262 516 L262 518 L263 519 L265 519 L267 519 L267 520 L267 521 L266 521 L265 522 L262 523 L262 524 L262 525 L261 526 L261 527ZM236 522 L235 526 L234 526 L233 525 L232 526 L230 525 L228 525 L227 522 L226 520 L224 519 L226 518 L227 517 L230 516 L230 516 L232 515 L234 513 L235 512 L236 512 L235 511 L236 509 L237 509 L238 509 L239 509 L238 512 L239 513 L238 513 L237 515 L236 518 L237 518 L236 522ZM258 499 L261 500 L262 500 L262 502 L260 500 L258 506 L257 508 L257 509 L258 509 L258 511 L258 512 L257 514 L258 516 L259 518 L259 520 L261 520 L258 520 L256 518 L254 517 L254 516 L253 516 L250 515 L249 513 L250 511 L251 509 L252 509 L255 506 L257 502 L256 501 L255 502 L253 501 L251 499 L252 498 L253 497 L254 497 L256 497 L257 498 L258 499ZM262 438 L263 438 L264 438 L266 437 L268 438 L270 438 L270 438 L271 438 L272 438 L273 439 L272 440 L273 441 L274 442 L274 443 L274 443 L272 444 L270 446 L268 448 L268 447 L267 447 L266 447 L265 446 L264 446 L264 445 L264 444 L263 443 L262 443 L262 440 L262 439ZM239 474 L240 472 L239 470 L241 470 L245 470 L246 470 L247 470 L249 469 L252 472 L254 472 L255 471 L256 471 L258 471 L259 470 L259 469 L261 467 L260 471 L258 473 L259 474 L258 475 L257 476 L255 476 L254 476 L253 475 L252 474 L251 473 L250 473 L247 474 L246 473 L244 473 L241 474 L240 474ZM275 500 L276 500 L277 501 L276 502 L275 508 L274 510 L274 512 L274 514 L275 515 L274 517 L274 519 L272 522 L271 522 L270 521 L270 519 L270 518 L270 515 L271 514 L272 514 L272 512 L273 509 L274 507 L273 505 L274 504 L275 500ZM251 509 L249 510 L248 510 L247 508 L248 506 L249 503 L250 502 L251 500 L252 500 L253 501 L254 502 L255 502 L255 501 L256 501 L257 502 L253 509 L251 510ZM273 473 L274 475 L275 477 L274 478 L273 479 L272 479 L271 478 L270 478 L269 478 L268 478 L266 477 L266 477 L265 476 L265 474 L263 474 L261 475 L261 474 L260 474 L259 474 L258 473 L259 472 L260 471 L261 467 L262 468 L263 468 L264 468 L265 469 L266 469 L268 469 L269 469 L269 470 L270 470 L270 471 L270 471 L270 473 L270 473 L271 472 L272 473ZM243 463 L244 461 L245 460 L246 459 L248 458 L249 457 L251 456 L252 455 L254 454 L255 453 L255 452 L257 453 L257 454 L258 454 L259 455 L261 455 L262 455 L260 456 L259 457 L256 460 L256 461 L255 461 L255 462 L254 462 L252 461 L251 461 L249 461 L247 462ZM290 517 L291 519 L291 520 L290 523 L289 526 L288 527 L285 532 L282 534 L279 531 L279 530 L279 530 L279 528 L280 527 L280 525 L280 524 L281 523 L282 522 L282 521 L282 519 L283 518 L284 517 L285 516 L290 518Z" fill="var(--mapa-depto)" stroke="var(--mapa-pais)" stroke-width=".6"/><path d="M417 86 L403 89 L405 81 L407 72 L414 78ZM411 91 L406 101 L400 107 L394 103 L390 90 L399 94 L411 91ZM358 101 L345 106 L344 87 L347 80 L365 79 L372 81 L367 90 L361 98ZM386 94 L389 106 L384 106 L386 94ZM394 119 L380 116 L392 115ZM400 107 L392 113 L387 109 L386 99 L386 94 L398 104ZM402 86 L399 94 L390 90 L402 86ZM388 129 L382 132 L373 132 L371 127 L380 131ZM442 58 L420 87 L417 86 L409 72 L404 77 L405 68 L417 66 L433 64 L442 58ZM425 64 L417 66 L405 68 L398 67 L388 62 L398 54 L420 46 L419 54 L422 63ZM402 70 L405 81 L400 86 L386 94 L368 100 L361 98 L367 90 L372 81 L373 72 L388 62 L398 67ZM380 96 L387 109 L392 113 L394 119 L383 113 L377 118 L368 112 L366 106 L354 104 L368 100ZM442 58 L433 64 L422 63 L419 54 L420 46 L432 30 L436 22 L441 25 L449 23 L449 15 L459 14 L468 10 L487 20 L492 36 L478 47 L453 55ZM390 126 L380 131 L371 127 L381 123 L390 126ZM391 124 L386 126 L375 123 L380 116Z" fill="var(--mapa-depto)" stroke="var(--mapa-pais)" stroke-width=".6"/><path d="M352 251 L349 259 L345 265 L343 272 L338 275 L335 267 L340 263 L345 253 L347 246ZM381 161 L365 167 L359 169 L346 171 L344 171 L353 159 L369 153 L387 140 L381 161ZM334 185 L329 189 L323 193 L319 180 L333 178ZM377 178 L367 180 L359 177 L344 178 L346 171 L359 169 L365 167 L381 161 L382 168ZM333 152 L337 163 L328 166 L320 156 L326 153ZM334 186 L337 194 L340 202 L344 212 L356 209 L355 216 L348 216 L340 214 L330 209 L324 205 L322 195 L323 193 L329 189ZM352 181 L351 187 L369 191 L355 192 L347 199 L340 202 L337 194 L334 186 L343 185 L348 179ZM365 197 L356 209 L344 212 L340 202 L347 199 L355 192ZM334 132 L333 141 L333 152 L319 156 L318 146 L324 136 L334 132ZM344 167 L344 178 L355 178 L348 179 L343 185 L333 176 L331 169 L337 165ZM343 247 L341 256 L335 267 L337 249ZM361 250 L357 254 L356 248ZM347 246 L332 236 L336 232 L341 237 L346 230 L356 227 L348 240 L347 246ZM377 178 L371 186 L355 187 L349 184 L352 176 L362 181 L370 178ZM373 132 L387 135 L381 146 L360 152 L354 161 L344 167 L349 161 L356 155 L368 149 L371 144 L374 136 L371 129ZM387 135 L373 132 L382 132 L387 135ZM355 216 L355 224 L345 223 L340 223 L348 212 L352 217ZM355 224 L354 228 L344 235 L333 236 L339 231 L345 223 L355 224ZM337 135 L337 130 L343 126 L344 117 L350 113 L354 134 L342 137ZM360 256 L355 268 L355 271 L346 269 L348 264 L354 254 L360 256ZM360 286 L352 295 L343 291 L355 280 L363 277 L360 282ZM346 164 L349 155 L359 146 L367 135 L374 144 L371 149 L358 151 L351 155 L346 164ZM363 275 L357 281 L352 286 L336 291 L341 282 L344 275 L355 271 L359 275ZM340 214 L341 226 L336 232 L332 226 L334 212ZM377 118 L371 127 L367 135 L359 146 L349 155 L346 164 L337 165 L336 156 L334 148 L337 135 L351 136 L350 120 L348 112 L354 104 L366 106 L368 112 L377 118Z" fill="var(--mapa-depto)" stroke="var(--mapa-pais)" stroke-width=".6"/><path d="M244 189 L244 186 L245 186 L246 187 L247 186 L249 187 L249 188 L250 188 L251 188 L252 188 L252 187 L253 188 L254 188 L253 189 L254 189 L255 189 L256 190 L255 190 L256 191 L255 191 L255 192 L255 192 L254 192 L253 192 L253 192 L252 192 L252 192 L251 193 L248 195 L248 196 L245 195 L246 194 L247 194 L246 194 L246 193 L246 193 L247 191 L246 190 L245 189 L245 189Z" fill="var(--mapa-sitio)" stroke="#FFFFFF" stroke-width=".8"/><path d="M238 178 L238 180 L237 180 L238 181 L239 181 L239 181 L239 182 L240 183 L239 184 L238 185 L238 186 L238 187 L239 187 L239 188 L239 189 L240 190 L240 189 L240 190 L239 191 L239 191 L238 192 L238 193 L237 193 L236 194 L236 193 L234 193 L234 192 L233 193 L232 193 L232 192 L232 192 L231 191 L231 189 L232 188 L232 187 L232 186 L233 186 L234 185 L234 184 L233 183 L234 182 L235 182 L235 181 L234 181 L234 180 L235 180 L235 179 L234 179 L234 178 L235 178 L237 179 L237 178 L238 178Z" fill="var(--mapa-sitio)" stroke="#FFFFFF" stroke-width=".8"/><path d="M288 500 L290 501 L291 502 L291 504 L292 505 L293 505 L293 507 L293 508 L293 509 L293 510 L291 511 L291 512 L290 513 L290 514 L290 515 L290 516 L290 517 L289 517 L289 515 L288 513 L288 512 L287 511 L286 511 L285 510 L284 510 L285 509 L285 509 L287 507 L288 505 L288 502 L288 501 L288 500Z" fill="var(--mapa-sitio)" stroke="#FFFFFF" stroke-width=".8"/><path d="M196 570 L196 570 L197 569 L198 569 L198 568 L197 567 L198 566 L197 565 L197 564 L198 565 L199 566 L200 565 L201 566 L204 565 L205 565 L208 564 L209 563 L210 562 L211 561 L212 561 L213 560 L213 560 L214 559 L215 558 L215 558 L216 557 L217 557 L218 557 L219 557 L220 557 L220 559 L221 559 L222 559 L223 559 L223 559 L225 558 L226 558 L226 560 L226 561 L226 563 L227 564 L226 565 L227 566 L226 568 L227 568 L226 569 L224 571 L222 572 L220 574 L219 575 L215 578 L214 582 L213 584 L211 584 L210 583 L208 582 L208 581 L207 581 L206 581 L205 581 L205 579 L204 579 L204 578 L203 577 L202 577 L201 578 L200 579 L201 578 L201 576 L200 575 L200 574 L199 573 L198 573 L198 572 L198 571 L197 570Z" fill="var(--mapa-sitio)" stroke="#FFFFFF" stroke-width=".8"/><path d="M400 107 L396 117 L392 113 L391 110 L387 109 L389 106 L386 99 L386 94 L394 103 L398 104 L400 107Z" fill="var(--mapa-sitio)" stroke="#FFFFFF" stroke-width=".8"/><path d="M344 167 L344 173 L344 178 L352 176 L355 178 L352 181 L348 179 L343 182 L343 185 L334 185 L333 176 L331 172 L331 169 L337 163 L337 165 L344 167Z" fill="var(--mapa-sitio)" stroke="#FFFFFF" stroke-width=".8"/><path d="M387 135 L378 135 L373 132 L376 131 L382 132 L387 130 L387 135Z" fill="var(--mapa-sitio)" stroke="#FFFFFF" stroke-width=".8"/><text x="205" y="240" class="mapa-depto-txt">SUCRE</text><text x="330" y="215" class="mapa-depto-txt">CESAR</text><text x="420" y="70" class="mapa-depto-txt">LA GUAJIRA</text><text x="255" y="470" class="mapa-depto-txt">TOLIMA</text><text x="120" y="60" class="mapa-mar-txt">Mar Caribe</text><text x="20" y="420" class="mapa-mar-txt">Océano Pacífico</text><text x="500" y="330" class="mapa-mar-txt">VENEZUELA</text><text x="40" y="640" class="mapa-mar-txt">ECUADOR</text><path d="M236.1 185.7 L-20 147.0" class="mapa-guia"/><circle cx="236.1" cy="185.7" r="7" class="mapa-punto"/><text x="236.1" y="189.2" text-anchor="middle" class="mapa-num">1</text><g class="mapa-etq"><title>San José de Toluviejo (Sucre): Yuca, Procesamiento agroalimentario</title><rect x="-282" y="110" width="262" height="74" rx="10"/><text x="-270" y="134" class="mapa-mun">1. San José de Toluviejo <tspan class="mapa-dep">· Sucre</tspan></text><g transform="translate(-270 148)"><title>Yuca</title><rect width="30" height="26" rx="8" class="mapa-chip"/><text x="15" y="18.5" text-anchor="middle" font-size="15">🌱</text></g><g transform="translate(-236 148)"><title>Procesamiento agroalimentario</title><rect width="30" height="26" rx="8" class="mapa-chip"/><text x="15" y="18.5" text-anchor="middle" font-size="15">🏭</text></g></g><path d="M249.3 190.6 L-20 242.0" class="mapa-guia"/><circle cx="249.3" cy="190.6" r="7" class="mapa-punto"/><text x="249.3" y="194.1" text-anchor="middle" class="mapa-num">2</text><g class="mapa-etq"><title>Los Palmitos (Sucre): Porcicultura</title><rect x="-282" y="205" width="262" height="74" rx="10"/><text x="-270" y="229" class="mapa-mun">2. Los Palmitos <tspan class="mapa-dep">· Sucre</tspan></text><g transform="translate(-270 243)"><title>Porcicultura</title><rect width="30" height="26" rx="8" class="mapa-chip"/><text x="15" y="18.5" text-anchor="middle" font-size="15">🐖</text></g></g><path d="M392.2 105.2 L612 67.0" class="mapa-guia"/><circle cx="392.2" cy="105.2" r="7" class="mapa-punto"/><text x="392.2" y="108.7" text-anchor="middle" class="mapa-num">3</text><g class="mapa-etq"><title>Fonseca (La Guajira): Café, Ganadería, Maíz</title><rect x="612" y="30" width="262" height="74" rx="10"/><text x="624" y="54" class="mapa-mun">3. Fonseca <tspan class="mapa-dep">· La Guajira</tspan></text><g transform="translate(624 68)"><title>Café</title><rect width="30" height="26" rx="8" class="mapa-chip"/><text x="15" y="18.5" text-anchor="middle" font-size="15">☕</text></g><g transform="translate(658 68)"><title>Ganadería</title><rect width="30" height="26" rx="8" class="mapa-chip"/><text x="15" y="18.5" text-anchor="middle" font-size="15">🐄</text></g><g transform="translate(692 68)"><title>Maíz</title><rect width="30" height="26" rx="8" class="mapa-chip"/><text x="15" y="18.5" text-anchor="middle" font-size="15">🌽</text></g></g><path d="M381.4 132.7 L612 155.0" class="mapa-guia"/><circle cx="381.4" cy="132.7" r="7" class="mapa-punto"/><text x="381.4" y="136.2" text-anchor="middle" class="mapa-num">4</text><g class="mapa-etq"><title>Manaure Balcón del Cesar (Cesar): Porcicultura, Cacao, Frutales, Maderables</title><rect x="612" y="118" width="262" height="74" rx="10"/><text x="624" y="142" class="mapa-mun">4. Manaure Balcón del Cesar <tspan class="mapa-dep">· Cesar</tspan></text><g transform="translate(624 156)"><title>Porcicultura</title><rect width="30" height="26" rx="8" class="mapa-chip"/><text x="15" y="18.5" text-anchor="middle" font-size="15">🐖</text></g><g transform="translate(658 156)"><title>Cacao</title><rect width="30" height="26" rx="8" class="mapa-chip"/><text x="15" y="18.5" text-anchor="middle" font-size="15">🍫</text></g><g transform="translate(692 156)"><title>Frutales</title><rect width="30" height="26" rx="8" class="mapa-chip"/><text x="15" y="18.5" text-anchor="middle" font-size="15">🍊</text></g><g transform="translate(726 156)"><title>Maderables</title><rect width="30" height="26" rx="8" class="mapa-chip"/><text x="15" y="18.5" text-anchor="middle" font-size="15">🌳</text></g></g><path d="M342.1 174.6 L612 243.0" class="mapa-guia"/><circle cx="342.1" cy="174.6" r="7" class="mapa-punto"/><text x="342.1" y="178.1" text-anchor="middle" class="mapa-num">5</text><g class="mapa-etq"><title>El Paso (Cesar): Gallinas ponedoras, Ganadería</title><rect x="612" y="206" width="262" height="74" rx="10"/><text x="624" y="230" class="mapa-mun">5. El Paso <tspan class="mapa-dep">· Cesar</tspan></text><g transform="translate(624 244)"><title>Gallinas ponedoras</title><rect width="30" height="26" rx="8" class="mapa-chip"/><text x="15" y="18.5" text-anchor="middle" font-size="15">🐔</text></g><g transform="translate(658 244)"><title>Ganadería</title><rect width="30" height="26" rx="8" class="mapa-chip"/><text x="15" y="18.5" text-anchor="middle" font-size="15">🐄</text></g></g><path d="M289.5 509.2 L612 507.0" class="mapa-guia"/><circle cx="289.5" cy="509.2" r="7" class="mapa-punto"/><text x="289.5" y="512.7" text-anchor="middle" class="mapa-num">6</text><g class="mapa-etq"><title>Icononzo (Tolima): Café</title><rect x="612" y="470" width="262" height="74" rx="10"/><text x="624" y="494" class="mapa-mun">6. Icononzo <tspan class="mapa-dep">· Tolima</tspan></text><g transform="translate(624 508)"><title>Café</title><rect width="30" height="26" rx="8" class="mapa-chip"/><text x="15" y="18.5" text-anchor="middle" font-size="15">☕</text></g></g><path d="M210.3 568.0 L-20 597.0" class="mapa-guia"/><circle cx="210.3" cy="568.0" r="7" class="mapa-punto"/><text x="210.3" y="571.5" text-anchor="middle" class="mapa-num">7</text><g class="mapa-etq"><title>Planadas (Tolima): Café, Aguacate</title><rect x="-282" y="560" width="262" height="74" rx="10"/><text x="-270" y="584" class="mapa-mun">7. Planadas <tspan class="mapa-dep">· Tolima</tspan></text><g transform="translate(-270 598)"><title>Café</title><rect width="30" height="26" rx="8" class="mapa-chip"/><text x="15" y="18.5" text-anchor="middle" font-size="15">☕</text></g><g transform="translate(-236 598)"><title>Aguacate</title><rect width="30" height="26" rx="8" class="mapa-chip"/><text x="15" y="18.5" text-anchor="middle" font-size="15">🥑</text></g></g></svg>
+<table class="cobertura"><thead><tr><th aria-label="Número en el mapa">#</th><th>Municipio</th><th>Departamento</th><th>Sistemas productivos</th></tr></thead><tbody><tr><td><span class="lista-num">1</span></td><td><b>San José de Toluviejo</b></td><td>Sucre</td><td><div class="tabla-sistemas"><span><i aria-hidden="true">🌱</i>Yuca</span><span><i aria-hidden="true">🏭</i>Procesamiento agroalimentario</span></div></td></tr><tr><td><span class="lista-num">2</span></td><td><b>Los Palmitos</b></td><td>Sucre</td><td><div class="tabla-sistemas"><span><i aria-hidden="true">🐖</i>Porcicultura</span></div></td></tr><tr><td><span class="lista-num">3</span></td><td><b>Fonseca</b></td><td>La Guajira</td><td><div class="tabla-sistemas"><span><i aria-hidden="true">☕</i>Café</span><span><i aria-hidden="true">🐄</i>Ganadería</span><span><i aria-hidden="true">🌽</i>Maíz</span></div></td></tr><tr><td><span class="lista-num">4</span></td><td><b>Manaure Balcón del Cesar</b></td><td>Cesar</td><td><div class="tabla-sistemas"><span><i aria-hidden="true">🐖</i>Porcicultura</span><span><i aria-hidden="true">🍫</i>Cacao</span><span><i aria-hidden="true">🍊</i>Frutales</span><span><i aria-hidden="true">🌳</i>Maderables</span></div></td></tr><tr><td><span class="lista-num">5</span></td><td><b>El Paso</b></td><td>Cesar</td><td><div class="tabla-sistemas"><span><i aria-hidden="true">🐔</i>Gallinas ponedoras</span><span><i aria-hidden="true">🐄</i>Ganadería</span></div></td></tr><tr><td><span class="lista-num">6</span></td><td><b>Icononzo</b></td><td>Tolima</td><td><div class="tabla-sistemas"><span><i aria-hidden="true">☕</i>Café</span></div></td></tr><tr><td><span class="lista-num">7</span></td><td><b>Planadas</b></td><td>Tolima</td><td><div class="tabla-sistemas"><span><i aria-hidden="true">☕</i>Café</span><span><i aria-hidden="true">🥑</i>Aguacate</span></div></td></tr></tbody></table>
+      </div>
+    </div>
   </section>
 
   <footer>
     <p>
       Datos satelitales: GloH2O (MSWEP y MSWX), bajo licencia CC BY-NC 4.0.
       <strong>Uso no comercial.</strong>
-      Índice ENSO: NOAA Climate Prediction Center.
+      Límites de países: Natural Earth (dominio público). Límites municipales: DANE.
     </p>
     <p>
       Pipeline y documentación:
@@ -276,46 +340,31 @@
 </div>
 
 <script>
-/* El estado del evento se lee del mismo data.json que consume el tablero.
-   Si no hay datos, se dice; no se inventa un valor. */
-(async function () {
-  const $valor = document.getElementById("oni-valor");
-  const $etiqueta = document.getElementById("oni-etiqueta");
-  const $nota = document.getElementById("oni-nota");
-  const $pie = document.getElementById("pie-generado");
+/* En celular el mapa se acerca a Colombia (las etiquetas se ocultan y van en la lista). */
+(function () {
+  const svg = document.querySelector(".mapa");
+  if (!svg) return;
+  const completa = svg.getAttribute("viewBox"), cel = svg.dataset.vistaCel;
+  const mq = window.matchMedia("(max-width: 40rem)");
+  const ajustar = () => svg.setAttribute("viewBox", mq.matches ? cel : completa);
+  ajustar();
+  mq.addEventListener("change", ajustar);
+})();
 
+/* Fecha de la última actualización, leída del mismo data.json que usa el tablero.
+   Si no se puede leer, simplemente no se muestra. */
+(async function () {
+  const $pie = document.getElementById("pie-generado");
   try {
     const resp = await fetch("./data.json", { cache: "no-store" });
     if (!resp.ok) throw new Error("HTTP " + resp.status);
     const datos = await resp.json();
-    const e = datos.enso || {};
-
-    if (e.valor === null || e.valor === undefined || !isFinite(e.valor)) {
-      $valor.textContent = "—";
-      $etiqueta.textContent = "Índice ENSO";
-      $nota.textContent = e.categoria || "Sin dato del índice.";
-    } else {
-      $valor.textContent = (e.valor > 0 ? "+" : "") + e.valor.toFixed(2) + " °C";
-      $etiqueta.textContent = (e.indice || "ONI") + " · " + (e.trimestre || "");
-      const partes = [e.categoria];
-      if (e.historico && e.historico.texto) partes.push(e.historico.texto);
-      if (e.provisional) partes.push("valor provisional, sujeto a revisión por la NOAA");
-      if (e.en_cache) partes.push("valor archivado: la fuente no respondió");
-      $nota.textContent = partes.filter(Boolean).join(" · ") + ".";
-    }
-
     if (datos.generado_en) {
       const f = new Date(datos.generado_en);
-      $pie.textContent = "Última actualización: " + f.toLocaleString("es-CO", {
-        dateStyle: "long", timeStyle: "short",
-      });
+      $pie.textContent = "Última actualización: " + f.toLocaleString("es-CO", { dateStyle: "long", timeStyle: "short" });
     }
   } catch (err) {
-    $valor.textContent = "—";
-    $nota.textContent =
-      "No se pudo cargar el estado del evento (" + err.message + "). " +
-      "Es probable que la última corrida del pipeline no haya terminado bien.";
-    console.error(err);
+    console.error("No se pudo leer la fecha de actualización:", err);
   }
 })();
 </script>
