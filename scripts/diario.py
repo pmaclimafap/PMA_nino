@@ -59,7 +59,9 @@ DIAS_PUBLICADOS = 60
 #
 #   1  solo series puntuales
 #   2  series puntuales + grilla por pixel
-VERSION_EXTRACCION = 2
+#   3  grilla con los polígonos del MGN 2025 del DANE (antes: polígonos
+#      del prototipo, de fuentes mezcladas). Las series puntuales no cambian.
+VERSION_EXTRACCION = 3
 
 # La cuota de descarga de Drive se restablece en unas 24 horas. No vale la
 # pena reintentar antes: solo consume tiempo y vuelve a fallar.
@@ -433,6 +435,9 @@ def main() -> int:
     if not grilla.empty:
         grilla["fecha"] = pd.to_datetime(grilla["fecha"])
         grilla = grilla[grilla.fecha >= pd.Timestamp(fechas[-1])]
+        # Quita celdas que ya no tocan el polígono vigente (ver filtrar_grilla).
+        geo = gpd.read_file(config.ruta_geojson()).set_index("id")
+        grilla = extraccion.filtrar_grilla(grilla, geo.geometry)
 
     calc = indicadores.calcular(ventana)
     publicar(ventana, calc, faltantes, errores)
