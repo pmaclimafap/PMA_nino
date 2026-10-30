@@ -4,25 +4,10 @@
 # Geoestadístico Nacional del DANE, versión 2025 (MGN_ADM_MPIO_GRAFICO),
 # simplificados a 30 m (con esa tolerancia el recorte por polígono toma
 # exactamente las mismas celdas de 0,1° que con el límite completo).
-# Reemplazan a las del prototipo de A. Amaya, que mezclaban fuentes: en
-# Sucre y Tolima eran de GADM (Planadas quedaba con 1.576 km² en vez de
-# 1.754) y en La Guajira y Cesar una versión del MGN con 7 a 18 vértices
-# por municipio. Aquí va lo que el geojson no
-# puede llevar: asociaciones, sistemas productivos y el cultivo con el que
-# se evalúan los umbrales por defecto.
-#
 # El punto de referencia es representative_point() reproyectado desde
-# EPSG:6933 (área equivalente). Se usa representative_point y no centroid
-# porque garantiza caer dentro del polígono aunque sea cóncavo.
+# EPSG:6933 (área equivalente).
 # Se guarda precalculado para no depender de geopandas en cada corrida,
 # pero el pipeline puede recalcularlo desde el geojson.
-#
-# Al cambiar a los polígonos del MGN 2025 los puntos NO se recalcularon a
-# propósito: los siete caen dentro de los polígonos nuevos y en la misma
-# celda de 0,1° que su representative_point nuevo (salvo El Paso, cuyo punto
-# nuevo caería una celda al norte). Cambiarlos rompería la continuidad con
-# la serie guardada y con la climatología, que se calcularon en estos puntos.
-# area_km2 sí se actualizó al área oficial del MGN 2025 (campo mpio_narea).
 
 meta:
   fuente_geometrias: DANE, MGN 2025 (MGN_ADM_MPIO_GRAFICO), simplificado a 30 m
