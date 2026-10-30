@@ -116,12 +116,44 @@ def fecha_del_archivo(da: xr.DataArray):
     return pd.Timestamp(np.asarray(da["time"].values).ravel()[0]).date()
 
 
-def extraer_grilla(da: xr.DataArray, geometria, crs="EPSG:4326") -> list[dict]:
-    """Una celda por pixel dentro del polígono del municipio.
+def filtrar_grilla(grilla: pd.DataFrame, geometrias) -> pd.DataFrame:
+    """Deja solo las celdas que tocan el polígono ACTUAL de cada municipio.
 
-    Alimenta el mapa del tablero. Requiere rioxarray, que se importa aquí
-    para que el resto del módulo no dependa de él.
+    La grilla guardada se fusiona día a día, así que si cambia un polígono
+    las celdas que quedaron por fuera siguen en el almacenamiento para las
+    fechas viejas. Este filtro aplica el mismo criterio que extraer_grilla
+    (all_touched: la celda cuenta si el polígono la toca) al momento de
+    publicar, para que el mapa nunca muestre celdas de una geometría anterior.
+
+    `geometrias` es una serie de geopandas indexada por id de municipio.
     """
+    from shapely.geometry import box
+
+    if grilla.empty:
+        return grilla
+    conservar = pd.Series(False, index=grilla.index)
+    for (mid, var), grupo in grilla.groupby(["municipio", "variable"]):
+        if mid not in geometrias.index:
+            continue
+        geom = geometrias.loc[mid]
+        # Medio paso de la malla, deducido de los propios datos.
+        pasos = [np.diff(np.unique(grupo[c])) for c in ("lon", "lat")]
+        pasos = [p[p > 1e-6].min() for p in pasos if (p > 1e-6).any()]
+        medio = (min(pasos) if pasos else 0.1) / 2
+        celdas = grupo[["lon", "lat"]].drop_duplicates()
+        dentro = {
+            (r.lon, r.lat) for r in celdas.itertuples()
+            if geom.intersects(box(r.lon - medio, r.lat - medio,
+                                   r.lon + medio, r.lat + medio))
+        }
+        conservar.loc[grupo.index] = [
+            (lo, la) in dentro for lo, la in zip(grupo.lon, grupo.lat)
+        ]
+    return grilla[conservar]
+
+
+def extraer_grilla(da: xr.DataArray, geometria, crs="EPSG:4326") -> list[dict]:
+    """Una celda por pixel dentro del polígono del municipio."""
     import rioxarray  # noqa: F401  habilita el accesor .rio
 
     espacial = da.rio.set_spatial_dims(x_dim="lon", y_dim="lat", inplace=False)
