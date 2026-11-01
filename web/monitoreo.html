@@ -279,6 +279,32 @@
     background: color-mix(in srgb, var(--al-nivel) 16%, var(--color-panel)); box-shadow: inset 0 -3px 0 var(--al-nivel); }
   .al-otra b { display: block; font-size: 0.98rem; margin-bottom: 2px; }
   .al-otra span { font-size: 0.9rem; color: var(--color-ink-soft); line-height: 1.45; }
+  /* "Esté pendiente": clima favorable para plagas y enfermedades. Azul, para no confundirse con los niveles de alerta. */
+  .al-ojo { width: 1.15em; height: 1.15em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .al-pend { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 5px 13px; border-radius: 999px; font-size: 0.82rem; font-weight: 700;
+    color: #FFFFFF; background: var(--color-rain); }
+  .al-pendiente { margin: 18px 24px 6px; border: 2px solid var(--color-rain); border-radius: 16px; overflow: hidden; }
+  .al-pend-cab { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 12px 18px; background: var(--color-rain); color: #FFFFFF; }
+  .al-pend-cab .al-ojo { width: 26px; height: 26px; }
+  .al-pend-cab b { font-family: var(--font-display); font-size: 1.3rem; }
+  .al-pend-cab span { margin-left: auto; font-size: 0.88rem; opacity: 0.92; }
+  .al-pend-lista { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--color-line); }
+  .al-pend-item { display: flex; gap: 14px; align-items: center; padding: 16px 18px; background: var(--color-panel); min-width: 0; }
+  .al-pend-item:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .al-pend-item b { font-size: 1.02rem; }
+  .al-pend-item p { margin: 3px 0 0; font-size: 0.8rem; color: var(--color-ink-soft); line-height: 1.4; }
+  .al-anillo { --p: 0; flex: none; width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center;
+    background: conic-gradient(var(--color-rain) calc(var(--p) * 1%), color-mix(in srgb, var(--color-rain) 15%, var(--color-panel)) 0); }
+  .al-anillo > div { width: 48px; height: 48px; border-radius: 50%; background: var(--color-panel); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; line-height: 1; }
+  .al-anillo span { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; color: var(--color-rain); }
+  .al-anillo small { font-size: 0.6rem; font-weight: 600; color: var(--color-ink-soft); margin-top: 2px; }
+  .al-pend-pie { padding: 10px 18px; font-size: 0.82rem; color: var(--color-ink-soft); background: color-mix(in srgb, var(--color-rain) 9%, var(--color-panel)); }
+  @media (max-width: 40rem) {
+    .al-pendiente { margin: 16px 16px 6px; }
+    .al-pend-cab span { margin-left: 0; flex-basis: 100%; }
+    .al-pend-lista { grid-template-columns: minmax(0, 1fr); }
+  }
   .al-mas { padding: 0 24px 6px; font-size: 0.85rem; color: var(--color-ink-soft); }
   .al-bien { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 14px 24px; margin-top: 6px; border-top: 1px solid var(--color-line); }
   .al-bien > span:first-child { font-size: 0.88rem; color: var(--color-ink-soft); margin-right: 4px; }
@@ -668,7 +694,9 @@ const MESES_ES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","n
    ------------------------------------------------------------------------ */
 // Sistemas productivos de los 7 municipios. Se muestran todos en cualquier
 // municipio.
-const SISTEMAS_PRODUCTIVOS = ["Aguacate", "Cacao", "Café", "Gallinas ponedoras", "Ganadería", "Maíz", "Plátano", "Porcicultura", "Yuca"];
+// Porcicultura y gallinas ponedoras no están: sus umbrales publicados son de
+// temperatura dentro del galpón y el tablero tiene datos de aire libre.
+const SISTEMAS_PRODUCTIVOS = ["Aguacate", "Cacao", "Café", "Ganadería", "Maíz", "Plátano", "Yuca"];
 const EMOJI_SISTEMA = {
   Aguacate: "🥑", Cacao: "🍫", Café: "☕", "Gallinas ponedoras": "🐔", Ganadería: "🐄",
   Maíz: "🌽", Plátano: "🍌", Porcicultura: "🐖", Yuca: "🌱",
@@ -832,24 +860,36 @@ actualizarOpcionesSistema();
 
 /* ======================================================================
    ALERTAS POR SISTEMA PRODUCTIVO
-   Lee web/Umbrales.csv (sale del Excel "Umbrales_criticos_SAT_ElNino_Colombia")
-   y compara los umbrales con los datos satelitales del punto del municipio.
-   Cada indicador queda en un nivel: 0 Óptimo, 1 Vigilar, 2 Alerta, 3 Grave.
+   Lee web/Umbrales.csv (sale del Excel "Umbrales_SAT_ElNino" v26; la columna
+   "id" es el ID de la hoja «Umbrales») y compara los umbrales con los datos
+   satelitales del punto del municipio.
+   Cada indicador queda en un nivel: 0 Óptimo, 1 Vigilar, 2 Alerta, 3 Grave
+   (en el Excel: Moderado, Severo, Crítico).
      sentido "alto": el nivel sube cuando el valor alcanza cada límite (>=)
      sentido "bajo": el nivel sube cuando el valor queda por debajo (<)
+   Un límite vacío es un nivel sin umbral publicado: ese nivel no se activa.
+   La columna "etapa" admite varias etapas separadas por ";".
    Indicadores (columna "indicador"):
      max / min      valor más alto o más bajo del período (con su fecha)
      media / suma   promedio o acumulado de los últimos N días ("ventana")
      dsc            racha más larga de días con menos de 1 mm
+     racha_actual   días seguidos que cumplen las condiciones hasta el último
+                    día (busca hasta N días atrás, "ventana")
      max_suma3      lluvia máxima acumulada en 3 días seguidos
      sostenido3     valor que se mantuvo al menos 3 días seguidos
      dias_cond      días de los últimos N que cumplen las "condiciones"
      max_cond       valor más alto en los días que cumplen las condiciones
      racha_cond     días seguidos que cumplen las condiciones
-   La variable "ith" es el índice de temperatura y humedad (NRC, 1971),
-   calculado con la temperatura máxima y la humedad media del día.
+     max_y_media    Vigilar si algún día de los últimos N alcanza lim_vigilar;
+                    Alerta si el promedio de los N días alcanza lim_alerta
+     favorable      SIN NIVEL: cuántos días del período cumplen las condiciones
+                    de clima favorables para una plaga o enfermedad. Se muestra
+                    como dato informativo, no como alerta, porque las fuentes no
+                    dan un número de días que indique daño.
+   La variable "ith_media" es el índice de temperatura y humedad (NRC, 1971)
+   calculado con la temperatura media y la humedad media de cada día.
    Para el productor no se muestra el número del índice, sino la
-   temperatura y la humedad del día en que fue más alto.
+   temperatura y la humedad promedio.
    ====================================================================== */
 const ARCHIVO_UMBRALES = "./Umbrales.csv";
 let UMBRALES = [];
@@ -866,7 +906,9 @@ const NOMBRE_GRUPO = { calor: "calor", frio: "frío", sin_lluvia: "falta de lluv
 const PARA_QUIEN = { "Café": "su cultivo de café", "Aguacate": "su cultivo de aguacate", "Maíz": "su cultivo de maíz", "Yuca": "su cultivo de yuca",
   "Plátano": "su cultivo de plátano", "Cacao": "su cultivo de cacao", "Porcicultura": "sus cerdos", "Gallinas ponedoras": "sus gallinas", "Ganadería": "su ganado" };
 const NOMBRE_PERIODO = { "Última fecha": "Último día", "Última semana": "Última semana", "Últimas 2 semanas": "Últimas 2 semanas", "Último mes": "Último mes" };
-const SISTEMAS_PECUARIOS = ["Porcicultura", "Gallinas ponedoras", "Ganadería"];
+const SISTEMAS_PECUARIOS = ["Ganadería"];
+// Ícono de "esté pendiente" para el clima favorable a plagas y enfermedades (no es un nivel de alerta).
+const ICONO_PENDIENTE = `<svg class="al-ojo" viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3.2"/></svg>`;
 const ETAPA_ELEGIDA = {}; // sistema -> etapa elegida ("" = todas)
 // Estado de cada panel de alertas ("alertas" = satelital, "alertas-campo" = comunitario):
 // los últimos datos dibujados y si está desplegado (empieza recogido).
@@ -884,9 +926,14 @@ function leerCsvUmbrales(texto) {
   lineas.slice(1).forEach((linea) => {
     const c = separarCsv(linea, sep); const g = (n) => (c[cab.indexOf(n)] || "").trim();
     const lims = [num(g("lim_vigilar")), num(g("lim_alerta")), num(g("lim_grave"))];
-    if (!g("sistema") || !g("indicador") || lims.some((l) => l === null)) return; // fila incompleta
+    const informativo = g("indicador") === "favorable";
+    // Fila incompleta: sin sistema o indicador, o con alerta pero sin ningún límite.
+    if (!g("sistema") || !g("indicador") || (!informativo && lims.every((l) => l === null))) return;
+    const etapas = (g("etapa") || "Todas").split(";").map((e) => e.trim()).filter(Boolean);
     filas.push({
-      sistema: g("sistema"), etapa: g("etapa") || "Todas", titulo: g("titulo"), grupo: g("grupo"),
+      id: g("id"), informativo,
+      sistema: g("sistema"), etapas: etapas.includes("Todas") ? ["Todas"] : etapas,
+      etapa: etapas.includes("Todas") ? "Todas" : etapas.join(";"), titulo: g("titulo"), grupo: g("grupo"),
       indicador: g("indicador"), variable: g("variable"), ventana: num(g("ventana")),
       condiciones: g("condiciones").split(";").filter(Boolean).map((t) => {
         const m = t.trim().match(/^(\w+)\s*(>=|<=|>|<)\s*(-?[\d.,]+)$/);
@@ -925,10 +972,11 @@ function seriesPorFecha(vars, fechasCompletas = null) {
     mapa[k] = {};
     (vars[k] || []).forEach((p) => { if (typeof p.value === "number" && isFinite(p.value)) mapa[k][p.date] = p.value; });
   });
-  mapa.ith = {};
+  // Índice de temperatura y humedad (NRC, 1971) con la T media y la HR media del día.
+  mapa.ith_media = {};
   fechas.forEach((f) => {
-    const T = mapa.tmax[f], H = mapa.relhum[f];
-    if (T !== undefined && H !== undefined) mapa.ith[f] = (1.8 * T + 32) - (0.55 - 0.0055 * H) * (1.8 * T - 26);
+    const T = mapa.tavg[f], H = mapa.relhum[f];
+    if (T !== undefined && H !== undefined) mapa.ith_media[f] = (1.8 * T + 32) - (0.55 - 0.0055 * H) * (1.8 * T - 26);
   });
   return { fechas, mapa };
 }
@@ -946,11 +994,15 @@ function evaluarUmbral(u, s, fin, diasPeriodo) {
   const racha = (fs, prueba) => { let mejor = 0, act = 0; fs.forEach((f) => { act = prueba(f) ? act + 1 : 0; mejor = Math.max(mejor, act); }); return mejor; };
   const ventana = (f, n) => { const i = s.fechas.indexOf(f); return i - n + 1 < 0 ? null : s.fechas.slice(i - n + 1, i + 1); };
   // Días que usa el indicador y datos que necesita; si faltan muchos días no se calcula.
-  const diasUsados = ["media", "suma", "dias_cond"].includes(u.indicador) ? tramo(u.ventana || (u.indicador === "dias_cond" ? 7 : diasPeriodo)) : periodo;
-  const necesarias = [...new Set([...(u.variable === "ith" ? ["tmax", "relhum"] : u.variable ? [u.variable] : []), ...u.condiciones.map((c) => c.v)])];
-  const largo = ["media", "suma", "dias_cond"].includes(u.indicador) ? (u.ventana || (u.indicador === "dias_cond" ? 7 : diasPeriodo)) : diasPeriodo;
-  const conDatos = diasUsados.filter((f) => necesarias.every((v) => val(v, f) !== undefined)).length;
-  if (conDatos < Math.ceil(largo * COBERTURA_MINIMA)) return { u, incompleto: true };
+  const conVentana = ["media", "suma", "dias_cond", "max_y_media"].includes(u.indicador);
+  const largo = conVentana ? (u.ventana || (u.indicador === "dias_cond" ? 7 : diasPeriodo)) : diasPeriodo;
+  const diasUsados = conVentana ? tramo(largo) : periodo;
+  const necesarias = [...new Set([...(u.variable === "ith_media" ? ["tavg", "relhum"] : u.variable ? [u.variable] : []), ...u.condiciones.map((c) => c.v)])];
+  const tiene = (f) => necesarias.every((v) => val(v, f) !== undefined);
+  if (u.indicador === "racha_actual") {
+    // La racha se cuenta hacia atrás desde el último día: basta con que ese día tenga datos.
+    if (!tiene(fin)) return { u, incompleto: true };
+  } else if (diasUsados.filter(tiene).length < Math.ceil(largo * COBERTURA_MINIMA)) return { u, incompleto: true };
   let valor = null, fecha = null;
   switch (u.indicador) {
     case "max": case "min": {
@@ -979,18 +1031,48 @@ function evaluarUmbral(u, s, fin, diasPeriodo) {
       break;
     }
     case "racha_cond": valor = racha(periodo, cumple); break;
+    case "racha_actual": {
+      // Días seguidos que cumplen las condiciones, contados hacia atrás desde el último día.
+      const fs = tramo(u.ventana || 60).reverse();
+      valor = 0;
+      for (const f of fs) { if (!tiene(f) || !cumple(f)) break; valor++; }
+      break;
+    }
+    case "favorable": {
+      // Dato informativo, sin nivel: días del período con clima favorable.
+      const fs = periodo.filter(tiene);
+      return { u, informativo: true, valor: fs.filter(cumple).length, total: fs.length, nivel: null };
+    }
+    case "max_y_media": {
+      const fs = tramo(largo).filter(tiene);
+      const xs = fs.map((f) => val(u.variable, f));
+      const media = xs.reduce((a, b) => a + b, 0) / xs.length;
+      const iMax = xs.indexOf(Math.max(...xs));
+      const nivelMedia = u.lims[1] !== null && media >= u.lims[1] ? 2 : 0;
+      const nivelMax = u.lims[0] !== null && xs[iMax] >= u.lims[0] ? 1 : 0;
+      if (nivelMedia >= nivelMax) { valor = media; return { u, valor, fecha: null, nivel: nivelMedia, dia: promedioTH(fs) }; }
+      fecha = fs[iMax]; valor = xs[iMax];
+      return { u, valor, fecha, nivel: nivelMax, dia: { T: val("tavg", fecha), H: val("relhum", fecha), unDia: true } };
+    }
     default: return null;
   }
   if (valor === null || !isFinite(valor)) return null;
-  const nivel = u.sentido === "alto" ? u.lims.filter((l) => valor >= l).length : u.lims.filter((l) => valor < l).length;
-  // El índice de calor y humedad no se muestra como número: se muestran la temperatura y la humedad de ese día.
-  const dia = u.variable === "ith" && fecha ? { T: val("tmax", fecha), H: val("relhum", fecha) } : null;
+  // Nivel: el más alto cuyo límite se cumple. Un límite vacío (nivel sin umbral publicado) se salta.
+  const nivel = u.lims.reduce((n, l, i) => l !== null && (u.sentido === "alto" ? valor >= l : valor < l) ? i + 1 : n, 0);
+  // El índice de calor y humedad no se muestra como número: se muestran la temperatura y la humedad promedio.
+  const dia = u.variable === "ith_media" ? promedioTH(tramo(largo).filter(tiene)) : null;
   return { u, valor, fecha, nivel, dia };
+
+  function promedioTH(fs) {
+    if (!fs.length) return null;
+    const m = (k) => fs.reduce((a, f) => a + val(k, f), 0) / fs.length;
+    return { T: m("tavg"), H: m("relhum") };
+  }
 }
 
 function formatoValor(u, v, dia = null) {
   if (v === null) return "—";
-  if (u.variable === "ith") return dia ? `${dia.T.toFixed(1).replace(".", ",")} °C con ${Math.round(dia.H)} % de humedad` : "—";
+  if (u.variable === "ith_media") return dia ? `${dia.T.toFixed(1).replace(".", ",")} °C con ${Math.round(dia.H)} % de humedad${dia.unDia ? "" : " (promedio)"}` : "—";
   if (u.unidad === "°C") return `${v.toFixed(1).replace(".", ",")} °C`;
   if (u.unidad === "%") return `${Math.round(v)} %`;
   if (u.unidad === "mm") return `${Math.round(v)} mm`;
@@ -999,7 +1081,7 @@ function formatoValor(u, v, dia = null) {
 }
 
 // Variable del tablero a la que pertenece cada dato de los umbrales.
-const VARIABLE_DE = { precip: "Lluvia", tavg: "Temperatura", tmax: "Temperatura", tmin: "Temperatura", relhum: "Humedad relativa", ith: ["Temperatura", "Humedad relativa"] };
+const VARIABLE_DE = { precip: "Lluvia", tavg: "Temperatura", tmax: "Temperatura", tmin: "Temperatura", relhum: "Humedad relativa", ith_media: ["Temperatura", "Humedad relativa"] };
 const ICONO_VARIABLE = { "Lluvia": "🌧️", "Temperatura": "🌡️", "Humedad relativa": "💧" };
 const NOMBRE_VARIABLE = { "Lluvia": "lluvia", "Temperatura": "temperatura", "Humedad relativa": "humedad" };
 const ORDEN_VARIABLES = ["Temperatura", "Lluvia", "Humedad relativa"];
@@ -1149,6 +1231,7 @@ function agC2(tipo) {
   s += mechon(50, 57, -10, 17, 6);
   if (tipo === "flor") s += hojaNueva(50, 57, -78, 9) + hojaNueva(50, 57, -102, 8) +
     paniculaAg(50, 56, -112, 19) + paniculaAg(51, 56, -62, 21) + paniculaAg(52, 57, -18, 17);
+  if (tipo === "cuajado") s += hojaNueva(50, 57, -85, 8) + fruto(44, 59, 6, 0.75) + fruto(49, 58, 9, 0.7) + fruto(53, 58.5, 6, 0.65);
   if (tipo === "fruto") s += fruto(38, 61, 9, 1.35) + fruto(45, 58.5, 13, 1.2);
   return s;
 }
@@ -1274,6 +1357,7 @@ const ETAPAS_DIBUJO = {
   },
   "Aguacate": {
     "Floración": () => agC2("flor"),
+    "Cuajado del fruto": () => agC2("cuajado"),
     "Crecimiento del fruto": () => agC2("fruto"),
   },
   "Maíz": {
@@ -1326,17 +1410,22 @@ const NOMBRE_GRUPO_ANIMAL = {
   "Ceba y levante": "Ganado de ceba y levante",
 };
 const nombreEtapa = (e) => NOMBRE_GRUPO_ANIMAL[e] || e;
+// Nombre de una o varias etapas: "Vegetativa, floración y llenado del grano".
+const nombreEtapas = (u) => {
+  const ns = u.etapas.map((e, i) => i ? nombreEtapa(e).toLowerCase() : nombreEtapa(e));
+  return ns.length > 1 ? `${ns.slice(0, -1).join(", ")} y ${ns[ns.length - 1]}` : ns[0];
+};
 
 // Gráfico del ciclo. "activa" es la etapa a resaltar ("" = todas a color).
 function graficoCiclo(sistema, activa, marca, titulo) {
   const dibujos = ETAPAS_DIBUJO[sistema];
   if (!dibujos) return "";
   return `<div class="ciclo" aria-label="${escaparHtml(titulo)}"><div class="ciclo-tit">${escaparHtml(titulo)}</div>
-    <div class="ciclo-fila${activa ? "" : " todas"}">${Object.entries(dibujos).map(([nombre, f]) =>
-      `<div class="ciclo-paso${nombre === activa ? " on" : ""}"><span class="ciclo-marca${nombre === activa ? "" : " oculta"}">${marca}</span>
+    <div class="ciclo-fila${activa && activa.length ? "" : " todas"}">${Object.entries(dibujos).map(([nombre, f]) =>
+      `<div class="ciclo-paso${[].concat(activa || []).includes(nombre) ? " on" : ""}"><span class="ciclo-marca${[].concat(activa || []).includes(nombre) ? "" : " oculta"}">${marca}</span>
         <svg viewBox="0 0 80 100" aria-hidden="true"><g class="ciclo-dib">${f()}</g></svg>
         <div class="ciclo-eje"><div class="ciclo-punto"></div></div><div class="ciclo-nom">${escaparHtml(nombreEtapa(nombre))}</div></div>`).join("")}</div>
-    ${activa ? "" : `<div class="ciclo-todas">${marca}</div>`}</div>`;
+    ${activa && activa.length ? "" : `<div class="ciclo-todas">${marca}</div>`}</div>`;
 }
 
 // Texto que acompaña al valor. En los conteos de días el texto continúa la frase
@@ -1383,13 +1472,20 @@ function pintarAlertas(args, idPanel = "alertas") {
     return;
   }
   // Etapas o tipos de animal disponibles para el sistema y la variable
-  const etapas = [...new Set(deVariable.map((u) => u.etapa).filter((e) => e !== "Todas"))];
+  // Etapas en el orden del ciclo (el de los dibujos); las que no tienen dibujo van al final.
+  const ordenCiclo = Object.keys(ETAPAS_DIBUJO[sistema] || {});
+  const posCiclo = (e) => { const i = ordenCiclo.indexOf(e); return i < 0 ? 99 : i; };
+  const etapas = [...new Set(deVariable.flatMap((u) => u.etapas).filter((e) => e !== "Todas"))].sort((a, b) => posCiclo(a) - posCiclo(b));
   const etapa = etapas.includes(ETAPA_ELEGIDA[sistema]) ? ETAPA_ELEGIDA[sistema] : "";
   const esPecuario = SISTEMAS_PECUARIOS.includes(sistema);
-  const aplican = deVariable.filter((u) => !etapa || u.etapa === etapa || u.etapa === "Todas");
+  const aplican = deVariable.filter((u) => !etapa || u.etapas.includes(etapa) || u.etapa === "Todas");
 
   const s = seriesPorFecha(vars, args.fechas || null);
-  const evaluados = aplican.map((u) => evaluarUmbral(u, s, fin, diasPeriodo)).filter(Boolean);
+  const evaluadosTodos = aplican.map((u) => evaluarUmbral(u, s, fin, diasPeriodo)).filter(Boolean);
+  // Los indicadores informativos (clima favorable para plagas y enfermedades) van aparte: no tienen nivel.
+  // Solo se mencionan las que tuvieron al menos un día con clima favorable.
+  const favorables = evaluadosTodos.filter((r) => r.informativo && r.valor > 0).sort((a, b) => b.valor - a.valor);
+  const evaluados = evaluadosTodos.filter((r) => !r.u.informativo);
   const sinDatos = evaluados.filter((r) => r.incompleto).length; // indicadores sin registros suficientes
   const resultados = evaluados.filter((r) => !r.incompleto)
     .sort((a, b) => b.nivel - a.nivel || (a.u.provisional - b.u.provisional));
@@ -1415,15 +1511,18 @@ function pintarAlertas(args, idPanel = "alertas") {
   // Etiqueta visible con la etapa o el tipo de animal al que apunta la alerta.
   const foco = (u) => {
     const todas = u.etapa === "Todas";
-    const nombre = todas ? (esPecuario ? "Todos los grupos" : "Todas las etapas") : nombreEtapa(u.etapa);
+    const nombre = todas ? (esPecuario ? "Todos los grupos" : "Todas las etapas") : nombreEtapas(u);
     return `<div class="al-foco"><i aria-hidden="true">!</i><span><span>${esPecuario ? "Grupo afectado" : "Etapa afectada"}:</span> <b>${escaparHtml(nombre)}</b></span></div>`;
   };
   const columnaNivel = (icono, nivel) => `<div class="al-izq"><div class="al-grande" aria-hidden="true">${icono}</div>${escalera(nivel)}</div>`;
   const pill = (nivel) => `<span class="al-pill" style="background:${NIVELES[nivel].color}${nivel === 1 ? ";color:#2B2B23" : ""}">${NIVELES[nivel].nombre}</span>`;
-  const etiquetaEtapa = (u) => !etapa && u.etapa !== "Todas" ? `<b>${esPecuario ? "Grupo: " : "Etapa: "}${escaparHtml(nombreEtapa(u.etapa))}</b>` : "";
+  const etiquetaEtapa = (u) => !etapa && u.etapa !== "Todas" ? `<b>${esPecuario ? "Grupo: " : (u.etapas.length > 1 ? "Etapas: " : "Etapa: ")}${escaparHtml(nombreEtapas(u))}</b>` : "";
   const peor = resultados.length ? resultados[0].nivel : 0;
   let cuerpo;
-  if (!resultados.length) {
+  if (!resultados.length && !evaluados.length) {
+    // La variable solo tiene datos informativos (por ejemplo, humedad en café).
+    cuerpo = `<p class="al-aviso">No hay alertas de ${nombreVar} para ${quien}.${favorables.length ? " Abajo puede ver cuántos días el clima favoreció plagas y enfermedades." : ""}</p>`;
+  } else if (!resultados.length) {
     cuerpo = `<p class="al-aviso">${esComunitario
       ? "No hay suficientes registros para calcular las alertas en este período. Se necesitan reportes en al menos 8 de cada 10 días."
       : "No hay datos suficientes para evaluar las alertas en este período."}</p>`;
@@ -1455,7 +1554,7 @@ function pintarAlertas(args, idPanel = "alertas") {
         <p>${escaparHtml(p.u.quePasa)}</p>
         <div class="al-dato"><b>${formatoValor(p.u, p.valor, p.dia)}</b><span>${escaparHtml(textoMedida(p))}${cuando}</span></div>
       </div>
-      ${columnaDerecha(p.u.etapa !== "Todas" ? p.u.etapa : etapa,
+      ${columnaDerecha(p.u.etapa !== "Todas" ? (etapa && p.u.etapas.includes(etapa) ? etapa : p.u.etapas) : etapa,
           p.u.etapa !== "Todas" || etapa ? (esPecuario ? "Grupo afectado" : "Etapa afectada")
             : (esPecuario ? "Esta alerta aplica a todos los grupos" : "Esta alerta aplica a todas las etapas"),
           esPecuario ? "¿Qué grupo de animales está en alerta?" : "¿En qué etapa del cultivo es la alerta?")}</div>`;
@@ -1469,13 +1568,27 @@ function pintarAlertas(args, idPanel = "alertas") {
           ${etiquetaJunta(r.u)}</div></div>`).join("")}</div>`;
   }
 
+  // Clima favorable para plagas y enfermedades: dato informativo, sin nivel.
+  if (favorables.length) {
+    const n = favorables[0].total;
+    cuerpo += `<section class="al-pendiente" aria-label="Esté pendiente: clima favorable para plagas y enfermedades">
+      <div class="al-pend-cab">${ICONO_PENDIENTE}<b>Esté pendiente</b><span>Clima favorable para plagas y enfermedades</span></div>
+      <div class="al-pend-lista">${favorables.map((r) => `<div class="al-pend-item">
+        <div class="al-anillo" style="--p:${r.total ? Math.round(100 * r.valor / r.total) : 0}" aria-hidden="true"><div><span>${r.valor}</span><small>de ${r.total}</small></div></div>
+        <div><b>${ICONO_GRUPO[r.u.grupo] || "🍂"} ${escaparHtml(r.u.titulo)}</b>
+          <p>${r.valor} ${r.valor === 1 ? "día" : "días"} ${n === 1 ? "" : `de los últimos ${r.total} `}con ${escaparHtml(r.u.comoSeMide)}${etiquetaEtapa(r.u) ? ` · ${etiquetaEtapa(r.u)}` : ""}</p></div></div>`).join("")}</div>
+      <div class="al-pend-pie">No es una alerta: el clima las favorece, pero su presencia se confirma revisando el cultivo.</div></section>`;
+  }
+
   const nivelResumen = resultados.length ? peor : null;
-  const resumen = nivelResumen === null ? `<span class="al-resumen al-resumen-gris">Sin datos suficientes</span>` : `<span class="al-resumen" style="--al-nivel:${NIVELES[nivelResumen].color}${nivelResumen === 1 ? ";--al-texto:#2B2B23" : ""}">${NIVELES[nivelResumen].nombre}</span>`;
+  const resumen = nivelResumen === null ? `<span class="al-resumen al-resumen-gris">${evaluados.length ? "Sin datos suficientes" : "Sin alertas"}</span>` : `<span class="al-resumen" style="--al-nivel:${NIVELES[nivelResumen].color}${nivelResumen === 1 ? ";--al-texto:#2B2B23" : ""}">${NIVELES[nivelResumen].nombre}</span>`;
+  // Si el clima favoreció alguna plaga o enfermedad, se marca junto al nivel (sin ser un nivel).
+  const pendiente = favorables.length ? `<span class="al-pend" title="El clima favoreció plagas o enfermedades">${ICONO_PENDIENTE}Esté pendiente</span>` : "";
   const abierto = estado.abierto;
   const cab = `<button type="button" class="al-cab" aria-expanded="${abierto}" aria-controls="${idPanel}-cuerpo">
       <div class="al-cultivo" aria-hidden="true">${emoji}</div>
       <h2>Así estuvo la ${nombreVar} para ${quien}<small><b>${NOMBRE_PERIODO[periodoNombre] || periodoNombre}</b> · ${escaparHtml(lugar)}, ${fin === inicio ? "el " : "del "}${rangoLargo(inicio, fin)}</small></h2>
-      ${resumen}<span class="al-flecha" aria-hidden="true"></span><span class="al-ver">${abierto ? "Ocultar" : "Ver alertas"}</span></button>`;
+      ${resumen}${pendiente}<span class="al-flecha" aria-hidden="true"></span><span class="al-ver">${abierto ? "Ocultar" : "Ver alertas"}</span></button>`;
   const notaFaltantes = sinDatos && resultados.length
     ? `<p class="al-faltan">${sinDatos === 1 ? "1 alerta no se pudo calcular" : `${sinDatos} alertas no se pudieron calcular`} porque faltan registros en el período.</p>` : "";
   $al.innerHTML = cab + `<div class="al-cuerpo" id="${idPanel}-cuerpo"${abierto ? "" : " hidden"}>${cuerpo}
