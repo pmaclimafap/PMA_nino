@@ -170,6 +170,17 @@
     transform: rotate(45deg); margin: -4px 4px 0 -4px; transition: transform .2s; }
   .al-cab[aria-expanded="true"] .al-flecha { transform: rotate(-135deg); margin-top: 4px; }
   .al-ver { order: 8; }
+  /* Panel cerrado: "Ver alertas" se ve como botón y titila suavemente para invitar a abrirlo. */
+  /* Su color es el del nivel más alto (o el ocre de "Esté pendiente"), así que no hace falta otra etiqueta. */
+  .al-cab[aria-expanded="false"] .al-ver { padding: 7px 16px; border-radius: 999px; font-weight: 700; color: var(--boton-texto, #FFFFFF);
+    background: var(--boton); animation: al-titileo 1.8s ease-in-out infinite; }
+  .al-cab[aria-expanded="false"] .al-ver[style*="--boton-rayas"] {
+    background: repeating-linear-gradient(135deg, var(--boton) 0 8px, var(--boton-rayas) 8px 16px); }
+  @keyframes al-titileo {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 color-mix(in srgb, var(--boton) 55%, transparent); }
+    50% { opacity: 0.75; box-shadow: 0 0 0 9px color-mix(in srgb, var(--boton) 0%, transparent); }
+  }
+  @media (prefers-reduced-motion: reduce) { .al-cab[aria-expanded="false"] .al-ver { animation: none; } }
   .al-cuerpo[hidden] { display: none; }
   .al-cuerpo { border-top: 1px solid var(--color-line); padding-top: 16px; }
   .al-sin { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; padding: 14px 20px; }
@@ -279,31 +290,52 @@
     background: color-mix(in srgb, var(--al-nivel) 16%, var(--color-panel)); box-shadow: inset 0 -3px 0 var(--al-nivel); }
   .al-otra b { display: block; font-size: 0.98rem; margin-bottom: 2px; }
   .al-otra span { font-size: 0.9rem; color: var(--color-ink-soft); line-height: 1.45; }
-  /* "Esté pendiente": clima favorable para plagas y enfermedades. Azul, para no confundirse con los niveles de alerta. */
+  /* "Esté pendiente": clima favorable para plagas y enfermedades. No es un nivel de alerta:
+     va en ocre oscuro con rayas de precaución y borde punteado, para no confundirse con
+     Vigilar (amarillo), Alerta (naranja) ni Grave (rojo). */
+  .al-pendiente, .al-pend { --pend: #7A4E00; --pend-2: #6A4300; }
   .al-ojo { width: 1.15em; height: 1.15em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .al-pend { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 5px 13px; border-radius: 999px; font-size: 0.82rem; font-weight: 700;
-    color: #FFFFFF; background: var(--color-rain); }
-  .al-pendiente { margin: 18px 24px 6px; border: 2px solid var(--color-rain); border-radius: 16px; overflow: hidden; }
-  .al-pend-cab { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 12px 18px; background: var(--color-rain); color: #FFFFFF; }
+    color: #FFFFFF; background: repeating-linear-gradient(135deg, var(--pend) 0 8px, var(--pend-2) 8px 16px); }
+  .al-pendiente { margin: 18px 24px 6px; border: 2px dashed var(--pend); border-radius: 16px; overflow: hidden; }
+  .al-pend-cab { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 12px 18px; color: #FFFFFF;
+    background: repeating-linear-gradient(135deg, var(--pend) 0 22px, var(--pend-2) 22px 44px); }
   .al-pend-cab .al-ojo { width: 26px; height: 26px; }
   .al-pend-cab b { font-family: var(--font-display); font-size: 1.3rem; }
   .al-pend-cab span { margin-left: auto; font-size: 0.88rem; opacity: 0.92; }
-  .al-pend-lista { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--color-line); }
-  .al-pend-item { display: flex; gap: 14px; align-items: center; padding: 16px 18px; background: var(--color-panel); min-width: 0; }
-  .al-pend-item:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .al-pend-tabla { width: 100%; border-collapse: collapse; background: var(--color-panel); }
+  .al-pend-tabla thead { background: color-mix(in srgb, var(--pend) 5%, var(--color-panel)); }
+  .al-pend-tabla thead tr:first-child th:first-child { width: 55%; }
+  .al-pend-grupo { padding: 12px 6px 4px; font-size: 0.74rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--pend);
+    border-bottom: 2px solid color-mix(in srgb, var(--pend) 35%, transparent); }
+  .al-pend-etapa { padding: 10px 8px; font-size: 0.82rem; font-weight: 700; color: var(--color-ink); text-align: center; }
+  .al-pend-tabla td { border-top: 1px solid var(--color-line); vertical-align: middle; }
+  .al-pend-marca { text-align: center; padding: 8px 6px; }
+  .al-pend-si { display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: var(--pend);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--pend) 18%, transparent); }
+  .al-pend-no { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--color-line); }
+  .al-pend-item { display: flex; gap: 14px; align-items: center; padding: 14px 18px; min-width: 0; }
   .al-pend-item b { font-size: 1.02rem; }
   .al-pend-item p { margin: 3px 0 0; font-size: 0.8rem; color: var(--color-ink-soft); line-height: 1.4; }
-  .al-anillo { --p: 0; flex: none; width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center;
-    background: conic-gradient(var(--color-rain) calc(var(--p) * 1%), color-mix(in srgb, var(--color-rain) 15%, var(--color-panel)) 0); }
-  .al-anillo > div { width: 48px; height: 48px; border-radius: 50%; background: var(--color-panel); display: flex; flex-direction: column;
+  .al-pend-en { display: none; margin-top: 8px; padding: 5px 10px; border-radius: 8px; font-size: 0.8rem;
+    background: color-mix(in srgb, var(--pend) 10%, var(--color-panel)); }
+  .al-pend-en b { color: var(--pend); }
+  .al-anillo { --p: 0; flex: none; width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center;
+    background: conic-gradient(var(--pend) calc(var(--p) * 1%), color-mix(in srgb, var(--pend) 15%, var(--color-panel)) 0); }
+  .al-anillo > div { width: 45px; height: 45px; border-radius: 50%; background: var(--color-panel); display: flex; flex-direction: column;
     align-items: center; justify-content: center; line-height: 1; }
-  .al-anillo span { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; color: var(--color-rain); }
-  .al-anillo small { font-size: 0.6rem; font-weight: 600; color: var(--color-ink-soft); margin-top: 2px; }
-  .al-pend-pie { padding: 10px 18px; font-size: 0.82rem; color: var(--color-ink-soft); background: color-mix(in srgb, var(--color-rain) 9%, var(--color-panel)); }
+  .al-anillo span { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--pend); }
+  .al-anillo small { font-size: 0.56rem; font-weight: 600; color: var(--color-ink-soft); margin-top: 2px; }
+  .al-pend-pie { padding: 10px 18px; font-size: 0.82rem; color: var(--color-ink-soft); background: color-mix(in srgb, var(--pend) 7%, var(--color-panel)); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .al-pendiente, :root:not([data-theme="light"]) .al-pend { --pend: #C98F2E; --pend-2: #A87522; } }
   @media (max-width: 40rem) {
     .al-pendiente { margin: 16px 16px 6px; }
     .al-pend-cab span { margin-left: 0; flex-basis: 100%; }
-    .al-pend-lista { grid-template-columns: minmax(0, 1fr); }
+    /* En celular: sin columnas; cada plaga o enfermedad dice en una línea en qué etapas aplica. */
+    .al-pend-tabla, .al-pend-tabla tbody, .al-pend-tabla tr, .al-pend-tabla td { display: block; }
+    .al-pend-tabla thead, .al-pend-tabla td.al-pend-marca { display: none; }
+    .al-pend-item { padding: 14px; align-items: flex-start; }
+    .al-pend-en { display: inline-block; }
   }
   .al-mas { padding: 0 24px 6px; font-size: 0.85rem; color: var(--color-ink-soft); }
   .al-bien { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 14px 24px; margin-top: 6px; border-top: 1px solid var(--color-line); }
@@ -1573,22 +1605,34 @@ function pintarAlertas(args, idPanel = "alertas") {
     const n = favorables[0].total;
     cuerpo += `<section class="al-pendiente" aria-label="Esté pendiente: clima favorable para plagas y enfermedades">
       <div class="al-pend-cab">${ICONO_PENDIENTE}<b>Esté pendiente</b><span>Clima favorable para plagas y enfermedades</span></div>
-      <div class="al-pend-lista">${favorables.map((r) => `<div class="al-pend-item">
-        <div class="al-anillo" style="--p:${r.total ? Math.round(100 * r.valor / r.total) : 0}" aria-hidden="true"><div><span>${r.valor}</span><small>de ${r.total}</small></div></div>
-        <div><b>${ICONO_GRUPO[r.u.grupo] || "🍂"} ${escaparHtml(r.u.titulo)}</b>
-          <p>${r.valor} ${r.valor === 1 ? "día" : "días"} ${n === 1 ? "" : `de los últimos ${r.total} `}con ${escaparHtml(r.u.comoSeMide)}${etiquetaEtapa(r.u) ? ` · ${etiquetaEtapa(r.u)}` : ""}</p></div></div>`).join("")}</div>
+      <table class="al-pend-tabla">${ordenCiclo.length ? `<thead><tr><th rowspan="2"></th>
+          <th class="al-pend-grupo" colspan="${ordenCiclo.length}">${esPecuario ? "Grupos de animales" : "Etapas del cultivo"} en que aplica</th></tr>
+          <tr>${ordenCiclo.map((e) => `<th class="al-pend-etapa">${escaparHtml(nombreEtapa(e))}</th>`).join("")}</tr></thead>` : ""}
+        <tbody>${favorables.map((r) => {
+          const aplica = (e) => r.u.etapa === "Todas" || r.u.etapas.includes(e);
+          const enEtapas = ordenCiclo.length ? (r.u.etapa === "Todas" || ordenCiclo.every(aplica) ? "En <b>todas las etapas</b>"
+            : `Solo en: <b>${escaparHtml(ordenCiclo.filter(aplica).map(nombreEtapa).join(", "))}</b>`) : "";
+          return `<tr><td><div class="al-pend-item">
+            <div class="al-anillo" style="--p:${r.total ? Math.round(100 * r.valor / r.total) : 0}" aria-hidden="true"><div><span>${r.valor}</span><small>de ${r.total}</small></div></div>
+            <div><b>${ICONO_GRUPO[r.u.grupo] || "🍂"} ${escaparHtml(r.u.titulo)}</b>
+              <p>${r.valor} ${r.valor === 1 ? "día" : "días"} ${n === 1 ? "" : `de los últimos ${r.total} `}con ${escaparHtml(r.u.comoSeMide)}</p>
+              ${enEtapas ? `<div class="al-pend-en">${enEtapas}</div>` : ""}</div></div></td>
+            ${ordenCiclo.map((e) => `<td class="al-pend-marca">${aplica(e) ? `<span class="al-pend-si" title="Aplica"></span>` : `<span class="al-pend-no" title="No aplica"></span>`}</td>`).join("")}</tr>`;
+        }).join("")}</tbody></table>
       <div class="al-pend-pie">No es una alerta: el clima las favorece, pero su presencia se confirma revisando el cultivo.</div></section>`;
   }
 
   const nivelResumen = resultados.length ? peor : null;
-  const resumen = nivelResumen === null ? `<span class="al-resumen al-resumen-gris">${evaluados.length ? "Sin datos suficientes" : "Sin alertas"}</span>` : `<span class="al-resumen" style="--al-nivel:${NIVELES[nivelResumen].color}${nivelResumen === 1 ? ";--al-texto:#2B2B23" : ""}">${NIVELES[nivelResumen].nombre}</span>`;
-  // Si el clima favoreció alguna plaga o enfermedad, se marca junto al nivel (sin ser un nivel).
-  const pendiente = favorables.length ? `<span class="al-pend" title="El clima favoreció plagas o enfermedades">${ICONO_PENDIENTE}Esté pendiente</span>` : "";
+  // Color del botón "Ver alertas": el del nivel más alto; si no hay alertas pero el clima
+  // favoreció plagas o enfermedades, el ocre de "Esté pendiente"; sin datos, gris.
+  const botonEstilo = nivelResumen === null ? "--boton:#8A8D80"
+    : nivelResumen > 0 ? `--boton:${NIVELES[nivelResumen].color}${nivelResumen === 1 ? ";--boton-texto:#2B2B23" : ""}`
+    : favorables.length ? "--boton:#7A4E00;--boton-rayas:#6A4300" : `--boton:${NIVELES[0].color}`;
   const abierto = estado.abierto;
   const cab = `<button type="button" class="al-cab" aria-expanded="${abierto}" aria-controls="${idPanel}-cuerpo">
       <div class="al-cultivo" aria-hidden="true">${emoji}</div>
       <h2>Así estuvo la ${nombreVar} para ${quien}<small><b>${NOMBRE_PERIODO[periodoNombre] || periodoNombre}</b> · ${escaparHtml(lugar)}, ${fin === inicio ? "el " : "del "}${rangoLargo(inicio, fin)}</small></h2>
-      ${resumen}${pendiente}<span class="al-flecha" aria-hidden="true"></span><span class="al-ver">${abierto ? "Ocultar" : "Ver alertas"}</span></button>`;
+      <span class="al-flecha" aria-hidden="true"></span><span class="al-ver" style="${botonEstilo}">${abierto ? "Ocultar" : "Ver alertas"}</span></button>`;
   const notaFaltantes = sinDatos && resultados.length
     ? `<p class="al-faltan">${sinDatos === 1 ? "1 alerta no se pudo calcular" : `${sinDatos} alertas no se pudieron calcular`} porque faltan registros en el período.</p>` : "";
   $al.innerHTML = cab + `<div class="al-cuerpo" id="${idPanel}-cuerpo"${abierto ? "" : " hidden"}>${cuerpo}
