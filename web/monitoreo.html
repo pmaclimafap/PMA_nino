@@ -958,7 +958,10 @@ function leerCsvUmbrales(texto) {
   lineas.slice(1).forEach((linea) => {
     const c = separarCsv(linea, sep); const g = (n) => (c[cab.indexOf(n)] || "").trim();
     const lims = [num(g("lim_vigilar")), num(g("lim_alerta")), num(g("lim_grave"))];
-    const informativo = g("indicador") === "favorable";
+    // Informativo ("Esté pendiente"): clima favorable para plagas y enfermedades, sin nivel de alerta.
+    // Son las filas "favorable" (días que cumplen condiciones) y las marcadas informativo = si
+    // (plagas favorecidas por una temperatura o una lluvia; se muestran si alcanzan lim_vigilar).
+    const informativo = g("indicador") === "favorable" || normalizarTexto(g("informativo")) === "si";
     // Fila incompleta: sin sistema o indicador, o con alerta pero sin ningún límite.
     if (!g("sistema") || !g("indicador") || (!informativo && lims.every((l) => l === null))) return;
     const etapas = (g("etapa") || "Todas").split(";").map((e) => e.trim()).filter(Boolean);
@@ -1104,7 +1107,7 @@ function evaluarUmbral(u, s, fin, diasPeriodo) {
 
 function formatoValor(u, v, dia = null) {
   if (v === null) return "—";
-  if (u.variable === "ith_media") return dia ? `${dia.T.toFixed(1).replace(".", ",")} °C con ${Math.round(dia.H)} % de humedad${dia.unDia ? "" : " (promedio)"}` : "—";
+  if (u.variable === "ith_media") return dia ? `${dia.T.toFixed(1).replace(".", ",")} °C con ${Math.round(dia.H)} % de humedad` : "—";
   if (u.unidad === "°C") return `${v.toFixed(1).replace(".", ",")} °C`;
   if (u.unidad === "%") return `${Math.round(v)} %`;
   if (u.unidad === "mm") return `${Math.round(v)} mm`;
@@ -1464,6 +1467,7 @@ function graficoCiclo(sistema, activa, marca, titulo) {
 // ("3 días" + "de la última semana con…"), por eso va en minúscula y sin repetir "días".
 function textoMedida(r) {
   let texto = r.u.comoSeMide;
+  if (r.dia && r.dia.unDia) texto = `el día con más calor y humedad de los últimos ${r.u.ventana} días`;
   if (r.u.unidad === "días" && Math.round(r.valor) === 1) texto = texto.replace(/^seguidos/, "seguido");
   return texto;
 }
@@ -1516,7 +1520,8 @@ function pintarAlertas(args, idPanel = "alertas") {
   const evaluadosTodos = aplican.map((u) => evaluarUmbral(u, s, fin, diasPeriodo)).filter(Boolean);
   // Los indicadores informativos (clima favorable para plagas y enfermedades) van aparte: no tienen nivel.
   // Solo se mencionan las que tuvieron al menos un día con clima favorable.
-  const favorables = evaluadosTodos.filter((r) => r.informativo && r.valor > 0).sort((a, b) => b.valor - a.valor);
+  const favorables = evaluadosTodos.filter((r) => r.u.informativo && !r.incompleto && (r.informativo ? r.valor > 0 : r.nivel > 0))
+    .sort((a, b) => (b.informativo ? b.valor / b.total : 1) - (a.informativo ? a.valor / a.total : 1));
   const evaluados = evaluadosTodos.filter((r) => !r.u.informativo);
   const sinDatos = evaluados.filter((r) => r.incompleto).length; // indicadores sin registros suficientes
   const resultados = evaluados.filter((r) => !r.incompleto)
@@ -1605,7 +1610,8 @@ function pintarAlertas(args, idPanel = "alertas") {
   // va debajo en versión compacta y sin dibujos, para no repetir el ciclo.
   if (favorables.length) {
     const nEt = (u) => u.etapa === "Todas" ? (esPecuario ? "Todos los grupos" : "Todas las etapas") : nombreEtapas(u);
-    const nDias = (r) => `${r.valor} de ${r.total} ${r.total === 1 ? "día" : "días"}`;
+    const nDias = (r) => r.informativo ? `${r.valor} de ${r.total} ${r.total === 1 ? "día" : "días"}` : formatoValor(r.u, r.valor, r.dia);
+    const conQue = (r) => r.informativo ? `con ${r.u.comoSeMide}` : r.u.comoSeMide.charAt(0).toUpperCase() + r.u.comoSeMide.slice(1);
     const masculino = /^(ojo|minador|añublo|gusano)/i;
     const paraLa = (u) => `${masculino.test(u.titulo) ? "el" : "la"} ${u.titulo.charAt(0).toLowerCase()}${u.titulo.slice(1)}`;
     const notaNoAlerta = (u) => `No es una alerta: indica que el clima favorece ${u ? (u.grupo === "plagas" ? "la plaga" : "la enfermedad") : "la plaga o enfermedad"}, no que esté presente.`;
@@ -1619,7 +1625,7 @@ function pintarAlertas(args, idPanel = "alertas") {
           <h3>Clima favorable para ${escaparHtml(paraLa(p.u))}</h3>
           ${etiquetaJunta(p.u)}
           <p>${escaparHtml(p.u.quePasa)}</p>
-          <div class="al-dato"><b>${nDias(p)}</b><span>con ${escaparHtml(p.u.comoSeMide)}</span></div>
+          <div class="al-dato"><b>${nDias(p)}</b><span>${escaparHtml(conQue(p))}</span></div>
           <p class="al-pend-nota">${notaNoAlerta(p.u)}</p>
         </div>
         ${columnaDerecha(p.u.etapa !== "Todas" ? p.u.etapas : "",
@@ -1631,7 +1637,7 @@ function pintarAlertas(args, idPanel = "alertas") {
       cuerpo += `<section class="al-pend-compacto" aria-label="Esté pendiente: clima favorable para plagas y enfermedades">
         <div class="al-pend-izq"><div class="al-pend-ojo">${ICONO_PENDIENTE}</div><span class="al-pend-etq">Esté pendiente</span></div>
         <div><h4>Clima favorable para plagas y enfermedades</h4>
-          ${favorables.map((r) => `<div class="al-pend-fila"><div><b>${ICONO_GRUPO[r.u.grupo] || "🍂"} ${escaparHtml(r.u.titulo)}</b><small>Con ${escaparHtml(r.u.comoSeMide)}</small></div>
+          ${favorables.map((r) => `<div class="al-pend-fila"><div><b>${ICONO_GRUPO[r.u.grupo] || "🍂"} ${escaparHtml(r.u.titulo)}</b><small>${escaparHtml(conQue(r).charAt(0).toUpperCase() + conQue(r).slice(1))}</small></div>
             <span class="al-pend-n">${nDias(r)}</span><span class="al-pend-et"><i aria-hidden="true">${ICONO_PENDIENTE}</i>${escaparHtml(nEt(r.u))}</span></div>`).join("")}
           <p class="al-pend-nota">${notaNoAlerta(null)}</p></div></section>`;
     }
