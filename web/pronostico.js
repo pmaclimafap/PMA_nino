@@ -1,36 +1,54 @@
 /* Tablero de pronóstico.
-   Lee publico/pronostico.json, que produce scripts/pronostico.py.
-   Si no hay datos, LO DICE: nunca simula. */
+   Lee publico/pronostico.json, que produce scripts/pronostico.py. */
 
 const VARIABLES = [
-  { id: "tmax", etiqueta: "Tmax", unidad: "°C", anomalia: true },
-  { id: "tmin", etiqueta: "Tmin", unidad: "°C", anomalia: true },
-  { id: "precipitacion", etiqueta: "Lluvia", unidad: "mm", anomalia: false },
-  { id: "humedad_relativa", etiqueta: "Humedad", unidad: "%", anomalia: false },
+  { id: "tmax", etiqueta: "Temperatura máxima", unidad: "°C" },
+  { id: "tmin", etiqueta: "Temperatura mínima", unidad: "°C" },
+  { id: "precipitacion", etiqueta: "Lluvia", unidad: "mm" },
+  { id: "humedad_relativa", etiqueta: "Humedad relativa", unidad: "%" },
 ];
 
-const COLORES_MODELO = ["#1D5A8C", "#D97F2B", "#2E7D4F", "#B23A3A",
-                        "#6b5ea8", "#4FA8C9", "#8a6d3b", "#5f6a6a"];
+/* Frase de cada icono. Los iconos los elige el pipeline (exportar_pronostico.icono). */
+const CONDICION = {
+  sun: "Soleado", hot: "Muy caluroso", part: "Parcialmente nublado", cloudy: "Nublado",
+  overcast: "Cubierto", drizzle: "Llovizna", rain: "Lluvioso", heavy: "Lluvias fuertes",
+  storm: "Tormentas", showers: "Chubascos", rainlow: "Posibles lluvias",
+  thermo_hot: "Caluroso", thermo_cool: "Fresco", humid: "Húmedo",
+};
+/* Fondo de la parte de arriba de cada tarjeta, según el cielo. */
+const CIELO = {
+  sun: "#FFE7B8, #FFF6E4", thermo_hot: "#FFD6B8, #FFF1E6", hot: "#FFD0B0, #FFF0E4",
+  part: "#DCEBF7, #F4F8FB", cloudy: "#DDE3E8, #F3F5F7", overcast: "#D2D9DF, #F0F2F4",
+  rainlow: "#CFE0EE, #EEF4F9", rain: "#BBD3E8, #E9F1F8", heavy: "#A9C4DE, #E4EDF6",
+  storm: "#B5BFD6, #EAEDF5", drizzle: "#D3E3EF, #F1F6FA", showers: "#D3E3EF, #F1F6FA",
+  thermo_cool: "#DDE8EE, #F3F7F9", humid: "#D6EAF0, #F1F7F9",
+};
+const ICONO_DATO = {
+  t: '<svg viewBox="0 0 24 24" fill="none" stroke="#C0582A" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M10 14.5V5a2 2 0 0 1 4 0v9.5a4 4 0 1 1-4 0z"/><path d="M12 9v7"/></svg>',
+  l: '<svg viewBox="0 0 24 24" fill="none" stroke="#1D5A8C" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M7 15a4 4 0 0 1 .5-8 5 5 0 0 1 9.6 1.5A3.5 3.5 0 0 1 17 15z"/><path d="M9 18l-1 2M13 18l-1 2M17 18l-1 2"/></svg>',
+  h: '<svg viewBox="0 0 24 24" fill="none" stroke="#2F7E9E" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11z"/></svg>',
+};
 
 let DATOS = null;
-let estado = { municipio: null, variable: "tmax", dias: 7 };
+const estado = { municipio: null, variable: "tmax", dias: 7 };
 
 const $ = (id) => document.getElementById(id);
-const num = (v, d = 1) => (v === null || v === undefined ? "—" : v.toFixed(d));
-const firmado = (v, d = 1) =>
-  v === null || v === undefined ? "—" : (v > 0 ? "+" : "") + v.toFixed(d);
+const redondo = (v, suf = "") => (v === null || v === undefined ? "—" : Math.round(v) + suf);
+const escapar = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-function fechaCorta(iso) {
+function fecha(iso, opciones) {
   const [a, m, d] = iso.split("-").map(Number);
-  const f = new Date(Date.UTC(a, m - 1, d));
-  return f.toLocaleDateString("es-CO", {
-    weekday: "short", day: "numeric", timeZone: "UTC",
-  });
+  return new Date(Date.UTC(a, m - 1, d)).toLocaleDateString("es-CO", { timeZone: "UTC", ...opciones });
+}
+const mayuscula = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+/* Fecha de hoy en Colombia (AAAA-MM-DD). */
+const hoyColombia = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+
+function puntos(confianza) {
+  const n = { alta: 3, media: 2, baja: 1 }[confianza] || 0;
+  return `<span class="puntos" aria-hidden="true">${[1, 2, 3].map((i) => `<i class="${i <= n ? "on" : ""}"></i>`).join("")}</span>`;
 }
 
-/* Sin datos se dice, no se inventan. El tablero de monitoreo tenía un
-   respaldo silencioso que generaba datos de ejemplo y seguía mostrando el
-   sello de actualizado; aquí no existe esa posibilidad. */
 function mostrarVacio(motivo) {
   $("contenido").hidden = true;
   const v = $("vacio");
@@ -41,203 +59,123 @@ function mostrarVacio(motivo) {
     '<h2 style="font-family:var(--font-display);margin:0 0 .5rem;font-size:1.2rem">Sin datos de pronóstico</h2>' +
     "<p style=\"margin:0 0 .75rem\">No se pudo cargar <code>pronostico.json</code>. " +
     "Es probable que la última corrida del módulo de pronóstico no haya terminado bien.</p>" +
-    '<p style="margin:0;font-size:.88rem;color:var(--color-ink-soft)">Detalle: ' +
-    motivo + "</p></div>";
+    '<p style="margin:0;font-size:.88rem;color:var(--color-ink-soft)">Detalle: ' + escapar(motivo) + "</p></div>";
 }
 
-/* ---------- Tarjetas ---------- */
+/* ---------- Tarjetas de los próximos días ---------- */
 
-function colorAnomalia(a) {
-  if (a === null || a === undefined) return "var(--color-line)";
-  if (a >= 3) return "#c43e30";
-  if (a >= 1.5) return "#e8702a";
-  if (a <= -3) return "#1D5A8C";
-  if (a <= -1.5) return "#4FA8C9";
-  return "var(--color-line)";
+function tarjeta(d) {
+  const nombre = d.horizonte === 1 ? "Mañana" : mayuscula(fecha(d.objetivo, { weekday: "long" }));
+  const cielo = CIELO[d.icono] || CIELO.part;
+  const prob = d.probabilidad_lluvia === null || d.probabilidad_lluvia === undefined ? "—" : Math.round(d.probabilidad_lluvia * 100) + " %";
+  const pocos = d.modelos && d.modelos <= 3 ? ` · solo ${d.modelos} modelos` : "";
+  return `<article class="dia${d.horizonte === 1 ? " manana" : ""}">
+    <div class="cielo" style="--cielo:linear-gradient(180deg, ${cielo})">
+      <div class="dn">${nombre}<small>${fecha(d.objetivo, { day: "numeric", month: "long" })}</small></div>
+      ${icon(d.icono)}
+      <div class="cond">${CONDICION[d.icono] || ""}</div>
+    </div>
+    <div class="cuerpo">
+      <div class="fila"><div class="lab">${ICONO_DATO.t}Temperatura</div>
+        <div class="par"><div class="mn"><small>Mínima</small><b>${redondo(d.tmin, "°")}</b></div><div class="mx"><small>Máxima</small><b>${redondo(d.tmax, "°")}</b></div></div></div>
+      <div class="fila"><div class="lab">${ICONO_DATO.l}Lluvia</div>
+        <div class="par ll"><div><small>Probabilidad</small><b>${prob}</b></div><div><small>Cantidad</small><b>${redondo(d.precipitacion === null || d.precipitacion === undefined ? d.precipitacion : Math.max(0, d.precipitacion), " mm")}</b></div></div></div>
+      <div class="fila"><div class="lab">${ICONO_DATO.h}Humedad relativa</div>
+        <div class="hr">${redondo(d.humedad_relativa, " %")}</div></div>
+    </div>
+    <div class="pie" title="${d.variable_limitante ? "Lo limita: " + escapar(d.variable_limitante) : ""}${pocos}">
+      ${puntos(d.confianza)} ${d.confianza ? "Confianza " + escapar(d.confianza) : "Confianza sin dato"}</div>
+  </article>`;
 }
 
-function pintarTarjetas(mun) {
-  const cont = $("tarjetas");
-  cont.innerHTML = "";
+function pintarDias(mun) {
   const dias = mun.dias.slice(0, estado.dias);
-
-  for (const d of dias) {
-    const art = document.createElement("article");
-    art.className = "tarjeta";
-    art.style.setProperty("--acento", colorAnomalia(d.tmax_anomalia));
-
-    /* Un día al que ya no llegan suficientes modelos se marca y se explica,
-       en vez de ocultarlo o fingir que vale lo mismo. */
-    const pocos = d.modelos <= 3;
-    const lluvia = d.probabilidad_lluvia === null ? "—"
-      : Math.round(d.probabilidad_lluvia * 100) + " %";
-
-    art.innerHTML =
-      `<div class="fecha">${fechaCorta(d.objetivo)}</div>` +
-      icon(d.icono) +
-      `<div class="anom" style="color:${colorAnomalia(d.tmax_anomalia)}">` +
-      `${firmado(d.tmax_anomalia)}°</div>` +
-      `<div class="abs">${num(d.tmax)} / ${num(d.tmin)}</div>` +
-      `<div class="lluvia">${lluvia} · ${num(d.precipitacion)} mm</div>` +
-      `<div class="hr">HR ${num(d.humedad_relativa, 0)} %</div>` +
-      `<div class="conf conf--${d.confianza}" title="${
-        d.variable_limitante
-          ? "Lo limita: " + d.variable_limitante
-          : ""}${pocos ? " · solo " + d.modelos + " modelos" : ""}">` +
-      `${d.confianza}</div>`;
-    cont.appendChild(art);
-  }
-
-  const total = mun.dias.length;
-  if (estado.dias > total) {
-    const faltan = document.createElement("div");
-    faltan.className = "tarjeta tarjeta--corta";
-    faltan.textContent = "Ningún modelo llega más lejos";
-    cont.appendChild(faltan);
-  }
+  $("tit-dias").textContent = `Los próximos ${estado.dias} días en ${mun.nombre}`;
+  $("dias").innerHTML = dias.map(tarjeta).join("") +
+    (estado.dias > mun.dias.length ? `<div class="dias-fin">Ningún modelo llega más lejos de ${mun.dias.length} días.</div>` : "");
 }
 
-/* ---------- Gráfico ---------- */
+/* ---------- Gráfico: cada modelo en gris y su promedio ---------- */
 
 function pintarGrafico(mun) {
-  const serie = mun.series[estado.variable];
   const cfg = VARIABLES.find((v) => v.id === estado.variable);
+  const serie = mun.series[estado.variable];
+  $("sub-graf").textContent = `${mun.nombre}, ${mun.departamento} · ${cfg.etiqueta} de cada día`;
   const cont = $("grafico");
-
-  if (!serie || !serie.objetivo.length) {
-    cont.innerHTML =
-      '<p style="color:var(--color-ink-soft);font-size:.9rem;margin:1rem 0">' +
-      "Ningún modelo aporta esta variable.</p>";
+  if (!serie || !serie.objetivo || !serie.objetivo.length) {
+    cont.innerHTML = '<p style="color:var(--color-ink-soft);font-size:.9rem;margin:1rem 0">Ningún modelo aporta esta variable.</p>';
     $("leyenda").innerHTML = "";
     return;
   }
 
-  const n = Math.min(estado.dias, serie.objetivo.length);
-  const fechas = serie.objetivo.slice(0, n);
-  /* En temperatura se grafica la anomalía: es lo que no arrastra el sesgo
-     del modelo. En lluvia y humedad, el valor, porque su anomalía comunica
-     poco (lo normal de un día suele ser cero) o no se interpreta bien. */
-  const usarAnom = cfg.anomalia && serie.anomalia;
-  const central = (usarAnom ? serie.anomalia : serie.agregado).slice(0, n);
-  const sup = usarAnom ? null : serie.banda_sup.slice(0, n);
-  const inf = usarAnom ? null : serie.banda_inf.slice(0, n);
-  const desv = serie.agregado
-    .slice(0, n)
-    .map((v, i) => (v === null ? 0 : (serie.banda_sup[i] ?? v) - v));
+  /* Desde hoy (si la serie lo trae) hasta el último día elegido. */
+  const hoy = hoyColombia();
+  const ultimo = mun.dias[Math.min(estado.dias, mun.dias.length) - 1];
+  const fin = ultimo ? serie.objetivo.indexOf(ultimo.objetivo) : serie.objetivo.length - 1;
+  let ini = serie.objetivo.findIndex((f) => f >= hoy);
+  if (ini < 0 || ini > fin) ini = 0;
+  const idx = [];
+  for (let i = ini; i <= (fin >= 0 ? fin : serie.objetivo.length - 1); i++) idx.push(i);
+  const fechas = idx.map((i) => serie.objetivo[i]);
+  /* La lluvia no puede ser negativa: se recorta en cero. */
+  const limpio = (v) => (v === null || v === undefined ? v : estado.variable === "precipitacion" ? Math.max(0, v) : v);
+  const promedio = idx.map((i) => limpio(serie.agregado[i]));
+  const modelos = Object.entries(serie.modelos || {}).map(([k, v]) => [k, idx.map((i) => limpio(v[i]))]);
+  const N = fechas.length;
 
-  const bandaSup = usarAnom
-    ? central.map((v, i) => (v === null ? null : v + desv[i]))
-    : sup;
-  const bandaInf = usarAnom
-    ? central.map((v, i) => (v === null ? null : v - desv[i]))
-    : inf;
+  const todos = [...promedio, ...modelos.flatMap(([, v]) => v)].filter((v) => v !== null && v !== undefined);
+  if (!todos.length) { cont.innerHTML = ""; $("leyenda").innerHTML = ""; return; }
+  let lo = Math.floor(Math.min(...todos)) - 1, hi = Math.ceil(Math.max(...todos)) + 1;
+  if (estado.variable === "precipitacion") lo = 0;
+  if (estado.variable === "humedad_relativa") hi = Math.min(100, hi);
+  if (hi <= lo) hi = lo + 1;
 
-  const modelos = Object.entries(serie.modelos).map(([k, vals]) => {
-    const recortado = vals.slice(0, n);
-    if (!usarAnom) return [k, recortado];
-    /* Para comparar modelos en anomalía, cada uno se desplaza por la misma
-       climatología que el agregado: la diferencia entre ellos se conserva. */
-    const ref = serie.agregado.slice(0, n).map((v, i) =>
-      v === null || central[i] === null ? null : v - central[i]);
-    return [k, recortado.map((v, i) =>
-      v === null || ref[i] === null ? null : +(v - ref[i]).toFixed(2))];
+  const celular = cont.clientWidth < 560;
+  const W = Math.max(320, cont.clientWidth || 900), H = celular ? 280 : 330;
+  const mL = celular ? 40 : 54, mR = celular ? 14 : 40, mT = 18, mB = 34;
+  const X = (i) => mL + (N > 1 ? (i * (W - mL - mR)) / (N - 1) : (W - mL - mR) / 2);
+  const Y = (v) => mT + ((hi - v) * (H - mT - mB)) / (hi - lo);
+  const rango = hi - lo;
+  const paso = rango > 40 ? 10 : rango > 16 ? 5 : rango > 8 ? 2 : 1;
+  let g = "";
+  for (let v = Math.ceil(lo / paso) * paso; v <= hi; v += paso) {
+    g += `<line x1="${mL}" x2="${W - mR}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--rejilla)"/>` +
+         `<text x="${mL - 8}" y="${Y(v) + 4}" text-anchor="end" font-size="12" fill="var(--color-ink-soft)">${v}</text>`;
+  }
+  const linea = (vals, color, ancho) => {
+    let s = "", tramo = [];
+    const cerrar = () => { if (tramo.length > 1) s += `<polyline points="${tramo.join(" ")}" fill="none" stroke="${color}" stroke-width="${ancho}" stroke-linejoin="round" stroke-linecap="round"/>`; tramo = []; };
+    vals.forEach((v, i) => { if (v === null || v === undefined) cerrar(); else tramo.push(`${X(i).toFixed(1)},${Y(v).toFixed(1)}`); });
+    cerrar();
+    return s;
+  };
+  modelos.forEach(([, v]) => { g += linea(v, "var(--modelo)", 1.6); });
+  g += linea(promedio, "var(--prom)", 3.2);
+  g += promedio.map((v, i) => (v === null || v === undefined ? "" :
+    `<circle cx="${X(i)}" cy="${Y(v)}" r="${celular ? 3.5 : 4.5}" fill="var(--prom)" stroke="var(--color-panel)" stroke-width="1.5"><title>${fecha(fechas[i], { day: "numeric", month: "short" })}: ${(+v).toFixed(1).replace(".", ",")} ${cfg.unidad}</title></circle>`)).join("");
+  const iHoy = fechas.indexOf(hoy);
+  if (iHoy >= 0) {
+    g += `<line x1="${X(iHoy)}" x2="${X(iHoy)}" y1="${mT - 6}" y2="${H - mB}" stroke="var(--color-max)" stroke-width="1.5" stroke-dasharray="4 4"/>` +
+         `<text x="${X(iHoy) + 6}" y="${mT + 6}" font-size="11" font-weight="700" fill="var(--color-max)">Hoy</text>`;
+  }
+  const cada = Math.ceil(N / (celular ? 4 : 9));
+  fechas.forEach((f, i) => {
+    if (i % cada === 0) g += `<text x="${X(i)}" y="${H - 12}" text-anchor="middle" font-size="12" fill="var(--color-ink-soft)">${fecha(f, { day: "numeric", month: "short" }).replace(".", "")}</text>`;
   });
+  g += `<text transform="translate(14 ${(H - mB + mT) / 2}) rotate(-90)" text-anchor="middle" font-size="12" fill="var(--color-ink-soft)">${cfg.etiqueta} (${cfg.unidad})</text>`;
 
-  const todos = [...central, ...bandaSup, ...bandaInf,
-                 ...modelos.flatMap(([, v]) => v)].filter((v) => v !== null);
-  let lo = Math.min(...todos), hi = Math.max(...todos);
-  if (usarAnom) { const m = Math.max(Math.abs(lo), Math.abs(hi), 1); lo = -m; hi = m; }
-  if (!usarAnom) { lo = Math.min(0, lo); }
-  if (hi === lo) hi = lo + 1;
+  cont.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${cfg.etiqueta} pronosticada por cada modelo y su promedio">${g}</svg>`;
+  $("leyenda").innerHTML = `<span><i class="prom"></i>Promedio de los modelos</span>` +
+    modelos.map(([k]) => `<span><i></i>${escapar(DATOS.modelos[k]?.nombre || k)}</span>`).join("");
 
-  const W = 680, H = 230, mL = 42, mR = 10, mT = 14, mB = 26;
-  const x = (i) => mL + (i * (W - mL - mR)) / Math.max(1, n - 1);
-  const y = (v) => mT + ((hi - v) * (H - mT - mB)) / (hi - lo);
-
-  const linea = (vals, color, ancho, opacidad) => {
-    const tramos = [];
-    let actual = [];
-    vals.forEach((v, i) => {
-      if (v === null) { if (actual.length > 1) tramos.push(actual); actual = []; }
-      else actual.push(`${x(i).toFixed(1)},${y(v).toFixed(1)}`);
-    });
-    if (actual.length > 1) tramos.push(actual);
-    return tramos.map((t) =>
-      `<polyline points="${t.join(" ")}" fill="none" stroke="${color}" ` +
-      `stroke-width="${ancho}" opacity="${opacidad}" stroke-linejoin="round"/>`
-    ).join("");
-  };
-
-  const banda = () => {
-    const arriba = [], abajo = [];
-    bandaSup.forEach((v, i) => {
-      if (v !== null && bandaInf[i] !== null) {
-        arriba.push(`${x(i).toFixed(1)},${y(v).toFixed(1)}`);
-        abajo.unshift(`${x(i).toFixed(1)},${y(bandaInf[i]).toFixed(1)}`);
-      }
-    });
-    if (arriba.length < 2) return "";
-    return `<polygon points="${arriba.concat(abajo).join(" ")}" ` +
-           `fill="var(--color-rain)" opacity="0.14"/>`;
-  };
-
-  const ticks = [lo, (lo + hi) / 2, hi].map((v) =>
-    `<line x1="${mL}" y1="${y(v)}" x2="${W - mR}" y2="${y(v)}" ` +
-    `stroke="var(--color-line)" stroke-dasharray="3 3"/>` +
-    `<text x="${mL - 6}" y="${y(v) + 3.5}" text-anchor="end" font-size="10" ` +
-    `fill="var(--color-ink-soft)">${v.toFixed(v % 1 ? 1 : 0)}</text>`
-  ).join("");
-
-  const cero = usarAnom
-    ? `<line x1="${mL}" y1="${y(0)}" x2="${W - mR}" y2="${y(0)}" ` +
-      `stroke="var(--color-ink-soft)" stroke-width="1"/>`
-    : "";
-
-  const etiquetas = fechas.map((f, i) =>
-    i % Math.ceil(n / 7) === 0
-      ? `<text x="${x(i)}" y="${H - 8}" text-anchor="middle" font-size="10" ` +
-        `fill="var(--color-ink-soft)">${fechaCorta(f)}</text>`
-      : ""
-  ).join("");
-
-  cont.innerHTML =
-    `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img" ` +
-    `aria-label="Pronóstico de ${cfg.etiqueta} por modelo">` +
-    ticks + banda() + cero +
-    modelos.map(([k, v], i) =>
-      linea(v, COLORES_MODELO[i % COLORES_MODELO.length], 1, 0.35)).join("") +
-    linea(central, "var(--color-rain)", 2.5, 1) +
-    etiquetas + "</svg>";
-
-  $("leyenda").innerHTML =
-    `<span><span style="display:inline-block;width:16px;height:3px;` +
-    `background:var(--color-rain);vertical-align:3px"></span> agregado ` +
-    `ponderado${usarAnom ? " (anomalía)" : ` (${cfg.unidad})`}</span>` +
-    `<span><span style="display:inline-block;width:16px;height:9px;` +
-    `background:var(--color-rain);opacity:.25;vertical-align:-1px"></span> ` +
-    `±1σ entre modelos</span>` +
-    modelos.map(([k], i) =>
-      `<span style="opacity:.75"><span style="display:inline-block;width:14px;` +
-      `height:2px;background:${COLORES_MODELO[i % COLORES_MODELO.length]};` +
-      `vertical-align:3px"></span> ${DATOS.modelos[k]?.nombre || k}</span>`
-    ).join("");
-
-  const sinCorregir = !DATOS.referencia.desfase_aplicado && cfg.anomalia;
+  const temperatura = estado.variable === "tmax" || estado.variable === "tmin";
   $("nota").innerHTML =
+    "Pronóstico diario de varios modelos (Open-Meteo, CC BY 4.0), en el punto del municipio. Cada línea gris es un modelo; la línea oscura es su promedio. " +
     (estado.variable === "precipitacion"
-      ? "Los modelos estiman la lluvia sobre celdas de 10 a 25 km, así que un " +
-        "valor representa el promedio de un área grande, no un punto. Suelen " +
-        "acertar mejor <strong>si</strong> va a llover que <strong>cuánto</strong>, " +
-        "y tienden a repartir lluvia en días que terminan secos. Para decidir, " +
-        "pesa más el acuerdo entre modelos y la probabilidad que el número de milímetros."
-      : "La anomalía compara contra lo normal de la época según " +
-        DATOS.referencia.climatologia + ". El valor absoluto hereda el sesgo de " +
-        "esa referencia y suele quedar por debajo de lo que marca un termómetro; " +
-        "la anomalía no, porque es una diferencia.") +
-    (sinCorregir
-      ? ' <strong>Atención:</strong> todavía no hay desfases estimados, así que ' +
-        "la anomalía se muestra sin corregir el sesgo de cada modelo."
-      : "");
+      ? "Los modelos estiman la lluvia sobre áreas de 10 a 25 km: aciertan mejor <strong>si</strong> va a llover que <strong>cuánto</strong>."
+      : temperatura && DATOS.referencia && !DATOS.referencia.desfase_aplicado
+        ? "Los valores todavía no se corrigen por el sesgo de cada modelo, así que pueden quedar algo por debajo de lo que marca un termómetro."
+        : "");
 }
 
 /* ---------- Armado ---------- */
@@ -245,74 +183,76 @@ function pintarGrafico(mun) {
 function pintar() {
   const mun = DATOS.municipios[estado.municipio];
   if (!mun) return;
-
-  $("contexto").innerHTML =
-    `${mun.sistema_principal.replace(/_/g, " ")}` +
-    (mun.umbral_tmax ? ` · umbral Tmax ${mun.umbral_tmax} °C` : "") +
-    (mun.umbral_hr ? `, HR ${mun.umbral_hr} %` : "");
-
-  const emis = Object.entries(DATOS.emisiones || {});
-  $("meta").innerHTML =
-    `${emis.length} modelo${emis.length === 1 ? "" : "s"}<br>` +
-    `corrida ${emis.length ? emis[0][1] : "—"}`;
-
-  pintarTarjetas(mun);
+  pintarDias(mun);
   pintarGrafico(mun);
+  const panel = $("panel-mapa");
+  if (!panel.hidden) cargarMapa(mun);
+}
 
-  const w = $("windy");
-  if (!w.dataset.cargado) {
-    w.dataset.cargado = "1";
-    const g = DATOS.municipios[estado.municipio];
-    const f = document.createElement("iframe");
-    /* Capa de lluvia modelada, no radar: la red de radares en Colombia es
-       escasa y la capa de radar saldría vacía en estos municipios. */
-    f.loading = "lazy";
-    f.title = "Mapa de lluvia y viento";
-    f.src = "https://embed.windy.com/embed.html?type=map&location=coordinates" +
-      "&metricRain=mm&metricTemp=°C&metricWind=km/h&zoom=8&overlay=rain" +
-      "&product=ecmwf&level=surface&lat=" + (g.lat ?? 0).toFixed(3) +
-      "&lon=" + (g.lon ?? 0).toFixed(3);
-    w.appendChild(f);
-  }
+function cargarMapa(mun) {
+  const panel = $("panel-mapa");
+  panel.innerHTML = "";
+  const f = document.createElement("iframe");
+  /* Capa de lluvia modelada, no radar: la red de radares en Colombia es
+     escasa y la capa de radar saldría vacía en estos municipios. */
+  f.loading = "lazy";
+  f.title = "Mapa de lluvia y viento";
+  f.src = "https://embed.windy.com/embed.html?type=map&location=coordinates" +
+    "&metricRain=mm&metricTemp=°C&metricWind=km/h&zoom=8&overlay=rain" +
+    "&product=ecmwf&level=surface&lat=" + (mun.lat ?? 0).toFixed(3) + "&lon=" + (mun.lon ?? 0).toFixed(3);
+  panel.appendChild(f);
 }
 
 function construirControles() {
   const sel = $("municipio");
   sel.innerHTML = Object.entries(DATOS.municipios)
-    .map(([id, m]) => `<option value="${id}">${m.nombre}, ${m.departamento}</option>`)
-    .join("");
+    .map(([id, m]) => `<option value="${id}">${escapar(m.nombre)} (${escapar(m.departamento)})</option>`).join("");
   sel.value = estado.municipio;
-  sel.onchange = () => { estado.municipio = sel.value;
-    $("windy").innerHTML = ""; $("windy").dataset.cargado = ""; pintar(); };
-
-  $("pestanas").innerHTML = VARIABLES.map((v) =>
-    `<button type="button" data-var="${v.id}" aria-pressed="${
-      v.id === estado.variable}">${v.etiqueta}</button>`).join("");
-  $("pestanas").onclick = (e) => {
-    const b = e.target.closest("button");
-    if (!b) return;
-    estado.variable = b.dataset.var;
-    [...$("pestanas").children].forEach((x) =>
-      x.setAttribute("aria-pressed", x === b));
-    pintarGrafico(DATOS.municipios[estado.municipio]);
-  };
+  sel.onchange = () => { estado.municipio = sel.value; pintar(); };
 
   $("horizonte").onclick = (e) => {
     const b = e.target.closest("button");
     if (!b) return;
     estado.dias = Number(b.dataset.dias);
-    [...$("horizonte").children].forEach((x) =>
-      x.setAttribute("aria-pressed", x === b));
+    [...$("horizonte").children].forEach((x) => x.setAttribute("aria-pressed", x === b));
     pintar();
   };
 
+  $("variables").innerHTML = VARIABLES.map((v) =>
+    `<button type="button" class="pill" data-var="${v.id}" aria-pressed="${v.id === estado.variable}">${v.etiqueta}</button>`).join("");
+  $("variables").onclick = (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    estado.variable = b.dataset.var;
+    [...$("variables").children].forEach((x) => x.setAttribute("aria-pressed", x === b));
+    pintarGrafico(DATOS.municipios[estado.municipio]);
+  };
+
+  $("btn-mapa").onclick = () => {
+    const panel = $("panel-mapa"), abrir = panel.hidden;
+    panel.hidden = !abrir;
+    $("btn-mapa").setAttribute("aria-expanded", abrir);
+    $("btn-mapa").textContent = abrir ? "Cerrar mapa" : "Abrir mapa";
+    if (abrir) { cargarMapa(DATOS.municipios[estado.municipio]); panel.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+    else panel.innerHTML = "";
+  };
+
+  /* Fecha de emisión: la corrida más reciente entre los modelos. */
+  const emis = Object.values(DATOS.emisiones || {}).filter(Boolean).sort();
+  const nModelos = Object.keys(DATOS.modelos || {}).length;
+  const ultima = emis.length ? emis[emis.length - 1] : null;
+  $("emitido").innerHTML = `<span class="ic" aria-hidden="true">🛰️</span><div><small>Pronóstico emitido</small>` +
+    `<b>${ultima ? fecha(ultima.slice(0, 10), { day: "numeric", month: "long", year: "numeric" }) : "—"}</b>` +
+    `<span>${nModelos} modelo${nModelos === 1 ? "" : "s"}</span></div>`;
+
   const f = new Date(DATOS.generado_en);
-  $("pie-fuentes").innerHTML =
-    "Fuentes: " +
-    Object.values(DATOS.modelos).map((m) => m.nombre).join(", ") +
-    ". Referencia: " + DATOS.referencia.climatologia +
-    ". Actualizado el " +
-    f.toLocaleString("es-CO", { dateStyle: "long", timeStyle: "short" }) + ".";
+  $("pie-fuentes").innerHTML = "Fuentes: " + Object.values(DATOS.modelos).map((m) => escapar(m.nombre)).join(", ") +
+    (DATOS.referencia?.climatologia ? ". Referencia: " + escapar(DATOS.referencia.climatologia) : "") +
+    ". Actualizado el " + f.toLocaleString("es-CO", { dateStyle: "long", timeStyle: "short", timeZone: "America/Bogota" }).replace(/\.?$/, ".");
+
+  /* El gráfico se ajusta al ancho de la pantalla. */
+  let espera;
+  window.addEventListener("resize", () => { clearTimeout(espera); espera = setTimeout(() => pintarGrafico(DATOS.municipios[estado.municipio]), 150); });
 }
 
 (async function iniciar() {
