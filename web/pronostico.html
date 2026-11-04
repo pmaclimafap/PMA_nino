@@ -2,12 +2,11 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pronóstico del tiempo — El Niño · Alianza Bioversity-CIAT / PMA</title>
-<meta name="description" content="Sistema de monitoreo, pronóstico y medidas anticipatorias frente al Fenómeno de El Niño en La Guajira, Cesar, Sucre y Tolima.">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pronóstico del tiempo · Fenómeno de El Niño, PMA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --color-bg: #F3F5EE;
@@ -19,7 +18,10 @@
     --color-relhum: #4FA8C9;
     --color-temp: #D97F2B;
     --color-max: #B23A3A;
-    --color-ok: #2E7D4F;
+    --color-min: #2A4B7C;
+    --color-enso-fria: #1D5A8C;
+    --color-enso-neutral: #3F8F5F;
+    --color-enso-calida: #D97F2B;
     --radius: 6px;
     --font-display: "Zilla Slab", Georgia, serif;
     --font-body: "Work Sans", -apple-system, sans-serif;
@@ -29,242 +31,243 @@
       --color-bg: #1C1E18; --color-panel: #262920; --color-ink: #EDEFE6;
       --color-ink-soft: #A9AD9C; --color-line: #3A3E30;
       --color-rain: #5B9BD5; --color-relhum: #7FC4E0; --color-temp: #E8A15C;
-      --color-ok: #6FBF8B;
+      --color-enso-fria: #5B9BD5; --color-enso-neutral: #6FBF8B; --color-enso-calida: #E8A15C;
     }
   }
   :root[data-theme="dark"] {
     --color-bg: #1C1E18; --color-panel: #262920; --color-ink: #EDEFE6;
     --color-ink-soft: #A9AD9C; --color-line: #3A3E30;
     --color-rain: #5B9BD5; --color-relhum: #7FC4E0; --color-temp: #E8A15C;
-    --color-ok: #6FBF8B;
+    --color-enso-fria: #5B9BD5; --color-enso-neutral: #6FBF8B; --color-enso-calida: #E8A15C;
   }
-
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--color-bg); color: var(--color-ink);
-         font-family: var(--font-body); line-height: 1.5; }
+  body { margin: 0; background: var(--color-bg); color: var(--color-ink); font-family: var(--font-body); line-height: 1.5; }
+  /* Ancho fluido: aprovecha la pantalla y solo pone tope en monitores muy
+     anchos. El texto no se estira porque header p ya está limitado a 85ch,
+     y el mapa y los gráficos sí se benefician del espacio. */
+  /* ---- Botones de módulos (los mismos de la página de inicio), dentro del encabezado ---- */
+  .modulos { display: flex; flex-wrap: wrap; gap: 10px; margin: 30px 0 0; }
+  .modulos a { color: #fff; text-decoration: none; font-family: var(--font-body); font-weight: 600; font-size: 1rem; padding: 11px 26px; border-radius: 999px;
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.5); backdrop-filter: blur(6px); transition: background .15s, transform .15s; }
+  .modulos a:hover { background: rgba(255,255,255,.24); transform: translateY(-1px); }
+  .modulos a[aria-current="page"] { background: #fff; color: #1F3D2E; border-color: #fff; }
+  @media (max-width: 40rem) { .modulos { display: grid; grid-template-columns: 1fr 1fr; } .modulos a { text-align: center; padding: 10px; } }
+
   .wrap { max-width: min(1680px, 100% - 2.5rem); margin: 0 auto; padding: 32px 0 60px; }
   @media (max-width: 40rem) { .wrap { max-width: 100%; padding: 24px 16px 48px; } }
+  /* Encabezado con foto de fondo: la foto se oscurece con un degradado para
+     que el texto blanco se lea bien, y abajo lleva una franja de colores
+     (verde, amarillo, naranja y rojo). La foto está en web/img/pronostico.jpg.
+     Colores fijos, para que se vea igual en modo claro y oscuro. */
+  header {
+    position: relative; overflow: hidden; border-radius: 14px; color: #FFFFFF;
+    padding: clamp(44px, 7vw, 96px) clamp(20px, 5vw, 64px) clamp(52px, 8vw, 104px);
+    background:
+      linear-gradient(90deg, rgba(8, 22, 18, 0.78) 0%, rgba(8, 22, 18, 0.55) 55%, rgba(8, 22, 18, 0.35) 100%),
+      url("img/pronostico.jpg") center 55% / cover no-repeat,
+      #1F3D2E;
+  }
+  header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 6px;
+    background: linear-gradient(90deg, #4C9A2A 0%, #A6C34A 30%, #fec44f 55%, #ec7014 78%, #d7301f 100%); }
+  .header-top > div { width: 100%; max-width: 1400px; margin: 0 auto; }
+  .titulo-banda { background: none; padding: 0; }
+  header h1 { font-family: var(--font-body); font-weight: 700; font-size: clamp(1.9rem, 3.6vw, 3.8rem); line-height: 1.12;
+    letter-spacing: -0.015em; color: #FFFFFF; margin: 0; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35); text-wrap: balance; }
+  /* En pantallas de computador el título va en una sola línea. */
+  @media (min-width: 64rem) { header h1 { white-space: nowrap; } }
+  header p { color: rgba(255, 255, 255, 0.9); margin: 20px 0 0; max-width: 105ch; font-size: 1.1rem; line-height: 1.65;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35); }
 
-  /* ---- Barra de modulos ---- */
-  .modulos { display: flex; gap: 2px; flex-wrap: wrap;
-             border-bottom: 1px solid var(--color-line); margin: 0 0 28px; }
-  .modulos a { font-family: var(--font-body); font-size: 0.9rem; font-weight: 500;
-               color: var(--color-ink-soft); text-decoration: none;
-               padding: 10px 18px; border-bottom: 2px solid transparent;
-               margin-bottom: -1px; white-space: nowrap; }
-  .modulos a:hover { color: var(--color-ink); background: var(--color-panel); }
-  .modulos a[aria-current="page"] { color: var(--color-ink);
-               border-bottom-color: var(--color-temp); font-weight: 600; }
-  .modulos a .num { font-family: var(--font-display); font-size: 0.78rem;
-               color: var(--color-ink-soft); margin-right: 7px; }
-  .modulos a[aria-current="page"] .num { color: var(--color-temp); }
-  .modulos .marca { font-family: var(--font-display); font-weight: 700; font-size: 0.9rem;
-               padding: 10px 16px 10px 0; color: var(--color-ink); text-decoration: none;
-               border-right: 1px solid var(--color-line); margin-right: 8px;
-               white-space: nowrap; }
+  .header-row { margin-bottom: 20px; }
+  .header-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px; }
 
-  header h1 { font-family: var(--font-display); font-weight: 600;
-              font-size: clamp(1.7rem, 3.4vw, 2.4rem); margin: 0 0 10px; line-height: 1.2; }
-  header .bajada { color: var(--color-ink-soft); margin: 0 0 4px; max-width: 72ch;
-                   font-size: 1.02rem; }
-  header .institucional { color: var(--color-ink-soft); font-size: 0.88rem;
-                          margin: 14px 0 0; }
 
-  /* ---- Estado del evento ---- */
-  .evento { background: var(--color-panel); border: 1px solid var(--color-line);
-            border-left: 3px solid var(--color-temp); border-radius: var(--radius);
-            padding: 18px 20px; margin: 28px 0; display: flex; flex-wrap: wrap;
-            gap: 10px 32px; align-items: baseline; }
-  .evento .dato { font-family: var(--font-display); font-size: 1.6rem;
-                  font-weight: 700; color: var(--color-temp); }
-  .evento .etiqueta { font-size: 0.88rem; color: var(--color-ink-soft);
-                      display: block; font-family: var(--font-body); font-weight: 400; }
-  .evento .nota { font-size: 0.9rem; color: var(--color-ink-soft); max-width: 60ch; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; padding: 16px;
+    background: var(--color-panel); border: 1px solid var(--color-line); border-radius: var(--radius); margin-bottom: 24px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  /* Los selectores que quedan se reparten el ancho; el recuadro de fechas va a la derecha. */
+  .controls .field { flex: 1 1 170px; max-width: 320px; }
+  .controls select { width: 100%; }
+  .field label { font-size: 0.78rem; color: var(--color-ink-soft); }
+  select { font-family: var(--font-body); font-size: 0.92rem; padding: 8px 10px;
+    border: 1px solid var(--color-line); border-radius: 4px; background: var(--color-bg); color: var(--color-ink); min-width: 200px; }
 
-  /* ---- Tarjetas de modulo ---- */
-  .tarjetas { display: grid; gap: 18px; margin: 32px 0;
-              grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
-  .tarjeta { background: var(--color-panel); border: 1px solid var(--color-line);
-             border-left: 3px solid var(--acento, var(--color-rain));
-             border-radius: var(--radius); padding: 20px 22px;
-             display: flex; flex-direction: column; text-decoration: none;
-             color: inherit; }
-  a.tarjeta:hover { border-color: var(--acento); }
-  .tarjeta[aria-disabled="true"] { opacity: 0.72; }
-  .tarjeta .orden { font-family: var(--font-display); font-size: 0.8rem;
-                    color: var(--color-ink-soft); letter-spacing: 0.04em; }
-  .tarjeta h2 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 600;
-                margin: 2px 0 8px; }
-  .tarjeta p { margin: 0 0 14px; font-size: 0.93rem; color: var(--color-ink-soft); }
-  .tarjeta ul { margin: 0 0 16px; padding-left: 1.1rem; font-size: 0.88rem;
-                color: var(--color-ink-soft); }
-  .tarjeta li { margin-bottom: 3px; }
-  .tarjeta .pie { margin-top: auto; display: flex; align-items: center;
-                  gap: 10px; flex-wrap: wrap; font-size: 0.85rem; }
-  .estado { display: inline-flex; align-items: center; gap: 6px;
-            font-size: 0.78rem; font-weight: 600; padding: 3px 9px;
-            border-radius: 99px; border: 1px solid var(--color-line); }
-  .estado--activo { color: var(--color-ok); border-color: var(--color-ok); }
-  .estado--pendiente { color: var(--color-ink-soft); }
-  .tarjeta .ir { color: var(--acento); font-weight: 600; }
+  /* Recuadro con el período y sus fechas, a la derecha de los selectores. */
+  .periodo-caja { display: inline-flex; align-items: center; gap: 12px; margin-left: auto; padding: 8px 18px 8px 14px;
+    background: var(--color-bg); border: 1px solid var(--color-line); border-left: 5px solid var(--color-rain); border-radius: var(--radius); }
+  .periodo-caja:empty { display: none; }
+  .periodo-caja-icono { font-size: 1.6rem; line-height: 1; }
+  .periodo-caja-nombre { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-ink-soft); }
+  .periodo-caja-fechas { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--color-ink); line-height: 1.25; }
+  @media (max-width: 40rem) {
+    .controls .field { flex: 1 1 100%; max-width: none; }
+    .controls select { width: 100%; min-width: 0; }
+    .emitido { margin-left: 0; width: 100%; }
+  }
 
-  /* ---- Resumen del proyecto ---- */
-  .seccion { margin: 44px 0 0; }
-  .seccion h2 { font-family: var(--font-display); font-size: 1.35rem;
-                font-weight: 600; margin: 0 0 12px; }
-  .seccion p { max-width: 80ch; margin: 0 0 14px; font-size: 0.96rem; }
-  .cobertura { width: 100%; border-collapse: collapse; margin: 18px 0;
-               font-size: 0.9rem; background: var(--color-panel);
-               border: 1px solid var(--color-line); border-radius: var(--radius); }
-  .cobertura th, .cobertura td { text-align: left; padding: 9px 14px;
-               border-bottom: 1px solid var(--color-line); }
-  .cobertura th { font-family: var(--font-body); font-weight: 600;
-               font-size: 0.82rem; text-transform: uppercase;
-               letter-spacing: 0.04em; color: var(--color-ink-soft); }
-  .cobertura tr:last-child td { border-bottom: none; }
-  .cobertura td:first-child { font-weight: 500; }
+  /* ---- Controles: horizonte y fecha de emisión ---- */
+  .seg { display: inline-flex; background: var(--color-bg); border: 1px solid var(--color-line); border-radius: 999px; padding: 3px; }
+  .seg button { border: 0; background: none; font: inherit; font-size: 0.88rem; font-weight: 600; padding: 7px 16px; border-radius: 999px;
+    color: var(--color-ink-soft); cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--color-rain); color: #FFFFFF; }
+  .emitido { display: inline-flex; align-items: center; gap: 12px; margin-left: auto; padding: 8px 18px 8px 14px; background: var(--color-bg);
+    border: 1px solid var(--color-line); border-left: 5px solid var(--color-rain); border-radius: var(--radius); }
+  .emitido .ic { font-size: 1.6rem; line-height: 1; }
+  .emitido small { display: block; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-ink-soft); }
+  .emitido b { font-family: var(--font-display); font-size: 1.15rem; }
+  .emitido span { display: block; font-size: 0.8rem; color: var(--color-ink-soft); }
 
-  footer { margin-top: 52px; padding-top: 22px;
-           border-top: 1px solid var(--color-line);
-           font-size: 0.84rem; color: var(--color-ink-soft); }
-  footer p { margin: 0 0 7px; max-width: 86ch; }
-  footer a { color: var(--color-rain); }
+  /* ---- Próximos días ---- */
+  .sec-cab { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 20px; margin: 6px 0 14px; }
+  .sec-tit { font-family: var(--font-display); font-size: 1.5rem; margin: 0; }
+  .sec-cab p { margin: 4px 0 0; color: var(--color-ink-soft); font-size: 0.92rem; }
+  .conf-info { display: flex; align-items: center; gap: 9px; font-size: 0.8rem; color: var(--color-ink-soft); max-width: 560px; padding: 7px 14px 7px 10px;
+    border-radius: 999px; background: color-mix(in srgb, #2E7D4F 7%, var(--color-bg)); border: 1px solid color-mix(in srgb, #2E7D4F 18%, transparent); }
+  .conf-info b { color: #2E6A47; }
+  .puntos { display: inline-flex; gap: 4px; align-items: center; flex: none; }
+  .puntos i { width: 9px; height: 9px; border-radius: 50%; background: #DCDFD5; }
+  .puntos i.on { background: #2E7D4F; }
+  .conf-info .puntos i { width: 7px; height: 7px; }
+  .dias { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 14px; }
+  .dia { background: var(--color-panel); border-radius: 20px; overflow: hidden; display: flex; flex-direction: column;
+    border: 1px solid color-mix(in srgb, var(--color-line) 70%, transparent); box-shadow: 0 1px 2px rgba(40,40,30,.06), 0 6px 18px rgba(40,40,30,.06); }
+  .dia.manana { box-shadow: 0 0 0 2px var(--color-rain), 0 8px 22px rgba(29,90,140,.18); }
+  .cielo { height: 182px; padding: 14px 10px 12px; text-align: center; background: var(--cielo); }
+  .cielo .dn { font-family: var(--font-display); font-size: 1.22rem; font-weight: 700; line-height: 1; color: #22312F; }
+  .cielo .dn small { display: block; font-family: var(--font-body); font-size: 0.76rem; font-weight: 500; color: #4A5552; margin-top: 4px; }
+  .cielo svg { width: 68px; height: 68px; display: block; margin: 6px auto 2px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.08)); }
+  .cielo .cond { font-size: 0.84rem; font-weight: 600; color: #2E3A37; }
+  .dia .cuerpo { padding: 8px 14px; display: flex; flex-direction: column; }
+  .dia .fila { padding: 9px 0; }
+  .dia .fila + .fila { border-top: 1px dashed var(--color-line); }
+  .dia .lab { display: flex; align-items: center; gap: 5px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--color-ink-soft); line-height: 1.1; }
+  .dia .lab svg { width: 15px; height: 15px; flex: none; }
+  .dia .par { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 5px; }
+  .dia .par div { display: flex; flex-direction: column; line-height: 1; }
+  .dia .par small { font-size: 0.66rem; color: var(--color-ink-soft); margin-bottom: 2px; }
+  .dia b { font-family: var(--font-display); font-size: 1.2rem; }
+  .dia .mn b { color: #2F6F9F; } .dia .mx b { color: #C0582A; } .dia .ll b { color: #1D5A8C; font-size: 1.1rem; }
+  .dia .hr { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; color: #2F7E9E; margin-top: 4px; }
+  .dia .pie { margin-top: auto; padding: 9px 8px; display: flex; align-items: center; justify-content: center; gap: 7px; white-space: nowrap;
+    font-size: 0.76rem; color: var(--color-ink-soft); background: color-mix(in srgb, var(--color-bg) 60%, var(--color-panel)); }
+  .dias-fin { grid-column: 1 / -1; padding: 14px; text-align: center; font-size: 0.88rem; color: var(--color-ink-soft);
+    border: 1px dashed var(--color-line); border-radius: 16px; }
 
-  /* ---- Pronóstico ---- */
-  .barra { display:flex; gap:12px; flex-wrap:wrap; align-items:center;
-           padding:12px 16px; background:var(--color-panel);
-           border:1px solid var(--color-line); border-radius:var(--radius);
-           margin-bottom:18px; }
-  .barra select { font-family:var(--font-body); font-size:0.95rem; padding:7px 10px;
-           border:1px solid var(--color-line); border-radius:var(--radius);
-           background:var(--color-bg); color:var(--color-ink); }
-  .barra .ctx { font-size:0.85rem; color:var(--color-ink-soft); line-height:1.5; }
-  .barra .meta { margin-left:auto; font-size:0.8rem; color:var(--color-ink-soft);
-           text-align:right; line-height:1.5; }
+  /* ---- Gráfico de los modelos ---- */
+  .graf { background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 16px; padding: 20px 22px; margin-top: 26px; }
+  .graf h3 { margin: 0; font-family: var(--font-display); font-size: 1.4rem; }
+  .graf .sub { margin: 4px 0 0; color: var(--color-ink-soft); font-size: 0.92rem; }
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0 8px; }
+  .pill { border: 1px solid var(--color-line); background: var(--color-panel); font: inherit; font-size: 0.88rem; font-weight: 600; padding: 7px 14px;
+    border-radius: 999px; color: var(--color-ink-soft); cursor: pointer; }
+  .pill[aria-pressed="true"] { background: var(--color-rain); color: #FFFFFF; border-color: var(--color-rain); }
+  #grafico svg { display: block; width: 100%; height: auto; }
+  .ley { display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: center; font-size: 0.82rem; color: var(--color-ink-soft); margin-top: 6px; }
+  .ley i { display: inline-block; width: 22px; height: 3px; vertical-align: 4px; margin-right: 6px; background: #B9BDB2; }
+  .ley i.prom { height: 4px; background: var(--prom); }
+  .fuente { font-size: 0.82rem; color: var(--color-ink-soft); font-style: italic; margin: 12px 0 0; line-height: 1.55; }
+  .graf { --prom: #2B2E35; --modelo: #BFC3B8; --rejilla: #E6E8E0; }
 
-  .tarjetas { display:grid; gap:6px; margin-bottom:22px;
-              grid-template-columns:repeat(auto-fit,minmax(7.5rem,1fr)); }
-  .tarjeta { background:var(--color-panel); border:1px solid var(--color-line);
-             border-top:3px solid var(--acento,var(--color-line));
-             border-radius:0 0 var(--radius) var(--radius);
-             padding:11px 6px; text-align:center; }
-  .tarjeta .fecha { font-size:0.78rem; color:var(--color-ink-soft); }
-  .tarjeta svg { width:42px; height:42px; margin:4px 0; }
-  .tarjeta .anom { font-family:var(--font-display); font-size:1.15rem;
-                   font-weight:600; line-height:1.2; }
-  .tarjeta .abs { font-size:0.72rem; color:var(--color-ink-soft); }
-  .tarjeta .lluvia { font-size:0.78rem; margin-top:5px; color:var(--color-rain); }
-  .tarjeta .hr { font-size:0.72rem; color:var(--color-ink-soft); }
-  .tarjeta .conf { display:inline-block; margin-top:7px; font-size:0.68rem;
-                   padding:2px 7px; border-radius:99px; border:1px solid var(--color-line); }
-  .conf--alta { color:var(--color-ok); border-color:var(--color-ok); }
-  .conf--media { color:var(--color-temp); border-color:var(--color-temp); }
-  .conf--baja { color:var(--color-ink-soft); }
-  .tarjeta--corta { background:transparent; border:1px dashed var(--color-line);
-                    border-radius:var(--radius); display:flex; flex-direction:column;
-                    justify-content:center; color:var(--color-ink-soft);
-                    font-size:0.72rem; line-height:1.5; }
+  /* ---- Mapa y verificación ---- */
+  .extra { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 22px; }
+  .extra > div { background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 16px; padding: 18px 20px; }
+  .extra h4 { margin: 0 0 6px; font-family: var(--font-display); font-size: 1.15rem; display: flex; align-items: center; gap: 8px; }
+  .extra p { margin: 0; font-size: 0.9rem; color: var(--color-ink-soft); line-height: 1.55; }
+  .boton { margin-top: 12px; padding: 7px 16px; border-radius: 999px; border: 1px solid var(--color-rain); background: none; color: var(--color-rain);
+    font: inherit; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+  .boton:hover { background: color-mix(in srgb, var(--color-rain) 8%, transparent); }
+  #panel-mapa { margin-top: 16px; background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 16px; padding: 12px; }
+  #panel-mapa iframe { width: 100%; height: 460px; border: 0; border-radius: 10px; display: block; }
 
-  .panel { background:var(--color-panel); border:1px solid var(--color-line);
-           border-radius:var(--radius); margin-bottom:18px; }
-  .panel__cab { display:flex; gap:8px; flex-wrap:wrap; align-items:center;
-                padding:10px 14px 0; }
-  .pestanas { display:flex; gap:1px; }
-  .pestanas button, .horiz button { font-family:var(--font-body); font-size:0.85rem;
-           padding:6px 12px; border:0; background:transparent;
-           color:var(--color-ink-soft); cursor:pointer; border-radius:var(--radius); }
-  .pestanas button[aria-pressed="true"] { background:var(--color-bg);
-           color:var(--color-ink); font-weight:600; }
-  .horiz { margin-left:auto; display:flex; gap:3px; }
-  .horiz button { border:1px solid transparent; }
-  .horiz button[aria-pressed="true"] { border-color:var(--color-line);
-           color:var(--color-ink); }
-  .panel__cuerpo { padding:8px 14px 14px; }
-  .leyenda { display:flex; gap:16px; flex-wrap:wrap; align-items:center;
-             font-size:0.78rem; color:var(--color-ink-soft); margin-top:6px; }
-  .nota { font-size:0.82rem; color:var(--color-ink-soft); line-height:1.6;
-          border-top:1px solid var(--color-line); margin-top:12px; padding-top:10px; }
+  footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--color-line); font-size: 0.82rem; color: var(--color-ink-soft); }
+  footer p { margin: 0 0 6px; } footer a { color: var(--color-rain); }
 
-  details.mapa summary { cursor:pointer; padding:11px 14px; font-size:0.95rem;
-          list-style:none; display:flex; gap:8px; align-items:center; }
-  details.mapa summary::-webkit-details-marker { display:none; }
-  details.mapa summary::before { content:"\25B8"; color:var(--color-ink-soft); }
-  details.mapa[open] summary::before { content:"\25BE"; }
-  details.mapa iframe { width:100%; height:clamp(320px,50vh,520px); border:0;
-          border-top:1px solid var(--color-line); display:block; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .graf { --prom: #EDEFE6; --modelo: #5A5F52; --rejilla: #34382C; }
+  }
+  :root[data-theme="dark"] .graf { --prom: #EDEFE6; --modelo: #5A5F52; --rejilla: #34382C; }
+
+  @media (max-width: 64rem) { .dias { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (max-width: 40rem) {
+    .dias { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 2px 10px; }
+    .dia { flex: 0 0 64%; scroll-snap-align: start; }
+    .dias-fin { flex: 0 0 64%; display: grid; place-items: center; }
+    .conf-info { max-width: none; border-radius: 16px; }
+    .graf { padding: 16px 12px; }
+    .pills { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; } .pill { white-space: nowrap; }
+    .extra { grid-template-columns: minmax(0, 1fr); }
+    #panel-mapa iframe { height: 360px; }
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <nav class="modulos" aria-label="Módulos del sistema">
-    <a class="marca" href="./">Fenómeno el niño, PMA</a>
-    <a href="./">Inicio</a>
-    <a href="./monitoreo.html"><span class="num">1</span>Monitoreo</a>
-    <a href="./pronostico.html" aria-current="page"><span class="num">2</span>Pronóstico</a>
-    <a href="./medidas.html"><span class="num">3</span>Medidas</a>
-  </nav>
-
-  <header>
-    <h1>Pronóstico del tiempo</h1>
-    <p class="bajada">
-      Qué viene en los próximos días según varios modelos. Se muestra la
-      anomalía respecto a lo normal para la época, porque es lo que no
-      depende del sesgo de cada modelo.
-    </p>
-  </header>
-
-  <div id="contenido" hidden>
-    <div class="barra">
-      <select id="municipio" aria-label="Municipio"></select>
-      <div class="ctx" id="contexto"></div>
-      <div class="meta" id="meta"></div>
-    </div>
-
-    <div class="tarjetas" id="tarjetas"></div>
-
-    <section class="panel">
-      <div class="panel__cab">
-        <div class="pestanas" id="pestanas" role="group" aria-label="Variable"></div>
-        <div class="horiz" id="horizonte" role="group" aria-label="Horizonte">
-          <button type="button" data-dias="7" aria-pressed="true">7 d</button>
-          <button type="button" data-dias="16" aria-pressed="false">16 d</button>
+  <div class="header-row">
+    <header>
+      <div class="header-top">
+        <div>
+          <div class="titulo-banda"><h1>Pronóstico del tiempo</h1></div>
+          <p>Acá encontrará cómo se espera que estén la lluvia, la temperatura y la humedad relativa en los próximos 7 a 16 días en los siete municipios del proyecto, para planear con tiempo las labores de la finca.</p>
+          <nav class="modulos" aria-label="Módulos del sistema">
+            <a href="./">Inicio</a><a href="./monitoreo.html">Monitoreo</a><a href="./pronostico.html" aria-current="page">Pronóstico</a><a href="./medidas.html">Medidas</a>
+          </nav>
         </div>
       </div>
-      <div class="panel__cuerpo">
-        <div id="grafico"></div>
-        <div class="leyenda" id="leyenda"></div>
-        <p class="nota" id="nota"></p>
+    </header>
+  </div>
+
+  <div id="contenido" hidden>
+    <div class="controls">
+      <div class="field"><label for="municipio">Municipio</label><select id="municipio"></select></div>
+      <div class="field" style="flex:none;max-width:none"><span style="font-size:0.78rem;color:var(--color-ink-soft)">Días de pronóstico</span>
+        <div class="seg" id="horizonte" role="group" aria-label="Días de pronóstico">
+          <button type="button" data-dias="7" aria-pressed="true">Próximos 7 días</button>
+          <button type="button" data-dias="16" aria-pressed="false">16 días</button>
+        </div>
       </div>
+      <div class="emitido" id="emitido"></div>
+    </div>
+
+    <section aria-labelledby="tit-dias">
+      <div class="sec-cab">
+        <div><h2 class="sec-tit" id="tit-dias"></h2><p>Lo que se espera cada día, según el promedio de los modelos de pronóstico.</p></div>
+        <div class="conf-info"><span class="puntos" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i></span>
+          <span><b>Confianza:</b> qué tanto coinciden los modelos de pronóstico; cuando es alta, es más probable que el pronóstico se cumpla.</span></div>
+      </div>
+      <div class="dias" id="dias"></div>
     </section>
 
-    <details class="mapa panel">
-      <summary>Mapa de lluvia y viento <span style="font-size:0.78rem;color:var(--color-ink-soft)">Windy, se carga al abrir</span></summary>
-      <div id="windy"></div>
-    </details>
-
-    <section class="panel">
-      <div class="panel__cuerpo">
-        <h2 style="font-family:var(--font-display);font-size:1.1rem;margin:0 0 6px">Verificación</h2>
-        <p style="margin:0;font-size:0.9rem;color:var(--color-ink-soft);line-height:1.6">
-          Pendiente de archivo. Cuando haya suficientes pronósticos emitidos y
-          verificados dirá, por municipio y variable, qué modelo acierta más y
-          con qué frecuencia los días de confianza alta resultaron correctos.
-        </p>
-      </div>
+    <section class="graf" aria-labelledby="tit-graf">
+      <h3 id="tit-graf">¿Qué dicen los modelos?</h3>
+      <p class="sub" id="sub-graf"></p>
+      <div class="pills" id="variables" role="group" aria-label="Variable del gráfico"></div>
+      <div id="grafico"></div>
+      <div class="ley" id="leyenda"></div>
+      <p class="fuente" id="nota"></p>
     </section>
+
+    <div class="extra">
+      <div>
+        <h4>🗺️ Mapa de lluvia y viento</h4>
+        <p>Mapa animado de Windy con la lluvia y el viento pronosticados alrededor del municipio.</p>
+        <button type="button" class="boton" id="btn-mapa" aria-expanded="false" aria-controls="panel-mapa">Abrir mapa</button>
+      </div>
+      <div>
+        <h4>✅ ¿Qué tan seguido aciertan?</h4>
+        <p>En preparación. Cuando haya suficientes pronósticos verificados, aquí se verá qué modelo acierta más en cada municipio y con qué frecuencia se cumplieron los días de confianza alta.</p>
+      </div>
+    </div>
+    <div id="panel-mapa" hidden></div>
   </div>
 
   <div id="vacio" hidden></div>
 
   <footer>
     <p id="pie-fuentes"></p>
-    <p>
-      Metodología:
-      <a href="https://github.com/pmaclimafap/PMA_nino/blob/main/docs/PRONOSTICO.md" target="_blank" rel="noopener">PRONOSTICO.md</a>
-      · Pipeline:
-      <a href="https://github.com/pmaclimafap/PMA_nino" target="_blank" rel="noopener">GitHub</a>
-    </p>
+    <p>Metodología: <a href="https://github.com/pmaclimafap/PMA_nino/blob/main/docs/PRONOSTICO.md" target="_blank" rel="noopener">PRONOSTICO.md</a>
+      · Pipeline: <a href="https://github.com/pmaclimafap/PMA_nino" target="_blank" rel="noopener">GitHub</a></p>
   </footer>
 </div>
 
