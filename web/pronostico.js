@@ -30,7 +30,7 @@ const ICONO_DATO = {
 };
 
 let DATOS = null;
-const estado = { municipio: null, variable: "tmax", dias: 7 };
+const estado = { municipio: null, variable: "tmax", dias: 7, modelo: null };
 
 const $ = (id) => document.getElementById(id);
 const redondo = (v, suf = "") => (v === null || v === undefined ? "—" : Math.round(v) + suf);
@@ -93,6 +93,15 @@ function pintarDias(mun) {
   $("tit-dias").textContent = `Los próximos ${estado.dias} días en ${mun.nombre}`;
   $("dias").innerHTML = dias.map(tarjeta).join("") +
     (estado.dias > mun.dias.length ? `<div class="dias-fin">Ningún modelo llega más lejos de ${mun.dias.length} días.</div>` : "");
+  $("dias").scrollLeft = 0;
+  flechas();
+}
+
+/* Las flechas aparecen solo si hay tarjetas fuera de la vista hacia ese lado. */
+function flechas() {
+  const c = $("dias");
+  $("ant").hidden = c.scrollLeft < 4;
+  $("sig").hidden = c.scrollLeft + c.clientWidth > c.scrollWidth - 4;
 }
 
 /* ---------- Gráfico: cada modelo en gris y su promedio ---------- */
@@ -122,8 +131,19 @@ function pintarGrafico(mun) {
   const promedio = idx.map((i) => limpio(serie.agregado[i]));
   const modelos = Object.entries(serie.modelos || {}).map(([k, v]) => [k, idx.map((i) => limpio(v[i]))]);
   const N = fechas.length;
+  const nombre = (k) => DATOS.modelos[k]?.nombre || k;
 
-  const todos = [...promedio, ...modelos.flatMap(([, v]) => v)].filter((v) => v !== null && v !== undefined);
+  /* Modelo: "Todos" o uno solo. */
+  if (estado.modelo && !serie.modelos[estado.modelo]) estado.modelo = null;
+  $("modelo-sel").innerHTML = [["", "Todos"], ...modelos.map(([k]) => [k, nombre(k)])]
+    .map(([k, n]) => `<option value="${k}">${escapar(n)}</option>`).join("");
+  $("modelo-sel").value = estado.modelo || "";
+  $("variable-sel").value = estado.variable;
+  [...$("variables").children].forEach((x) => x.setAttribute("aria-pressed", x.dataset.var === estado.variable));
+  const elegida = estado.modelo ? modelos.find(([k]) => k === estado.modelo)[1] : null;
+  const activa = elegida || promedio;
+
+  const todos = [...(elegida || [...promedio, ...modelos.flatMap(([, v]) => v)])].filter((v) => v !== null && v !== undefined);
   if (!todos.length) { cont.innerHTML = ""; $("leyenda").innerHTML = ""; return; }
   let lo = Math.floor(Math.min(...todos)) - 1, hi = Math.ceil(Math.max(...todos)) + 1;
   if (estado.variable === "precipitacion") lo = 0;
@@ -149,10 +169,11 @@ function pintarGrafico(mun) {
     cerrar();
     return s;
   };
-  modelos.forEach(([, v]) => { g += linea(v, "var(--modelo)", 1.6); });
-  g += linea(promedio, "var(--prom)", 3.2);
-  g += promedio.map((v, i) => (v === null || v === undefined ? "" :
-    `<circle cx="${X(i)}" cy="${Y(v)}" r="${celular ? 3.5 : 4.5}" fill="var(--prom)" stroke="var(--color-panel)" stroke-width="1.5"><title>${fecha(fechas[i], { day: "numeric", month: "short" })}: ${(+v).toFixed(1).replace(".", ",")} ${cfg.unidad}</title></circle>`)).join("");
+  const color = elegida ? "var(--color-rain)" : "var(--prom)";
+  if (!elegida) modelos.forEach(([, v]) => { g += linea(v, "var(--modelo)", 1.6); });
+  g += linea(activa, color, 3.2);
+  g += activa.map((v, i) => (v === null || v === undefined ? "" :
+    `<circle cx="${X(i)}" cy="${Y(v)}" r="${celular ? 3.5 : 4.5}" fill="${color}" stroke="var(--color-panel)" stroke-width="1.5"/>`)).join("");
   const iHoy = fechas.indexOf(hoy);
   if (iHoy >= 0) {
     g += `<line x1="${X(iHoy)}" x2="${X(iHoy)}" y1="${mT - 6}" y2="${H - mB}" stroke="var(--color-max)" stroke-width="1.5" stroke-dasharray="4 4"/>` +
@@ -160,17 +181,45 @@ function pintarGrafico(mun) {
   }
   const cada = Math.ceil(N / (celular ? 4 : 9));
   fechas.forEach((f, i) => {
-    if (i % cada === 0) g += `<text x="${X(i)}" y="${H - 12}" text-anchor="middle" font-size="12" fill="var(--color-ink-soft)">${fecha(f, { day: "numeric", month: "short" }).replace(".", "")}</text>`;
+    if (i % cada === 0) g += `<text x="${X(i)}" y="${H - 12}" text-anchor="${X(i) > W - mR - 30 ? "end" : "middle"}" font-size="12" fill="var(--color-ink-soft)">${fecha(f, { day: "numeric", month: "short" }).replace(".", "")}</text>`;
   });
   g += `<text transform="translate(14 ${(H - mB + mT) / 2}) rotate(-90)" text-anchor="middle" font-size="12" fill="var(--color-ink-soft)">${cfg.etiqueta} (${cfg.unidad})</text>`;
 
-  cont.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${cfg.etiqueta} pronosticada por cada modelo y su promedio">${g}</svg>`;
-  $("leyenda").innerHTML = `<span><i class="prom"></i>Promedio de los modelos</span>` +
-    modelos.map(([k]) => `<span><i></i>${escapar(DATOS.modelos[k]?.nombre || k)}</span>`).join("");
+  g += `<line id="guia" y1="${mT}" y2="${H - mB}" stroke="var(--color-ink-soft)" stroke-dasharray="2 3" visibility="hidden"/>` +
+       `<circle id="marca" r="7" fill="none" stroke="${color}" stroke-width="2.5" visibility="hidden"/>`;
+
+  cont.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${cfg.etiqueta} pronosticada por cada modelo y su promedio">${g}</svg>` +
+    `<div class="tip" hidden></div>`;
+  $("leyenda").innerHTML = elegida
+    ? `<span><i class="prom" style="background:var(--color-rain)"></i>${escapar(nombre(estado.modelo))}</span>`
+    : `<span><i class="prom"></i>Promedio de los modelos</span>` +
+      (celular ? `<span><i></i>Cada modelo</span>` : modelos.map(([k]) => `<span><i></i>${escapar(nombre(k))}</span>`).join(""));
+
+  /* Al pasar el mouse (o tocar) se muestra el valor del día más cercano en la línea activa. */
+  const svg = cont.querySelector("svg"), tip = cont.querySelector(".tip");
+  const guia = svg.querySelector("#guia"), marca = svg.querySelector("#marca");
+  const ocultar = () => { tip.hidden = true; guia.setAttribute("visibility", "hidden"); marca.setAttribute("visibility", "hidden"); };
+  svg.onpointermove = (e) => {
+    const r = svg.getBoundingClientRect(), esc = W / r.width;
+    const i = Math.round((((e.clientX - r.left) * esc - mL) * (N - 1)) / (W - mL - mR));
+    const v = activa[i];
+    if (i < 0 || i >= N || v === null || v === undefined) return ocultar();
+    guia.setAttribute("x1", X(i)); guia.setAttribute("x2", X(i)); guia.setAttribute("visibility", "visible");
+    marca.setAttribute("cx", X(i)); marca.setAttribute("cy", Y(v)); marca.setAttribute("visibility", "visible");
+    tip.innerHTML = `${escapar(elegida ? nombre(estado.modelo) : "Promedio de los modelos")} · ${fecha(fechas[i], { weekday: "short", day: "numeric", month: "short" })}<br>` +
+      `<b>${(+v).toFixed(1).replace(".", ",")} ${cfg.unidad}</b>`;
+    tip.hidden = false;
+    const px = X(i) / esc, py = Y(v) / esc;
+    tip.style.left = Math.max(0, Math.min(px - tip.offsetWidth / 2, r.width - tip.offsetWidth)) + "px";
+    tip.style.top = Math.max(0, py - tip.offsetHeight - 14) + "px";
+  };
+  svg.onpointerdown = svg.onpointermove;
+  svg.onpointerleave = ocultar;
 
   const temperatura = estado.variable === "tmax" || estado.variable === "tmin";
   $("nota").innerHTML =
-    "Pronóstico diario de varios modelos (Open-Meteo, CC BY 4.0), en el punto del municipio. Cada línea gris es un modelo; la línea oscura es su promedio. " +
+    "Pronóstico diario de varios modelos (Open-Meteo, CC BY 4.0), en el punto del municipio. " +
+    (elegida ? "Se muestra solo el modelo elegido. " : "Cada línea gris es un modelo; la línea oscura es su promedio. ") +
     (estado.variable === "precipitacion"
       ? "Los modelos estiman la lluvia sobre áreas de 10 a 25 km: aciertan mejor <strong>si</strong> va a llover que <strong>cuánto</strong>."
       : temperatura && DATOS.referencia && !DATOS.referencia.desfase_aplicado
@@ -210,13 +259,21 @@ function construirControles() {
   sel.value = estado.municipio;
   sel.onchange = () => { estado.municipio = sel.value; pintar(); };
 
-  $("horizonte").onclick = (e) => {
-    const b = e.target.closest("button");
-    if (!b) return;
-    estado.dias = Number(b.dataset.dias);
-    [...$("horizonte").children].forEach((x) => x.setAttribute("aria-pressed", x === b));
-    pintar();
-  };
+  /* El selector de días de la barra y el del gráfico son el mismo: cambiar uno cambia el otro. */
+  document.querySelectorAll("[data-horizonte]").forEach((grupo) => {
+    grupo.onclick = (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      estado.dias = Number(b.dataset.dias);
+      document.querySelectorAll("[data-dias]").forEach((x) => x.setAttribute("aria-pressed", x.dataset.dias === b.dataset.dias));
+      pintar();
+    };
+  });
+
+  const paso = () => $("dias").firstElementChild.offsetWidth + 14;
+  $("ant").onclick = () => $("dias").scrollBy({ left: -paso() * 3 });
+  $("sig").onclick = () => $("dias").scrollBy({ left: paso() * 3 });
+  $("dias").onscroll = flechas;
 
   $("variables").innerHTML = VARIABLES.map((v) =>
     `<button type="button" class="pill" data-var="${v.id}" aria-pressed="${v.id === estado.variable}">${v.etiqueta}</button>`).join("");
@@ -224,9 +281,11 @@ function construirControles() {
     const b = e.target.closest("button");
     if (!b) return;
     estado.variable = b.dataset.var;
-    [...$("variables").children].forEach((x) => x.setAttribute("aria-pressed", x === b));
     pintarGrafico(DATOS.municipios[estado.municipio]);
   };
+  $("variable-sel").innerHTML = VARIABLES.map((v) => `<option value="${v.id}">${v.etiqueta}</option>`).join("");
+  $("variable-sel").onchange = (e) => { estado.variable = e.target.value; pintarGrafico(DATOS.municipios[estado.municipio]); };
+  $("modelo-sel").onchange = (e) => { estado.modelo = e.target.value || null; pintarGrafico(DATOS.municipios[estado.municipio]); };
 
   $("btn-mapa").onclick = () => {
     const panel = $("panel-mapa"), abrir = panel.hidden;
@@ -241,9 +300,8 @@ function construirControles() {
   const emis = Object.values(DATOS.emisiones || {}).filter(Boolean).sort();
   const nModelos = Object.keys(DATOS.modelos || {}).length;
   const ultima = emis.length ? emis[emis.length - 1] : null;
-  $("emitido").innerHTML = `<span class="ic" aria-hidden="true">🛰️</span><div><small>Pronóstico emitido</small>` +
-    `<b>${ultima ? fecha(ultima.slice(0, 10), { day: "numeric", month: "long", year: "numeric" }) : "—"}</b>` +
-    `<span>${nModelos} modelo${nModelos === 1 ? "" : "s"}</span></div>`;
+  $("emitido").innerHTML = `<b>Pronóstico del ${ultima ? ["day", "month", "year"].map((p) => fecha(ultima.slice(0, 10), { [p]: p === "month" ? "short" : "numeric" }).replace(".", "")).join(" ") : "—"}</b>` +
+    `combina ${nModelos} modelo${nModelos === 1 ? "" : "s"} de pronóstico`;
 
   const f = new Date(DATOS.generado_en);
   $("pie-fuentes").innerHTML = "Fuentes: " + Object.values(DATOS.modelos).map((m) => escapar(m.nombre)).join(", ") +
@@ -252,7 +310,7 @@ function construirControles() {
 
   /* El gráfico se ajusta al ancho de la pantalla. */
   let espera;
-  window.addEventListener("resize", () => { clearTimeout(espera); espera = setTimeout(() => pintarGrafico(DATOS.municipios[estado.municipio]), 150); });
+  window.addEventListener("resize", () => { clearTimeout(espera); espera = setTimeout(() => { pintarGrafico(DATOS.municipios[estado.municipio]); flechas(); }, 150); });
 }
 
 (async function iniciar() {
