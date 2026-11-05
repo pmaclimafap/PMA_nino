@@ -22,6 +22,7 @@
     --color-enso-fria: #1D5A8C;
     --color-enso-neutral: #3F8F5F;
     --color-enso-calida: #D97F2B;
+    --color-boton: #6FA35A;
     --radius: 6px;
     --font-display: "Zilla Slab", Georgia, serif;
     --font-body: "Work Sans", -apple-system, sans-serif;
@@ -90,7 +91,7 @@
   .seg { display: inline-flex; background: var(--color-bg); border: 1px solid var(--color-line); border-radius: 999px; padding: 3px; }
   .seg button { border: 0; background: none; font: inherit; font-size: 0.88rem; font-weight: 600; padding: 7px 16px; border-radius: 999px;
     color: var(--color-ink-soft); cursor: pointer; }
-  .seg button[aria-pressed="true"] { background: var(--color-rain); color: #FFFFFF; }
+  .seg button[aria-pressed="true"] { background: var(--color-boton); color: #FFFFFF; }
   /* Barra: municipio con ícono, días y fecha de emisión como texto a la derecha. */
   .sel-mun { position: relative; display: inline-flex; }
   .sel-mun svg { position: absolute; left: 10px; top: 50%; width: 17px; height: 17px; transform: translateY(-50%); pointer-events: none; }
@@ -147,8 +148,6 @@
   .dia .hr { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; color: #2F7E9E; margin-top: 4px; }
   .dia .pie { margin-top: auto; padding: 9px 8px; display: flex; align-items: center; justify-content: center; gap: 7px; white-space: nowrap;
     font-size: 0.76rem; color: var(--color-ink-soft); background: color-mix(in srgb, var(--color-bg) 60%, var(--color-panel)); }
-  .dias-fin { display: grid; place-items: center; padding: 14px; text-align: center; font-size: 0.88rem; color: var(--color-ink-soft);
-    border: 1px dashed var(--color-line); border-radius: 16px; }
 
   /* ---- Gráfico de los modelos ---- */
   .graf { background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 16px; padding: 20px 22px; margin-top: 26px; }
@@ -157,7 +156,7 @@
   .pills { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0 8px; }
   .pill { border: 1px solid var(--color-line); background: var(--color-panel); font: inherit; font-size: 0.88rem; font-weight: 600; padding: 7px 14px;
     border-radius: 999px; color: var(--color-ink-soft); cursor: pointer; }
-  .pill[aria-pressed="true"] { background: var(--color-rain); color: #FFFFFF; border-color: var(--color-rain); }
+  .pill[aria-pressed="true"] { background: var(--color-boton); color: #FFFFFF; border-color: var(--color-boton); }
   .graf-cab { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 20px; }
   /* Variable con botones (en el celular, lista) y modelo siempre con lista. */
   .graf-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 16px 0 8px; }
@@ -231,7 +230,7 @@
 
   <div id="contenido" hidden>
     <div class="controls">
-      <label class="sel-mun"><svg viewBox="0 0 24 24" fill="none" stroke="var(--color-rain)" stroke-width="2.2" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+      <label class="sel-mun"><svg viewBox="0 0 24 24" fill="none" stroke="var(--color-boton)" stroke-width="2.2" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
         <select id="municipio" aria-label="Municipio"></select></label>
       <div class="seg" data-horizonte role="group" aria-label="Días de pronóstico">
         <button type="button" data-dias="7" aria-pressed="true">7 días</button>
