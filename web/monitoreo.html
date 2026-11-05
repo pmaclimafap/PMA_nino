@@ -107,6 +107,17 @@
   .periodo-caja-icono { font-size: 1.6rem; line-height: 1; }
   .periodo-caja-nombre { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-ink-soft); }
   .periodo-caja-fechas { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--color-ink); line-height: 1.25; }
+  /* Pantallas de computador medianas (no cabe todo en una línea): los selectores van
+     en dos filas de dos y el recuadro de fechas ocupa la columna derecha, con la
+     altura de las dos filas. */
+  @media (min-width: 40.01rem) and (max-width: 100rem) {
+    .controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(240px, 0.9fr); align-items: end; }
+    .controls .field { max-width: none; }
+    .controls select { min-width: 0; }
+    .periodo-caja { grid-column: 3; grid-row: 1 / span 2; align-self: stretch; margin: 0; flex-direction: column; justify-content: center;
+      align-items: flex-start; gap: 8px; padding: 14px 18px; }
+    .periodo-caja-icono { font-size: 1.9rem; }
+  }
   /* En celular: cada selector ocupa todo el ancho y el recuadro de fechas
      también. */
   @media (max-width: 40rem) {
@@ -2702,5 +2713,8 @@ iniciar();
 </script>
 </body>
 </html>
+
+
+
 
 
