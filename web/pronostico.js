@@ -240,7 +240,7 @@ function pintarGrafico(mun) {
   const temperatura = estado.variable === "tmax" || estado.variable === "tmin";
   $("nota").innerHTML =
     "Pronóstico diario de varios modelos (Open-Meteo, CC BY 4.0), en el punto del municipio. " +
-    (elegida ? "Se muestra solo el modelo elegido. " : `La línea oscura es ${central === "mediana" ? "la mediana" : "el promedio ponderado"} de los modelos; la franja gris oscura muestra dónde cae la mitad central de los modelos y la clara, casi todos. `) +
+    (elegida ? "Se muestra solo el modelo elegido. " : `La línea oscura es ${central === "mediana" ? "la mediana" : "el promedio ponderado"} de los modelos. Las franjas grises muestran qué tanto coinciden entre ellos: la franja oscura reúne la mitad de los pronósticos (25–75 %) y la clara, casi todos (5–95 %). Si las franjas son angostas, los modelos coinciden y el pronóstico es más confiable; si son anchas, hay más incertidumbre. `+
     (estado.variable === "precipitacion"
       ? "Los modelos estiman la lluvia sobre áreas de 10 a 25 km: aciertan mejor <strong>si</strong> va a llover que <strong>cuánto</strong>."
       : temperatura && DATOS.referencia && !DATOS.referencia.desfase_aplicado
