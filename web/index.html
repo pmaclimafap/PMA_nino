@@ -58,8 +58,8 @@
 
   /* Encabezado con foto: barra con instituciones y módulos, diapositivas que rotan solas
      (portada y un resumen de cada módulo) y pestañas con barra de avance. */
-  .hero { position: relative; overflow: hidden; border-radius: 14px; color: #FFFFFF; min-height: clamp(520px, 62vh, 680px);
-    display: grid; grid-template-rows: auto 1fr auto; padding: clamp(18px, 2.4vw, 30px) clamp(20px, 4vw, 56px) clamp(26px, 3vw, 40px);
+  .hero { position: relative; overflow: hidden; border-radius: 14px; color: #FFFFFF; 
+    display: grid; grid-template-rows: auto 1fr; padding: clamp(18px, 2.4vw, 30px) clamp(64px, 6vw, 96px) clamp(30px, 3vw, 44px);
     background: linear-gradient(90deg, rgba(8, 22, 18, 0.80) 0%, rgba(8, 22, 18, 0.55) 50%, rgba(8, 22, 18, 0.25) 100%),
                 linear-gradient(0deg, rgba(8, 22, 18, 0.70) 0%, rgba(8, 22, 18, 0) 45%),
                 url("img/inicio.jpg") center 55% / cover no-repeat, #1F3D2E; }
@@ -72,32 +72,24 @@
     background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.5); backdrop-filter: blur(6px); transition: background .15s, transform .15s; }
   .modulos a:hover { background: rgba(255,255,255,.24); transform: translateY(-1px); }
   .modulos a[aria-current="page"] { background: #fff; color: #1F3D2E; border-color: #fff; }
-  .escenario { display: grid; align-items: center; padding: clamp(28px, 4vw, 56px) 0 clamp(24px, 3vw, 40px); }
-  .diapo { grid-area: 1 / 1; max-width: 64rem; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity .6s, transform .6s, visibility .6s; }
+  .escenario { display: grid; align-items: center; padding: clamp(28px, 3.5vw, 48px) 0 clamp(8px, 1.5vw, 16px); }
+  .diapo { grid-area: 1 / 1; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity .6s, transform .6s, visibility .6s; }
   .diapo.on { opacity: 1; visibility: visible; transform: none; }
   .diapo .etq { display: inline-flex; align-items: center; gap: 8px; font-size: .85rem; font-weight: 600; letter-spacing: .04em;
     text-transform: uppercase; color: var(--c); margin-bottom: 14px; }
   .diapo .etq::before { content: ""; width: 28px; height: 3px; border-radius: 2px; background: var(--c); }
-  .diapo h1, .diapo h2 { font-family: var(--font-body); font-weight: 700; font-size: clamp(2rem, 4vw, 4rem); line-height: 1.06; letter-spacing: -0.015em;
-    margin: 0; max-width: 24ch; text-shadow: 0 2px 14px rgba(0,0,0,.35); text-wrap: balance; }
-  .diapo p { margin: 20px 0 0; max-width: 58ch; font-size: clamp(1.05rem, 1.35vw, 1.3rem); line-height: 1.6; color: rgba(255,255,255,.92); text-shadow: 0 1px 8px rgba(0,0,0,.35); }
-  .diapo .cta { display: inline-flex; align-items: center; gap: 10px; margin-top: 26px; text-decoration: none; font-weight: 600; padding: 12px 26px;
+  .diapo h1, .diapo h2 { font-family: var(--font-body); font-weight: 700; font-size: clamp(1.9rem, 3.3vw, 3.4rem); line-height: 1.08; letter-spacing: -0.015em;
+    margin: 0; max-width: 46ch; text-shadow: 0 2px 14px rgba(0,0,0,.35); text-wrap: balance; }
+  .diapo p { margin: 16px 0 0; max-width: 90ch; font-size: clamp(1.05rem, 1.35vw, 1.3rem); line-height: 1.6; color: rgba(255,255,255,.92); text-shadow: 0 1px 8px rgba(0,0,0,.35); }
+  .diapo .cta { display: inline-flex; align-items: center; gap: 10px; margin-top: 22px; text-decoration: none; font-weight: 600; padding: 12px 26px;
     border-radius: 999px; background: #fff; color: #1F3D2E; transition: transform .15s; }
   .diapo .cta:hover { transform: translateX(3px); }
-  .control { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: end; }
-  .pestanas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-  .pestana { all: unset; cursor: pointer; display: block; padding-top: 12px; position: relative; color: rgba(255,255,255,.65); font-size: .9rem; font-weight: 500; }
-  .pestana::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; border-radius: 2px; background: rgba(255,255,255,.25); }
-  .pestana i { position: absolute; left: 0; top: 0; height: 3px; border-radius: 2px; width: 0; background: var(--c); }
-  .pestana b { font-weight: 700; margin-right: 6px; color: rgba(255,255,255,.5); }
-  .pestana[aria-selected="true"] { color: #fff; }
-  .pestana[aria-selected="true"] b { color: var(--c); }
-  .pestana:focus-visible { outline: 2px solid #fff; outline-offset: 4px; border-radius: 2px; }
-  .botones { display: flex; gap: 8px; }
-  .botones button { width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,.5); background: rgba(255,255,255,.12);
-    color: #fff; font-size: 1rem; cursor: pointer; }
-  .botones button:hover { background: rgba(255,255,255,.26); }
-  @media (max-width: 52rem) { .pestanas { gap: 8px; } .pestana span { display: none; } }
+  .flecha-c { position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; width: 44px; height: 44px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.5); background: rgba(255,255,255,.12); color: #fff; font-size: 1.1rem; cursor: pointer; }
+  .flecha-c:hover { background: rgba(255,255,255,.26); }
+  .flecha-c.ant { left: clamp(10px, 1.5vw, 24px); } .flecha-c.sig { right: clamp(10px, 1.5vw, 24px); }
+  @media (max-width: 40rem) { .hero { padding: 18px 20px 76px; } .flecha-c { top: auto; bottom: 22px; transform: none; }
+    .flecha-c.ant { left: auto; right: 72px; } .flecha-c.sig { right: 20px; } }
   @media (max-width: 40rem) { .modulos { display: grid; grid-template-columns: 1fr 1fr; width: 100%; } .modulos a { text-align: center; padding: 10px; } }
   @media (prefers-reduced-motion: reduce) { .diapo { transition: none; } }
   /* ---- Tarjetas de módulo: cabecera de color suave; toda la tarjeta es el enlace ---- */
@@ -214,17 +206,8 @@
         <a class="cta" href="./medidas.html">Ver medidas <span aria-hidden="true">→</span></a>
       </div>
     </div>
-    <div class="control">
-      <div class="pestanas" role="tablist" aria-label="Diapositivas">
-        <button class="pestana" role="tab" style="--c: #A6C34A"><i></i><b>01</b><span>El sistema</span></button>
-        <button class="pestana" role="tab" style="--c: #5FB487"><i></i><b>02</b><span>Monitoreo</span></button>
-        <button class="pestana" role="tab" style="--c: #E0B040"><i></i><b>03</b><span>Pronóstico</span></button>
-        <button class="pestana" role="tab" style="--c: #E0875E"><i></i><b>04</b><span>Medidas</span></button>
-      </div>
-      <div class="botones">
-        <button id="diapo-ant" aria-label="Anterior">❮</button><button id="diapo-sig" aria-label="Siguiente">❯</button><button id="diapo-pausa" aria-label="Pausar">❚❚</button>
-      </div>
-    </div>
+    <button type="button" class="flecha-c ant" id="diapo-ant" aria-label="Diapositiva anterior">❮</button>
+    <button type="button" class="flecha-c sig" id="diapo-sig" aria-label="Diapositiva siguiente">❯</button>
   </header>
   <section class="proyecto" aria-labelledby="tit-proyecto">
     <h2 id="tit-proyecto">Sobre este proyecto</h2>
@@ -319,24 +302,16 @@
   </footer>
 </div>
 <script>
-/* Encabezado: las diapositivas pasan solas cada 7 s. Se detienen con el botón de pausa,
-   mientras el foco del teclado está dentro del encabezado, o si el sistema pide reducir el movimiento. */
+/* Encabezado: las diapositivas pasan solas cada 7 s; las flechas avanzan o regresan
+   y reinician el conteo. */
 (function () {
-  const T = 7000, hero = document.getElementById("hero");
-  const diapos = [...hero.querySelectorAll(".diapo")], pest = [...hero.querySelectorAll(".pestana")], $pausa = document.getElementById("diapo-pausa");
-  let i = 0, t0 = performance.now(), quieto = matchMedia("(prefers-reduced-motion: reduce)").matches, foco = false;
-  const pintar = (p) => pest.forEach((t, k) => { t.setAttribute("aria-selected", k === i); t.firstChild.style.width = k < i ? "100%" : k === i ? (p * 100) + "%" : "0"; });
-  const ir = (k) => { diapos[i].classList.remove("on"); i = (k + diapos.length) % diapos.length; diapos[i].classList.add("on"); t0 = performance.now(); pintar(0); };
-  pest.forEach((t, k) => t.onclick = () => ir(k));
-  document.getElementById("diapo-ant").onclick = () => ir(i - 1);
-  document.getElementById("diapo-sig").onclick = () => ir(i + 1);
-  $pausa.onclick = () => { quieto = !quieto; $pausa.textContent = quieto ? "▶" : "❚❚"; $pausa.setAttribute("aria-label", quieto ? "Reanudar" : "Pausar"); t0 = performance.now(); };
-  hero.addEventListener("focusin", () => foco = true); hero.addEventListener("focusout", () => { foco = false; t0 = performance.now(); });
-  (function bucle(ahora) {
-    if (!quieto && !foco) { const p = Math.min(1, (ahora - t0) / T); pintar(p); if (p >= 1) ir(i + 1); }
-    requestAnimationFrame(bucle);
-  })(performance.now());
-  pintar(0);
+  const T = 7000, diapos = [...document.querySelectorAll("#hero .diapo")];
+  let i = 0, reloj;
+  const arrancar = () => { clearInterval(reloj); reloj = setInterval(() => ir(i + 1), T); };
+  const ir = (k) => { diapos[i].classList.remove("on"); i = (k + diapos.length) % diapos.length; diapos[i].classList.add("on"); arrancar(); };
+  document.getElementById("diapo-ant").addEventListener("click", () => ir(i - 1));
+  document.getElementById("diapo-sig").addEventListener("click", () => ir(i + 1));
+  arrancar();
 })();
 
 /* Fecha de la última actualización, leída del mismo data.json que usa el tablero.
