@@ -1,4 +1,4 @@
-* Tablero de pronóstico.
+/* Tablero de pronóstico.
    Lee publico/pronostico.json, que produce scripts/pronostico.py. */
 
 const VARIABLES = [
