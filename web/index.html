@@ -56,22 +56,50 @@
   @media (max-width: 40rem) { .wrap { max-width: 100%; padding: 20px 16px 48px; } }
 
 
-  /* Encabezado con foto (como estaba), con los botones de los módulos debajo del título. */
-  .hero { position: relative; overflow: hidden; border-radius: 14px; color: #FFFFFF;
-    padding: clamp(44px, 7vw, 96px) clamp(20px, 5vw, 64px) clamp(52px, 7vw, 88px);
-    background: linear-gradient(90deg, rgba(8, 22, 18, 0.82) 0%, rgba(8, 22, 18, 0.58) 55%, rgba(8, 22, 18, 0.32) 100%), url("img/inicio.jpg") center 45% / cover no-repeat, #1F3D2E; }
+  /* Encabezado con foto: barra con instituciones y módulos, diapositivas que rotan solas
+     (portada y un resumen de cada módulo) y pestañas con barra de avance. */
+  .hero { position: relative; overflow: hidden; border-radius: 14px; color: #FFFFFF; min-height: clamp(520px, 62vh, 680px);
+    display: grid; grid-template-rows: auto 1fr auto; padding: clamp(18px, 2.4vw, 30px) clamp(20px, 4vw, 56px) clamp(26px, 3vw, 40px);
+    background: linear-gradient(90deg, rgba(8, 22, 18, 0.80) 0%, rgba(8, 22, 18, 0.55) 50%, rgba(8, 22, 18, 0.25) 100%),
+                linear-gradient(0deg, rgba(8, 22, 18, 0.70) 0%, rgba(8, 22, 18, 0) 45%),
+                url("img/inicio.jpg") center 55% / cover no-repeat, #1F3D2E; }
   .hero::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 6px;
     background: linear-gradient(90deg, #4C9A2A 0%, #A6C34A 30%, #fec44f 55%, #ec7014 78%, #d7301f 100%); }
-  .hero h1 { font-family: var(--font-body); font-weight: 700; font-size: clamp(2rem, 4.2vw, 4.2rem); line-height: 1.08; letter-spacing: -0.015em;
-    margin: 0; max-width: 26ch; text-shadow: 0 2px 14px rgba(0,0,0,.35); text-wrap: balance; }
-  .hero-bajada { color: rgba(255,255,255,.92); margin: 20px 0 0; font-size: clamp(1.02rem, 1.3vw, 1.22rem); line-height: 1.6; text-shadow: 0 1px 8px rgba(0,0,0,.35); }
-  .hero-inst { color: rgba(255,255,255,.75); font-size: .9rem; margin: 12px 0 0; }
-  .modulos { display: flex; flex-wrap: wrap; gap: 10px; margin: 30px 0 0; }
-  .modulos a { color: #fff; text-decoration: none; font-weight: 600; font-size: 1rem; padding: 11px 26px; border-radius: 999px;
+  .barra { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .hero-inst { color: rgba(255,255,255,.8); font-size: .88rem; }
+  .modulos { display: flex; flex-wrap: wrap; gap: 8px; }
+  .modulos a { color: #fff; text-decoration: none; font-weight: 600; font-size: .95rem; padding: 9px 22px; border-radius: 999px;
     background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.5); backdrop-filter: blur(6px); transition: background .15s, transform .15s; }
   .modulos a:hover { background: rgba(255,255,255,.24); transform: translateY(-1px); }
   .modulos a[aria-current="page"] { background: #fff; color: #1F3D2E; border-color: #fff; }
-  @media (max-width: 40rem) { .modulos { display: grid; grid-template-columns: 1fr 1fr; } .modulos a { text-align: center; padding: 10px; } }
+  .escenario { display: grid; align-items: center; padding: clamp(28px, 4vw, 56px) 0 clamp(24px, 3vw, 40px); }
+  .diapo { grid-area: 1 / 1; max-width: 64rem; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity .6s, transform .6s, visibility .6s; }
+  .diapo.on { opacity: 1; visibility: visible; transform: none; }
+  .diapo .etq { display: inline-flex; align-items: center; gap: 8px; font-size: .85rem; font-weight: 600; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--c); margin-bottom: 14px; }
+  .diapo .etq::before { content: ""; width: 28px; height: 3px; border-radius: 2px; background: var(--c); }
+  .diapo h1, .diapo h2 { font-family: var(--font-body); font-weight: 700; font-size: clamp(2rem, 4vw, 4rem); line-height: 1.06; letter-spacing: -0.015em;
+    margin: 0; max-width: 24ch; text-shadow: 0 2px 14px rgba(0,0,0,.35); text-wrap: balance; }
+  .diapo p { margin: 20px 0 0; max-width: 58ch; font-size: clamp(1.05rem, 1.35vw, 1.3rem); line-height: 1.6; color: rgba(255,255,255,.92); text-shadow: 0 1px 8px rgba(0,0,0,.35); }
+  .diapo .cta { display: inline-flex; align-items: center; gap: 10px; margin-top: 26px; text-decoration: none; font-weight: 600; padding: 12px 26px;
+    border-radius: 999px; background: #fff; color: #1F3D2E; transition: transform .15s; }
+  .diapo .cta:hover { transform: translateX(3px); }
+  .control { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: end; }
+  .pestanas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .pestana { all: unset; cursor: pointer; display: block; padding-top: 12px; position: relative; color: rgba(255,255,255,.65); font-size: .9rem; font-weight: 500; }
+  .pestana::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; border-radius: 2px; background: rgba(255,255,255,.25); }
+  .pestana i { position: absolute; left: 0; top: 0; height: 3px; border-radius: 2px; width: 0; background: var(--c); }
+  .pestana b { font-weight: 700; margin-right: 6px; color: rgba(255,255,255,.5); }
+  .pestana[aria-selected="true"] { color: #fff; }
+  .pestana[aria-selected="true"] b { color: var(--c); }
+  .pestana:focus-visible { outline: 2px solid #fff; outline-offset: 4px; border-radius: 2px; }
+  .botones { display: flex; gap: 8px; }
+  .botones button { width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,.5); background: rgba(255,255,255,.12);
+    color: #fff; font-size: 1rem; cursor: pointer; }
+  .botones button:hover { background: rgba(255,255,255,.26); }
+  @media (max-width: 52rem) { .pestanas { gap: 8px; } .pestana span { display: none; } }
+  @media (max-width: 40rem) { .modulos { display: grid; grid-template-columns: 1fr 1fr; width: 100%; } .modulos a { text-align: center; padding: 10px; } }
+  @media (prefers-reduced-motion: reduce) { .diapo { transition: none; } }
   /* ---- Tarjetas de módulo: cabecera de color suave; toda la tarjeta es el enlace ---- */
   .tarjetas { display: grid; gap: 20px; margin: 32px 0; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
   .tarjeta { display: flex; flex-direction: column; background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 16px;
@@ -88,14 +116,10 @@
   .tarjeta p { margin: 0 0 12px; font-size: .95rem; color: var(--color-ink-soft); line-height: 1.55; }
   .tarjeta ul { margin: 0 0 10px; padding-left: 1.1rem; font-size: .9rem; color: var(--color-ink-soft); }
   .tarjeta li { margin-bottom: 4px; }
-  .tarjeta .pie { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 24px; border-top: 1px solid var(--color-line); }
+  .tarjeta .pie { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 14px 24px; border-top: 1px solid var(--color-line); }
   .tarjeta .flecha { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none;
     background: color-mix(in srgb, var(--acento) 14%, var(--color-panel)); color: var(--acento); font-size: 1.2rem; font-weight: 700; transition: background .18s, color .18s, transform .18s; }
   .tarjeta:hover .flecha { background: var(--acento); color: #FFFFFF; transform: translateX(3px); }
-  .estado { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 600; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--color-line); }
-  .estado::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-  .estado--activo { color: var(--color-ok); border-color: var(--color-ok); }
-  .estado--pendiente { color: var(--color-ink-soft); }
 
   /* ---- El proyecto: introducción, cifras del proyecto en una fila y "el reto / la respuesta" ---- */
   .proyecto { margin: 36px 0 0; background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 14px;
@@ -161,13 +185,46 @@
   footer p { margin: 0 0 7px; max-width: 86ch; }
   footer a { color: var(--color-rain); }
 </style></head><body><div class="wrap">
-  <header class="hero">
-    <h1>Sistema de información agroclimática para la adaptación al fenómeno de El&nbsp;Niño 2026–2027</h1>
-    <p class="hero-bajada">Monitoreo, pronóstico y medidas anticipatorias en siete municipios de La Guajira, Cesar, Sucre y Tolima.</p>
-    <p class="hero-inst">Alianza de Bioversity International y el CIAT · Programa Mundial de Alimentos · Fondo Alimentando la Paz</p>
-    <nav class="modulos" aria-label="Módulos del sistema">
-      <a href="./" aria-current="page">Inicio</a><a href="./monitoreo.html">Monitoreo</a><a href="./pronostico.html">Pronóstico</a><a href="./medidas.html">Medidas</a>
-    </nav>
+  <header class="hero" id="hero">
+    <div class="barra">
+      <span class="hero-inst">Alianza de Bioversity International y el CIAT · Programa Mundial de Alimentos · Fondo Alimentando la Paz</span>
+      <nav class="modulos" aria-label="Módulos del sistema">
+        <a href="./" aria-current="page">Inicio</a><a href="./monitoreo.html">Monitoreo</a><a href="./pronostico.html">Pronóstico</a><a href="./medidas.html">Medidas</a>
+      </nav>
+    </div>
+    <div class="escenario" aria-roledescription="carrusel">
+      <div class="diapo on" style="--c: #A6C34A" aria-roledescription="diapositiva" aria-label="1 de 4">
+        <h1>Sistema de información agroclimática para la adaptación al fenómeno de El&nbsp;Niño 2026–2027</h1>
+        <p>Monitoreo, pronóstico y medidas anticipatorias en siete municipios de La Guajira, Cesar, Sucre y Tolima.</p>
+        <a class="cta" href="#tit-proyecto">Conocer el proyecto <span aria-hidden="true">↓</span></a>
+      </div>
+      <div class="diapo" style="--c: #5FB487" aria-roledescription="diapositiva" aria-label="2 de 4">
+        <span class="etq">Monitoreo</span><h2>¿Qué ha pasado con el clima?</h2>
+        <p>Permite consultar el comportamiento reciente de la lluvia, la temperatura y la humedad relativa en cada municipio, a partir de información satelital y de los registros de las asociaciones.</p>
+        <a class="cta" href="./monitoreo.html">Ver monitoreo <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="diapo" style="--c: #E0B040" aria-roledescription="diapositiva" aria-label="3 de 4">
+        <span class="etq">Pronóstico</span><h2>¿Qué clima se espera?</h2>
+        <p>Presenta la lluvia y la temperatura esperadas para los próximos días.</p>
+        <a class="cta" href="./pronostico.html">Ver pronóstico <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="diapo" style="--c: #E0875E" aria-roledescription="diapositiva" aria-label="4 de 4">
+        <span class="etq">Medidas de adaptación</span><h2>¿Qué hacer para prepararse?</h2>
+        <p>Reúne las medidas anticipatorias definidas por cada asociación en los talleres participativos, con su costo estimado y su tiempo de implementación.</p>
+        <a class="cta" href="./medidas.html">Ver medidas <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+    <div class="control">
+      <div class="pestanas" role="tablist" aria-label="Diapositivas">
+        <button class="pestana" role="tab" style="--c: #A6C34A"><i></i><b>01</b><span>El sistema</span></button>
+        <button class="pestana" role="tab" style="--c: #5FB487"><i></i><b>02</b><span>Monitoreo</span></button>
+        <button class="pestana" role="tab" style="--c: #E0B040"><i></i><b>03</b><span>Pronóstico</span></button>
+        <button class="pestana" role="tab" style="--c: #E0875E"><i></i><b>04</b><span>Medidas</span></button>
+      </div>
+      <div class="botones">
+        <button id="diapo-ant" aria-label="Anterior">❮</button><button id="diapo-sig" aria-label="Siguiente">❯</button><button id="diapo-pausa" aria-label="Pausar">❚❚</button>
+      </div>
+    </div>
   </header>
   <section class="proyecto" aria-labelledby="tit-proyecto">
     <h2 id="tit-proyecto">Sobre este proyecto</h2>
@@ -199,7 +256,7 @@
       <div class="respuesta">
         <h3><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.8"/><circle cx="12" cy="12" r="1.3"/></svg></i>La respuesta</h3>
         <p>
-          Este sistema existe para cerrar una parte de esa brecha: traducir
+          Este sistema existe para contribuir a cerrar la brecha: traducir
           pronósticos y alertas en decisiones concretas, oportunas y de bajo costo.
         </p>
       </div>
@@ -215,15 +272,15 @@
         <p>Permite consultar el comportamiento reciente de la lluvia, la temperatura y la humedad relativa en cada municipio, a partir de información satelital y de los registros de las asociaciones.</p>
         <ul><li>Seguimiento de la lluvia, la temperatura y la humedad relativa.</li><li>Alertas según el sistema productivo y su etapa.</li><li>Mapa de la variación del clima dentro del municipio.</li></ul>
       </div>
-      <div class="pie"><span class="estado estado--activo">En operación</span><span class="flecha" aria-hidden="true">→</span></div>
+      <div class="pie"><span class="flecha" aria-hidden="true">→</span></div>
     </a>
     <a class="tarjeta" href="./pronostico.html" style="--acento: var(--mod-2)">
       <div class="cab"><span class="ic" aria-hidden="true">🌦️</span><div><h2>Pronóstico</h2><span class="preg">¿Qué clima se espera?</span></div></div>
       <div class="cuerpo">
-        <p>Presenta las condiciones climáticas esperadas en el corto plazo y la evolución prevista del fenómeno de El Niño en los próximos meses.</p>
+        <p>Presenta la lluvia y la temperatura esperadas para los próximos días.</p>
         <ul><li>Pronóstico diario a 7 y 16 días.</li><li>Pronóstico estacional a 1–3 meses por departamento.</li><li>Verificación del desempeño de los pronósticos anteriores.</li></ul>
       </div>
-      <div class="pie"><span class="estado estado--pendiente">En desarrollo</span><span class="flecha" aria-hidden="true">→</span></div>
+      <div class="pie"><span class="flecha" aria-hidden="true">→</span></div>
     </a>
     <a class="tarjeta" href="./medidas.html" style="--acento: var(--mod-3)">
       <div class="cab"><span class="ic" aria-hidden="true">🛠️</span><div><h2>Medidas de adaptación</h2><span class="preg">¿Qué hacer para prepararse?</span></div></div>
@@ -231,7 +288,7 @@
         <p>Reúne las medidas anticipatorias definidas por cada asociación en los talleres participativos, con su costo estimado y su tiempo de implementación.</p>
         <ul><li>Medidas de 13 asociaciones en cuatro departamentos.</li><li>Clasificación por costo y plazo.</li><li>Relación de cada medida con la alerta que la activa.</li></ul>
       </div>
-      <div class="pie"><span class="estado estado--pendiente">En desarrollo</span><span class="flecha" aria-hidden="true">→</span></div>
+      <div class="pie"><span class="flecha" aria-hidden="true">→</span></div>
     </a>
   </div>
 
@@ -262,6 +319,26 @@
   </footer>
 </div>
 <script>
+/* Encabezado: las diapositivas pasan solas cada 7 s. Se detienen con el botón de pausa,
+   mientras el foco del teclado está dentro del encabezado, o si el sistema pide reducir el movimiento. */
+(function () {
+  const T = 7000, hero = document.getElementById("hero");
+  const diapos = [...hero.querySelectorAll(".diapo")], pest = [...hero.querySelectorAll(".pestana")], $pausa = document.getElementById("diapo-pausa");
+  let i = 0, t0 = performance.now(), quieto = matchMedia("(prefers-reduced-motion: reduce)").matches, foco = false;
+  const pintar = (p) => pest.forEach((t, k) => { t.setAttribute("aria-selected", k === i); t.firstChild.style.width = k < i ? "100%" : k === i ? (p * 100) + "%" : "0"; });
+  const ir = (k) => { diapos[i].classList.remove("on"); i = (k + diapos.length) % diapos.length; diapos[i].classList.add("on"); t0 = performance.now(); pintar(0); };
+  pest.forEach((t, k) => t.onclick = () => ir(k));
+  document.getElementById("diapo-ant").onclick = () => ir(i - 1);
+  document.getElementById("diapo-sig").onclick = () => ir(i + 1);
+  $pausa.onclick = () => { quieto = !quieto; $pausa.textContent = quieto ? "▶" : "❚❚"; $pausa.setAttribute("aria-label", quieto ? "Reanudar" : "Pausar"); t0 = performance.now(); };
+  hero.addEventListener("focusin", () => foco = true); hero.addEventListener("focusout", () => { foco = false; t0 = performance.now(); });
+  (function bucle(ahora) {
+    if (!quieto && !foco) { const p = Math.min(1, (ahora - t0) / T); pintar(p); if (p >= 1) ir(i + 1); }
+    requestAnimationFrame(bucle);
+  })(performance.now());
+  pintar(0);
+})();
+
 /* Fecha de la última actualización, leída del mismo data.json que usa el tablero.
    Si no se puede leer, simplemente no se muestra. */
 (async function () {
@@ -641,4 +718,3 @@ document.querySelectorAll("#mapa-unico svg.dib[data-s]").forEach((e) => { e.inne
   ajustar(); mq.addEventListener("change", ajustar);
 })();
 </script></body></html>
-
