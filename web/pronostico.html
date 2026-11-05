@@ -82,40 +82,25 @@
   .header-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px; }
 
 
-  .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; padding: 16px;
+  .controls { display: flex; flex-wrap: wrap; gap: 12px 14px; align-items: center; padding: 12px 16px;
     background: var(--color-panel); border: 1px solid var(--color-line); border-radius: var(--radius); margin-bottom: 24px; }
-  .field { display: flex; flex-direction: column; gap: 5px; }
-  /* Los selectores que quedan se reparten el ancho; el recuadro de fechas va a la derecha. */
-  .controls .field { flex: 1 1 170px; max-width: 320px; }
-  .controls select { width: 100%; }
-  .field label { font-size: 0.78rem; color: var(--color-ink-soft); }
   select { font-family: var(--font-body); font-size: 0.92rem; padding: 8px 10px;
     border: 1px solid var(--color-line); border-radius: 4px; background: var(--color-bg); color: var(--color-ink); min-width: 200px; }
 
-  /* Recuadro con el período y sus fechas, a la derecha de los selectores. */
-  .periodo-caja { display: inline-flex; align-items: center; gap: 12px; margin-left: auto; padding: 8px 18px 8px 14px;
-    background: var(--color-bg); border: 1px solid var(--color-line); border-left: 5px solid var(--color-rain); border-radius: var(--radius); }
-  .periodo-caja:empty { display: none; }
-  .periodo-caja-icono { font-size: 1.6rem; line-height: 1; }
-  .periodo-caja-nombre { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-ink-soft); }
-  .periodo-caja-fechas { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--color-ink); line-height: 1.25; }
-  @media (max-width: 40rem) {
-    .controls .field { flex: 1 1 100%; max-width: none; }
-    .controls select { width: 100%; min-width: 0; }
-    .emitido { margin-left: 0; width: 100%; }
-  }
-
-  /* ---- Controles: horizonte y fecha de emisión ---- */
   .seg { display: inline-flex; background: var(--color-bg); border: 1px solid var(--color-line); border-radius: 999px; padding: 3px; }
   .seg button { border: 0; background: none; font: inherit; font-size: 0.88rem; font-weight: 600; padding: 7px 16px; border-radius: 999px;
     color: var(--color-ink-soft); cursor: pointer; }
   .seg button[aria-pressed="true"] { background: var(--color-rain); color: #FFFFFF; }
-  .emitido { display: inline-flex; align-items: center; gap: 12px; margin-left: auto; padding: 8px 18px 8px 14px; background: var(--color-bg);
-    border: 1px solid var(--color-line); border-left: 5px solid var(--color-rain); border-radius: var(--radius); }
-  .emitido .ic { font-size: 1.6rem; line-height: 1; }
-  .emitido small { display: block; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-ink-soft); }
-  .emitido b { font-family: var(--font-display); font-size: 1.15rem; }
-  .emitido span { display: block; font-size: 0.8rem; color: var(--color-ink-soft); }
+  /* Barra: municipio con ícono, días y fecha de emisión como texto a la derecha. */
+  .sel-mun { position: relative; display: inline-flex; }
+  .sel-mun svg { position: absolute; left: 10px; top: 50%; width: 17px; height: 17px; transform: translateY(-50%); pointer-events: none; }
+  .sel-mun select { padding-left: 34px; min-width: 240px; font-size: 0.95rem; }
+  .emitido { margin-left: auto; text-align: right; line-height: 1.35; font-size: 0.82rem; color: var(--color-ink-soft); }
+  .emitido b { display: block; font-family: var(--font-display); font-size: 1.05rem; color: var(--color-ink); }
+  @media (max-width: 40rem) {
+    .sel-mun, .sel-mun select { width: 100%; min-width: 0; }
+    .controls .seg button { padding: 7px 13px; }
+  }
 
   /* ---- Próximos días ---- */
   .sec-cab { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 20px; margin: 6px 0 14px; }
@@ -128,7 +113,18 @@
   .puntos i { width: 9px; height: 9px; border-radius: 50%; background: #DCDFD5; }
   .puntos i.on { background: #2E7D4F; }
   .conf-info .puntos i { width: 7px; height: 7px; }
-  .dias { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 14px; }
+  /* Fila deslizable: con 7 días caben todas en computador; con 16 se pasan con las flechas. */
+  .carrusel { position: relative; }
+  .dias { --vis: 7; display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth;
+    scrollbar-width: none; padding: 4px 3px 18px; margin: -4px -3px -18px; }
+  .dias::-webkit-scrollbar { display: none; }
+  .dias > * { flex: 0 0 calc((100% - (var(--vis) - 1) * 14px) / var(--vis)); scroll-snap-align: start; }
+  .flecha { position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; width: 42px; height: 42px; border-radius: 50%;
+    border: 1px solid var(--color-line); background: var(--color-panel); color: var(--color-ink); cursor: pointer; display: grid; place-items: center;
+    box-shadow: 0 2px 8px rgba(40,40,30,.16); }
+  .flecha svg { width: 20px; height: 20px; }
+  .flecha[hidden] { display: none; }
+  .flecha.izq { left: -14px; } .flecha.der { right: -14px; }
   .dia { background: var(--color-panel); border-radius: 20px; overflow: hidden; display: flex; flex-direction: column;
     border: 1px solid color-mix(in srgb, var(--color-line) 70%, transparent); box-shadow: 0 1px 2px rgba(40,40,30,.06), 0 6px 18px rgba(40,40,30,.06); }
   .dia.manana { box-shadow: 0 0 0 2px var(--color-rain), 0 8px 22px rgba(29,90,140,.18); }
@@ -151,7 +147,7 @@
   .dia .hr { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; color: #2F7E9E; margin-top: 4px; }
   .dia .pie { margin-top: auto; padding: 9px 8px; display: flex; align-items: center; justify-content: center; gap: 7px; white-space: nowrap;
     font-size: 0.76rem; color: var(--color-ink-soft); background: color-mix(in srgb, var(--color-bg) 60%, var(--color-panel)); }
-  .dias-fin { grid-column: 1 / -1; padding: 14px; text-align: center; font-size: 0.88rem; color: var(--color-ink-soft);
+  .dias-fin { display: grid; place-items: center; padding: 14px; text-align: center; font-size: 0.88rem; color: var(--color-ink-soft);
     border: 1px dashed var(--color-line); border-radius: 16px; }
 
   /* ---- Gráfico de los modelos ---- */
@@ -162,19 +158,31 @@
   .pill { border: 1px solid var(--color-line); background: var(--color-panel); font: inherit; font-size: 0.88rem; font-weight: 600; padding: 7px 14px;
     border-radius: 999px; color: var(--color-ink-soft); cursor: pointer; }
   .pill[aria-pressed="true"] { background: var(--color-rain); color: #FFFFFF; border-color: var(--color-rain); }
+  .graf-cab { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 20px; }
+  /* Variable con botones (en el celular, lista) y modelo siempre con lista. */
+  .graf-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 16px 0 8px; }
+  .graf-ctrl .pills { margin: 0; }
+  .graf-ctrl label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--color-ink-soft); }
+  .sel-var { display: none !important; }
+  .sel-mod { margin-left: auto; }
+  .sel-mod select { min-width: 180px; }
+  #grafico { position: relative; }
   #grafico svg { display: block; width: 100%; height: auto; }
+  .tip { position: absolute; pointer-events: none; background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 8px;
+    padding: 6px 10px; font-size: 0.8rem; line-height: 1.35; white-space: nowrap; box-shadow: 0 4px 14px rgba(40,40,30,.14); }
+  .tip b { font-family: var(--font-display); font-size: 1.05rem; }
   .ley { display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: center; font-size: 0.82rem; color: var(--color-ink-soft); margin-top: 6px; }
   .ley i { display: inline-block; width: 22px; height: 3px; vertical-align: 4px; margin-right: 6px; background: #B9BDB2; }
   .ley i.prom { height: 4px; background: var(--prom); }
   .fuente { font-size: 0.82rem; color: var(--color-ink-soft); font-style: italic; margin: 12px 0 0; line-height: 1.55; }
   .graf { --prom: #2B2E35; --modelo: #BFC3B8; --rejilla: #E6E8E0; }
 
-  /* ---- Mapa y verificación ---- */
-  .extra { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 22px; }
-  .extra > div { background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 16px; padding: 18px 20px; }
+  /* ---- Mapa ---- */
+  .extra { margin-top: 22px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px;
+    background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 16px; padding: 18px 20px; }
   .extra h4 { margin: 0 0 6px; font-family: var(--font-display); font-size: 1.15rem; display: flex; align-items: center; gap: 8px; }
   .extra p { margin: 0; font-size: 0.9rem; color: var(--color-ink-soft); line-height: 1.55; }
-  .boton { margin-top: 12px; padding: 7px 16px; border-radius: 999px; border: 1px solid var(--color-rain); background: none; color: var(--color-rain);
+  .boton { padding: 7px 16px; border-radius: 999px; border: 1px solid var(--color-rain); background: none; color: var(--color-rain);
     font: inherit; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
   .boton:hover { background: color-mix(in srgb, var(--color-rain) 8%, transparent); }
   #panel-mapa { margin-top: 16px; background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 16px; padding: 12px; }
@@ -188,15 +196,18 @@
   }
   :root[data-theme="dark"] .graf { --prom: #EDEFE6; --modelo: #5A5F52; --rejilla: #34382C; }
 
-  @media (max-width: 64rem) { .dias { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (max-width: 64rem) { .dias { --vis: 4; } }
   @media (max-width: 40rem) {
-    .dias { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 2px 10px; }
-    .dia { flex: 0 0 64%; scroll-snap-align: start; }
-    .dias-fin { flex: 0 0 64%; display: grid; place-items: center; }
+    .dias > * { flex-basis: 64%; }
+    .flecha { display: none; }
     .conf-info { max-width: none; border-radius: 16px; }
     .graf { padding: 16px 12px; }
-    .pills { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; } .pill { white-space: nowrap; }
-    .extra { grid-template-columns: minmax(0, 1fr); }
+    .graf-ctrl { display: grid; grid-template-columns: 3fr 2fr; gap: 10px; margin: 14px 0 8px; }
+    .graf-ctrl .pills { display: none; }
+    .graf-ctrl label { flex-direction: column; align-items: stretch; gap: 4px; font-size: 0.78rem; }
+    .sel-var { display: flex !important; }
+    .sel-mod { margin-left: 0; }
+    .graf-ctrl select { width: 100%; min-width: 0; font-size: 0.88rem; padding: 8px; }
     #panel-mapa iframe { height: 360px; }
   }
 </style>
@@ -220,12 +231,11 @@
 
   <div id="contenido" hidden>
     <div class="controls">
-      <div class="field"><label for="municipio">Municipio</label><select id="municipio"></select></div>
-      <div class="field" style="flex:none;max-width:none"><span style="font-size:0.78rem;color:var(--color-ink-soft)">Días de pronóstico</span>
-        <div class="seg" id="horizonte" role="group" aria-label="Días de pronóstico">
-          <button type="button" data-dias="7" aria-pressed="true">Próximos 7 días</button>
-          <button type="button" data-dias="16" aria-pressed="false">16 días</button>
-        </div>
+      <label class="sel-mun"><svg viewBox="0 0 24 24" fill="none" stroke="var(--color-rain)" stroke-width="2.2" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+        <select id="municipio" aria-label="Municipio"></select></label>
+      <div class="seg" data-horizonte role="group" aria-label="Días de pronóstico">
+        <button type="button" data-dias="7" aria-pressed="true">7 días</button>
+        <button type="button" data-dias="16" aria-pressed="false">16 días</button>
       </div>
       <div class="emitido" id="emitido"></div>
     </div>
@@ -236,28 +246,35 @@
         <div class="conf-info"><span class="puntos" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i></span>
           <span><b>Confianza:</b> qué tanto coinciden los modelos de pronóstico; cuando es alta, es más probable que el pronóstico se cumpla.</span></div>
       </div>
-      <div class="dias" id="dias"></div>
+      <div class="carrusel">
+        <button type="button" class="flecha izq" id="ant" aria-label="Días anteriores" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <div class="dias" id="dias"></div>
+        <button type="button" class="flecha der" id="sig" aria-label="Días siguientes" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
     </section>
 
     <section class="graf" aria-labelledby="tit-graf">
-      <h3 id="tit-graf">¿Qué dicen los modelos?</h3>
-      <p class="sub" id="sub-graf"></p>
-      <div class="pills" id="variables" role="group" aria-label="Variable del gráfico"></div>
+      <div class="graf-cab">
+        <div><h3 id="tit-graf">¿Qué dicen los modelos?</h3><p class="sub" id="sub-graf"></p></div>
+        <div class="seg" data-horizonte role="group" aria-label="Días del gráfico">
+          <button type="button" data-dias="7" aria-pressed="true">7 días</button>
+          <button type="button" data-dias="16" aria-pressed="false">16 días</button>
+        </div>
+      </div>
+      <div class="graf-ctrl">
+        <div class="pills" id="variables" role="group" aria-label="Variable del gráfico"></div>
+        <label class="sel-var">Variable<select id="variable-sel"></select></label>
+        <label class="sel-mod">Modelo<select id="modelo-sel"></select></label>
+      </div>
       <div id="grafico"></div>
       <div class="ley" id="leyenda"></div>
       <p class="fuente" id="nota"></p>
     </section>
 
     <div class="extra">
-      <div>
-        <h4>🗺️ Mapa de lluvia y viento</h4>
-        <p>Mapa animado de Windy con la lluvia y el viento pronosticados alrededor del municipio.</p>
+        <div><h4>🗺️ Mapa de lluvia y viento</h4>
+        <p>Mapa animado de Windy con la lluvia y el viento pronosticados alrededor del municipio.</p></div>
         <button type="button" class="boton" id="btn-mapa" aria-expanded="false" aria-controls="panel-mapa">Abrir mapa</button>
-      </div>
-      <div>
-        <h4>✅ ¿Qué tan seguido aciertan?</h4>
-        <p>En preparación. Cuando haya suficientes pronósticos verificados, aquí se verá qué modelo acierta más en cada municipio y con qué frecuencia se cumplieron los días de confianza alta.</p>
-      </div>
     </div>
     <div id="panel-mapa" hidden></div>
   </div>
