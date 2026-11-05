@@ -2,9 +2,9 @@
    Lee publico/pronostico.json, que produce scripts/pronostico.py. */
 
 const VARIABLES = [
+  { id: "precipitacion", etiqueta: "Lluvia", unidad: "mm" },
   { id: "tmax", etiqueta: "Temperatura máxima", unidad: "°C" },
   { id: "tmin", etiqueta: "Temperatura mínima", unidad: "°C" },
-  { id: "precipitacion", etiqueta: "Lluvia", unidad: "mm" },
   { id: "humedad_relativa", etiqueta: "Humedad relativa", unidad: "%" },
 ];
 
@@ -30,7 +30,7 @@ const ICONO_DATO = {
 };
 
 let DATOS = null;
-const estado = { municipio: null, variable: "tmax", dias: 7, modelo: null };
+const estado = { municipio: null, variable: "precipitacion", dias: 7, modelo: null };
 
 const $ = (id) => document.getElementById(id);
 const redondo = (v, suf = "") => (v === null || v === undefined ? "—" : Math.round(v) + suf);
