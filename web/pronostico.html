@@ -176,7 +176,9 @@
   .ley i { display: inline-block; width: 22px; height: 3px; vertical-align: 4px; margin-right: 6px; background: #B9BDB2; }
   .ley i.prom { height: 4px; background: var(--prom); }
   .fuente { font-size: 0.82rem; color: var(--color-ink-soft); font-style: italic; margin: 12px 0 0; line-height: 1.55; }
-  .graf { --prom: #2B2E35; --modelo: #BFC3B8; --rejilla: #E6E8E0; }
+  .graf { --prom: #2B2E35; --modelo: #BFC3B8; --rejilla: #E6E8E0; --banda-ext: rgba(96, 100, 92, 0.13); --banda-int: rgba(96, 100, 92, 0.30); }
+  .ley i.b-int, .ley i.b-ext { width: 18px; height: 11px; vertical-align: -1px; border-radius: 2px; }
+  .ley i.b-int { background: var(--banda-int); } .ley i.b-ext { background: var(--banda-ext); }
 
   /* ---- Mapa ---- */
   .extra { margin-top: 22px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px;
@@ -193,9 +195,9 @@
   footer p { margin: 0 0 6px; } footer a { color: var(--color-rain); }
 
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .graf { --prom: #EDEFE6; --modelo: #5A5F52; --rejilla: #34382C; }
+    :root:not([data-theme="light"]) .graf { --prom: #EDEFE6; --modelo: #5A5F52; --rejilla: #34382C; --banda-ext: rgba(237, 239, 230, 0.10); --banda-int: rgba(237, 239, 230, 0.24); }
   }
-  :root[data-theme="dark"] .graf { --prom: #EDEFE6; --modelo: #5A5F52; --rejilla: #34382C; }
+  :root[data-theme="dark"] .graf { --prom: #EDEFE6; --modelo: #5A5F52; --rejilla: #34382C; --banda-ext: rgba(237, 239, 230, 0.10); --banda-int: rgba(237, 239, 230, 0.24); }
 
   @media (max-width: 64rem) { .dias { --vis: 4; } }
   @media (max-width: 40rem) {
@@ -332,3 +334,4 @@ const icon=(k)=>`<svg viewBox="0 0 64 64">${ICONS[k]||ICONS.part}</svg>`;
 <script src="./pronostico.js"></script>
 </body>
 </html>
+
