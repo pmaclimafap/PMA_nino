@@ -131,6 +131,9 @@ function pintarGrafico(mun) {
   const modelos = Object.entries(serie.modelos || {}).map(([k, v]) => [k, idx.map((i) => limpio(v[i]))]);
   const N = fechas.length;
   const nombre = (k) => DATOS.modelos[k]?.nombre || k;
+  /* Como en el pipeline: la lluvia es la mediana de los modelos; lo demás,
+     su promedio ponderado (WRF-IDEAM pesa más). */
+  const central = estado.variable === "precipitacion" ? "mediana" : "promedio ponderado";
 
   /* Modelo: "Todos" o uno solo. */
   if (estado.modelo && !serie.modelos[estado.modelo]) estado.modelo = null;
@@ -191,7 +194,7 @@ function pintarGrafico(mun) {
     `<div class="tip" hidden></div>`;
   $("leyenda").innerHTML = elegida
     ? `<span><i class="prom"></i>${escapar(nombre(estado.modelo))}</span>`
-    : `<span><i class="prom"></i>Promedio de los modelos</span>` +
+    : `<span><i class="prom"></i>${mayuscula(central)} de los modelos</span>` +
       (celular ? `<span><i></i>Cada modelo</span>` : modelos.map(([k]) => `<span><i></i>${escapar(nombre(k))}</span>`).join(""));
 
   /* Al pasar el mouse (o tocar) se muestra el valor del día más cercano en la línea activa. */
@@ -205,7 +208,7 @@ function pintarGrafico(mun) {
     if (i < 0 || i >= N || v === null || v === undefined) return ocultar();
     guia.setAttribute("x1", X(i)); guia.setAttribute("x2", X(i)); guia.setAttribute("visibility", "visible");
     marca.setAttribute("cx", X(i)); marca.setAttribute("cy", Y(v)); marca.setAttribute("visibility", "visible");
-    tip.innerHTML = `${escapar(elegida ? nombre(estado.modelo) : "Promedio de los modelos")} · ${fecha(fechas[i], { weekday: "short", day: "numeric", month: "short" })}<br>` +
+    tip.innerHTML = `${escapar(elegida ? nombre(estado.modelo) : mayuscula(central) + " de los modelos")} · ${fecha(fechas[i], { weekday: "short", day: "numeric", month: "short" })}<br>` +
       `<b>${(+v).toFixed(1).replace(".", ",")} ${cfg.unidad}</b>`;
     tip.hidden = false;
     const px = X(i) / esc, py = Y(v) / esc;
@@ -218,7 +221,7 @@ function pintarGrafico(mun) {
   const temperatura = estado.variable === "tmax" || estado.variable === "tmin";
   $("nota").innerHTML =
     "Pronóstico diario de varios modelos (Open-Meteo, CC BY 4.0), en el punto del municipio. " +
-    (elegida ? "Se muestra solo el modelo elegido. " : "Cada línea gris es un modelo; la línea oscura es su promedio. ") +
+    (elegida ? "Se muestra solo el modelo elegido. " : `Cada línea gris es un modelo; la línea oscura es su ${central}. `) +
     (estado.variable === "precipitacion"
       ? "Los modelos estiman la lluvia sobre áreas de 10 a 25 km: aciertan mejor <strong>si</strong> va a llover que <strong>cuánto</strong>."
       : temperatura && DATOS.referencia && !DATOS.referencia.desfase_aplicado
