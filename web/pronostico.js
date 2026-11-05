@@ -91,8 +91,7 @@ function tarjeta(d) {
 function pintarDias(mun) {
   const dias = mun.dias.slice(0, estado.dias);
   $("tit-dias").textContent = `Los próximos ${estado.dias} días en ${mun.nombre}`;
-  $("dias").innerHTML = dias.map(tarjeta).join("") +
-    (estado.dias > mun.dias.length ? `<div class="dias-fin">Ningún modelo llega más lejos de ${mun.dias.length} días.</div>` : "");
+  $("dias").innerHTML = dias.map(tarjeta).join("");
   $("dias").scrollLeft = 0;
   flechas();
 }
@@ -169,7 +168,7 @@ function pintarGrafico(mun) {
     cerrar();
     return s;
   };
-  const color = elegida ? "var(--color-rain)" : "var(--prom)";
+  const color = "var(--prom)";
   if (!elegida) modelos.forEach(([, v]) => { g += linea(v, "var(--modelo)", 1.6); });
   g += linea(activa, color, 3.2);
   g += activa.map((v, i) => (v === null || v === undefined ? "" :
@@ -191,7 +190,7 @@ function pintarGrafico(mun) {
   cont.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${cfg.etiqueta} pronosticada por cada modelo y su promedio">${g}</svg>` +
     `<div class="tip" hidden></div>`;
   $("leyenda").innerHTML = elegida
-    ? `<span><i class="prom" style="background:var(--color-rain)"></i>${escapar(nombre(estado.modelo))}</span>`
+    ? `<span><i class="prom"></i>${escapar(nombre(estado.modelo))}</span>`
     : `<span><i class="prom"></i>Promedio de los modelos</span>` +
       (celular ? `<span><i></i>Cada modelo</span>` : modelos.map(([k]) => `<span><i></i>${escapar(nombre(k))}</span>`).join(""));
 
