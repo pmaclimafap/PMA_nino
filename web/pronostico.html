@@ -117,7 +117,7 @@
   /* Fila deslizable: con 7 días caben todas en computador; con 16 se pasan con las flechas. */
   .carrusel { position: relative; }
   .dias { --vis: 7; display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth;
-    scrollbar-width: none; padding: 4px 3px 18px; margin: -4px -3px -18px; }
+    scrollbar-width: none; padding: 4px 3px 18px; margin: -4px -3px -18px; scroll-padding-inline: 3px; }
   .dias::-webkit-scrollbar { display: none; }
   .dias > * { flex: 0 0 calc((100% - (var(--vis) - 1) * 14px) / var(--vis)); scroll-snap-align: start; }
   .flecha { position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; width: 42px; height: 42px; border-radius: 50%;
@@ -164,6 +164,8 @@
   .graf-ctrl label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--color-ink-soft); }
   .sel-var { display: none !important; }
   .sel-mod { margin-left: auto; }
+  .sel-dias { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--color-ink-soft); }
+  .sel-dias > span { display: none; }
   .sel-mod select { min-width: 180px; }
   #grafico { position: relative; }
   #grafico svg { display: block; width: 100%; height: auto; }
@@ -197,16 +199,31 @@
 
   @media (max-width: 64rem) { .dias { --vis: 4; } }
   @media (max-width: 40rem) {
-    .dias > * { flex-basis: 64%; }
-    .flecha { display: none; }
+    .dias > * { flex-basis: 72%; }
+    /* Flechas también en celular: más pequeñas, a la altura del dibujo del cielo. */
+    .flecha { width: 36px; height: 36px; top: 96px; transform: none; }
+    .flecha.izq { left: 4px; } .flecha.der { right: 4px; }
+    /* Barra de controles: municipio y días a todo el ancho; la fecha de emisión debajo, a la izquierda. */
+    .controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .controls .seg { display: flex; } .controls .seg button { flex: 1 1 0; }
+    .emitido { margin: 0; text-align: left; padding-top: 10px; border-top: 1px dashed var(--color-line); }
+    .emitido b { display: inline; font-size: 1rem; } .emitido b::after { content: " · "; font-weight: 400; color: var(--color-ink-soft); }
+    .sec-tit { font-size: 1.3rem; }
     .conf-info { max-width: none; border-radius: 16px; }
     .graf { padding: 16px 12px; }
-    .graf-ctrl { display: grid; grid-template-columns: 3fr 2fr; gap: 10px; margin: 14px 0 8px; }
+    .graf-ctrl { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 10px; margin: 14px 0 10px; padding: 12px;
+      background: var(--color-bg); border-radius: 12px; }
+    .sel-var { grid-column: 1 / -1; }
+    .sel-dias { flex-direction: column; align-items: stretch; gap: 4px; font-size: 0.78rem; }
+    .sel-dias > span { display: block; }
+    .sel-dias .seg { display: flex; background: var(--color-panel); } .sel-dias .seg button { flex: 1 1 0; padding: 7px 6px; }
     .graf-ctrl .pills { display: none; }
     .graf-ctrl label { flex-direction: column; align-items: stretch; gap: 4px; font-size: 0.78rem; }
     .sel-var { display: flex !important; }
     .sel-mod { margin-left: 0; }
-    .graf-ctrl select { width: 100%; min-width: 0; font-size: 0.88rem; padding: 8px; }
+    .graf-ctrl select { width: 100%; min-width: 0; font-size: 0.88rem; padding: 8px; background: var(--color-panel); }
+    .graf h3 { font-size: 1.25rem; }
+    .fuente { font-style: normal; font-size: 0.8rem; padding-left: 10px; border-left: 3px solid var(--color-line); }
     #panel-mapa iframe { height: 360px; }
   }
 </style>
@@ -255,15 +272,15 @@
     <section class="graf" aria-labelledby="tit-graf">
       <div class="graf-cab">
         <div><h3 id="tit-graf">¿Qué dicen los modelos?</h3><p class="sub" id="sub-graf"></p></div>
-        <div class="seg" data-horizonte role="group" aria-label="Días del gráfico">
-          <button type="button" data-dias="7" aria-pressed="true">7 días</button>
-          <button type="button" data-dias="16" aria-pressed="false">16 días</button>
-        </div>
       </div>
       <div class="graf-ctrl">
         <div class="pills" id="variables" role="group" aria-label="Variable del gráfico"></div>
         <label class="sel-var">Variable<select id="variable-sel"></select></label>
         <label class="sel-mod">Modelo<select id="modelo-sel"></select></label>
+        <div class="sel-dias"><span>Días</span><div class="seg" data-horizonte role="group" aria-label="Días del gráfico">
+          <button type="button" data-dias="7" aria-pressed="true">7 días</button>
+          <button type="button" data-dias="16" aria-pressed="false">16 días</button>
+        </div></div>
       </div>
       <div id="grafico"></div>
       <div class="ley" id="leyenda"></div>
