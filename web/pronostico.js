@@ -110,6 +110,7 @@ function pintarGrafico(mun) {
   const serie = mun.series[estado.variable];
   $("sub-graf").textContent = `${mun.nombre}, ${mun.departamento} · pronóstico de cada día`;
   const cont = $("grafico");
+  cont.closest(".graf").dataset.var = estado.variable; // los colores dependen de la variable (ver .graf[data-var] en el HTML)
   if (!serie || !serie.objetivo || !serie.objetivo.length) {
     cont.innerHTML = '<p style="color:var(--color-ink-soft);font-size:.9rem;margin:1rem 0">Ningún modelo aporta esta variable.</p>';
     $("leyenda").innerHTML = "";
@@ -197,8 +198,8 @@ function pintarGrafico(mun) {
     `<circle cx="${X(i)}" cy="${Y(v)}" r="${celular ? 3.5 : 4.5}" fill="${color}" stroke="var(--color-panel)" stroke-width="1.5"/>`)).join("");
   const iHoy = fechas.indexOf(hoy);
   if (iHoy >= 0) {
-    g += `<line x1="${X(iHoy)}" x2="${X(iHoy)}" y1="${mT - 6}" y2="${H - mB}" stroke="var(--color-max)" stroke-width="1.5" stroke-dasharray="4 4"/>` +
-         `<text x="${X(iHoy) + 6}" y="${mT + 6}" font-size="11" font-weight="700" fill="var(--color-max)">Hoy</text>`;
+    g += `<line x1="${X(iHoy)}" x2="${X(iHoy)}" y1="${mT - 6}" y2="${H - mB}" stroke="var(--color-ink-soft)" stroke-width="1.5" stroke-dasharray="4 4"/>` +
+         `<text x="${X(iHoy) + 6}" y="${mT + 6}" font-size="11" font-weight="700" fill="var(--color-ink-soft)">Hoy</text>`;
   }
   const cada = Math.ceil(N / (celular ? 4 : 9));
   fechas.forEach((f, i) => {
@@ -240,7 +241,7 @@ function pintarGrafico(mun) {
   const temperatura = estado.variable === "tmax" || estado.variable === "tmin";
   $("nota").innerHTML =
     "Pronóstico diario de varios modelos (Open-Meteo, CC BY 4.0), en el punto del municipio. " +
-    (elegida ? "Se muestra solo el modelo elegido. " : `La línea oscura es ${central === "mediana" ? "la mediana" : "el promedio ponderado"} de los modelos. Las franjas grises muestran qué tanto coinciden entre ellos: la franja oscura reúne la mitad de los pronósticos (25–75 %) y la clara, casi todos (5–95 %). Si las franjas son angostas, los modelos coinciden y el pronóstico es más confiable; si son anchas, hay más incertidumbre. `+
+    (elegida ? "Se muestra solo el modelo elegido. " : `La línea oscura es ${central === "mediana" ? "la mediana" : "el promedio ponderado"} de los modelos. Las franjas sombreadas muestran qué tanto coinciden entre ellos: la franja oscura reúne la mitad de los pronósticos (25–75 %) y la clara, casi todos (5–95 %). Si las franjas son angostas, los modelos coinciden y el pronóstico es más confiable; si son anchas, hay más incertidumbre. `) +
     (estado.variable === "precipitacion"
       ? "Los modelos estiman la lluvia sobre áreas de 10 a 25 km: aciertan mejor <strong>si</strong> va a llover que <strong>cuánto</strong>."
       : temperatura && DATOS.referencia && !DATOS.referencia.desfase_aplicado
