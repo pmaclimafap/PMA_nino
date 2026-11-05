@@ -177,6 +177,11 @@
   .ley i.prom { height: 4px; background: var(--prom); }
   .fuente { font-size: 0.82rem; color: var(--color-ink-soft); font-style: italic; margin: 12px 0 0; line-height: 1.55; }
   .graf { --prom: #2B2E35; --modelo: #BFC3B8; --rejilla: #E6E8E0; --banda-ext: rgba(96, 100, 92, 0.13); --banda-int: rgba(96, 100, 92, 0.30); }
+  /* Colores por variable: temperaturas en rojizos; lluvia y humedad relativa en azules. */
+  .graf[data-var="tmax"] { --prom: #B23A3A; --banda-ext: rgba(178, 58, 58, 0.12); --banda-int: rgba(178, 58, 58, 0.28); }
+  .graf[data-var="tmin"] { --prom: #C0582A; --banda-ext: rgba(192, 88, 42, 0.12); --banda-int: rgba(192, 88, 42, 0.28); }
+  .graf[data-var="precipitacion"] { --prom: #1D5A8C; --banda-ext: rgba(29, 90, 140, 0.12); --banda-int: rgba(29, 90, 140, 0.28); }
+  .graf[data-var="humedad_relativa"] { --prom: #2F7E9E; --banda-ext: rgba(47, 126, 158, 0.12); --banda-int: rgba(47, 126, 158, 0.28); }
   .ley i.b-int, .ley i.b-ext { width: 18px; height: 11px; vertical-align: -1px; border-radius: 2px; }
   .ley i.b-int { background: var(--banda-int); } .ley i.b-ext { background: var(--banda-ext); }
 
@@ -196,8 +201,16 @@
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) .graf { --prom: #EDEFE6; --modelo: #5A5F52; --rejilla: #34382C; --banda-ext: rgba(237, 239, 230, 0.10); --banda-int: rgba(237, 239, 230, 0.24); }
+    :root:not([data-theme="light"]) .graf[data-var="tmax"] { --prom: #E07A6E; --banda-ext: rgba(224, 122, 110, 0.14); --banda-int: rgba(224, 122, 110, 0.30); }
+    :root:not([data-theme="light"]) .graf[data-var="tmin"] { --prom: #E8A15C; --banda-ext: rgba(232, 161, 92, 0.14); --banda-int: rgba(232, 161, 92, 0.30); }
+    :root:not([data-theme="light"]) .graf[data-var="precipitacion"] { --prom: #5B9BD5; --banda-ext: rgba(91, 155, 213, 0.14); --banda-int: rgba(91, 155, 213, 0.30); }
+    :root:not([data-theme="light"]) .graf[data-var="humedad_relativa"] { --prom: #7FC4E0; --banda-ext: rgba(127, 196, 224, 0.14); --banda-int: rgba(127, 196, 224, 0.30); }
   }
   :root[data-theme="dark"] .graf { --prom: #EDEFE6; --modelo: #5A5F52; --rejilla: #34382C; --banda-ext: rgba(237, 239, 230, 0.10); --banda-int: rgba(237, 239, 230, 0.24); }
+  :root[data-theme="dark"] .graf[data-var="tmax"] { --prom: #E07A6E; --banda-ext: rgba(224, 122, 110, 0.14); --banda-int: rgba(224, 122, 110, 0.30); }
+  :root[data-theme="dark"] .graf[data-var="tmin"] { --prom: #E8A15C; --banda-ext: rgba(232, 161, 92, 0.14); --banda-int: rgba(232, 161, 92, 0.30); }
+  :root[data-theme="dark"] .graf[data-var="precipitacion"] { --prom: #5B9BD5; --banda-ext: rgba(91, 155, 213, 0.14); --banda-int: rgba(91, 155, 213, 0.30); }
+  :root[data-theme="dark"] .graf[data-var="humedad_relativa"] { --prom: #7FC4E0; --banda-ext: rgba(127, 196, 224, 0.14); --banda-int: rgba(127, 196, 224, 0.30); }
 
   @media (max-width: 64rem) { .dias { --vis: 4; } }
   @media (max-width: 40rem) {
