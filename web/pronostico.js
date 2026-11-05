@@ -170,7 +170,28 @@ function pintarGrafico(mun) {
     return s;
   };
   const color = "var(--prom)";
-  if (!elegida) modelos.forEach(([, v]) => { g += linea(v, "var(--modelo)", 1.6); });
+  /* Con "Todos": en vez de una línea por modelo, dos bandas grises con el rango
+     en que caen los modelos cada día (percentiles 5–95 y 25–75). */
+  const percentil = (orden, q) => {
+    const h = (orden.length - 1) * q, a = Math.floor(h);
+    return orden[a] + (h - a) * ((orden[Math.min(a + 1, orden.length - 1)]) - orden[a]);
+  };
+  const porDia = fechas.map((_, i) => modelos.map(([, v]) => v[i]).filter((v) => v !== null && v !== undefined).sort((a, b) => a - b));
+  const banda = (qa, qb, relleno) => {
+    let s = "", tramo = [];
+    const cerrar = () => {
+      if (tramo.length > 1) {
+        const arriba = tramo.map(([i, , b]) => `${X(i).toFixed(1)},${Y(b).toFixed(1)}`);
+        const abajo = tramo.map(([i, a]) => `${X(i).toFixed(1)},${Y(a).toFixed(1)}`).reverse();
+        s += `<polygon points="${[...arriba, ...abajo].join(" ")}" fill="${relleno}"/>`;
+      }
+      tramo = [];
+    };
+    porDia.forEach((o, i) => { if (o.length < 2) cerrar(); else tramo.push([i, percentil(o, qa), percentil(o, qb)]); });
+    cerrar();
+    return s;
+  };
+  if (!elegida) g += banda(0.05, 0.95, "var(--banda-ext)") + banda(0.25, 0.75, "var(--banda-int)");
   g += linea(activa, color, 3.2);
   g += activa.map((v, i) => (v === null || v === undefined ? "" :
     `<circle cx="${X(i)}" cy="${Y(v)}" r="${celular ? 3.5 : 4.5}" fill="${color}" stroke="var(--color-panel)" stroke-width="1.5"/>`)).join("");
@@ -193,7 +214,7 @@ function pintarGrafico(mun) {
   $("leyenda").innerHTML = elegida
     ? `<span><i class="prom"></i>${escapar(nombre(estado.modelo))}</span>`
     : `<span><i class="prom"></i>${mayuscula(central)} de los modelos</span>` +
-      (celular ? `<span><i></i>Cada modelo</span>` : modelos.map(([k]) => `<span><i></i>${escapar(nombre(k))}</span>`).join(""));
+      `<span><i class="b-int"></i>Rango 25–75 % de los modelos</span><span><i class="b-ext"></i>Rango 5–95 %</span>`;
 
   /* Al pasar el mouse (o tocar) se muestra el valor del día más cercano en la línea activa. */
   const svg = cont.querySelector("svg"), tip = cont.querySelector(".tip");
@@ -219,7 +240,7 @@ function pintarGrafico(mun) {
   const temperatura = estado.variable === "tmax" || estado.variable === "tmin";
   $("nota").innerHTML =
     "Pronóstico diario de varios modelos (Open-Meteo, CC BY 4.0), en el punto del municipio. " +
-    (elegida ? "Se muestra solo el modelo elegido. " : `Cada línea gris es un modelo; la línea oscura es su ${central}. `) +
+    (elegida ? "Se muestra solo el modelo elegido. " : `La línea oscura es ${central === "mediana" ? "la mediana" : "el promedio ponderado"} de los modelos; la franja gris oscura muestra dónde cae la mitad central de los modelos y la clara, casi todos. `) +
     (estado.variable === "precipitacion"
       ? "Los modelos estiman la lluvia sobre áreas de 10 a 25 km: aciertan mejor <strong>si</strong> va a llover que <strong>cuánto</strong>."
       : temperatura && DATOS.referencia && !DATOS.referencia.desfase_aplicado
