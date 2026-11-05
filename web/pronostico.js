@@ -1,4 +1,4 @@
-/* Tablero de pronóstico.
+* Tablero de pronóstico.
    Lee publico/pronostico.json, que produce scripts/pronostico.py. */
 
 const VARIABLES = [
@@ -79,7 +79,7 @@ function tarjeta(d) {
       <div class="fila"><div class="lab">${ICONO_DATO.t}Temperatura</div>
         <div class="par"><div class="mn"><small>Mínima</small><b>${redondo(d.tmin, "°")}</b></div><div class="mx"><small>Máxima</small><b>${redondo(d.tmax, "°")}</b></div></div></div>
       <div class="fila"><div class="lab">${ICONO_DATO.l}Lluvia</div>
-        <div class="par ll"><div><small>Probabilidad</small><b>${prob}</b></div><div><small>Cantidad</small><b>${redondo(d.precipitacion === null || d.precipitacion === undefined ? d.precipitacion : Math.max(0, d.precipitacion), " mm")}</b></div></div></div>
+        <div class="par ll"><div><small>Probabilidad</small><b>${prob}</b></div><div><small>Cantidad</small><b>${redondo(d.precipitacion, " mm")}</b></div></div></div>
       <div class="fila"><div class="lab">${ICONO_DATO.h}Humedad relativa</div>
         <div class="hr">${redondo(d.humedad_relativa, " %")}</div></div>
     </div>
@@ -108,7 +108,7 @@ function flechas() {
 function pintarGrafico(mun) {
   const cfg = VARIABLES.find((v) => v.id === estado.variable);
   const serie = mun.series[estado.variable];
-  $("sub-graf").textContent = `${mun.nombre}, ${mun.departamento} · ${cfg.etiqueta} de cada día`;
+  $("sub-graf").textContent = `${mun.nombre}, ${mun.departamento} · pronóstico de cada día`;
   const cont = $("grafico");
   if (!serie || !serie.objetivo || !serie.objetivo.length) {
     cont.innerHTML = '<p style="color:var(--color-ink-soft);font-size:.9rem;margin:1rem 0">Ningún modelo aporta esta variable.</p>';
@@ -125,10 +125,8 @@ function pintarGrafico(mun) {
   const idx = [];
   for (let i = ini; i <= (fin >= 0 ? fin : serie.objetivo.length - 1); i++) idx.push(i);
   const fechas = idx.map((i) => serie.objetivo[i]);
-  /* La lluvia no puede ser negativa: se recorta en cero. */
-  const limpio = (v) => (v === null || v === undefined ? v : estado.variable === "precipitacion" ? Math.max(0, v) : v);
-  const promedio = idx.map((i) => limpio(serie.agregado[i]));
-  const modelos = Object.entries(serie.modelos || {}).map(([k, v]) => [k, idx.map((i) => limpio(v[i]))]);
+  const promedio = idx.map((i) => serie.agregado[i]);
+  const modelos = Object.entries(serie.modelos || {}).map(([k, v]) => [k, idx.map((i) => v[i])]);
   const N = fechas.length;
   const nombre = (k) => DATOS.modelos[k]?.nombre || k;
   /* Como en el pipeline: la lluvia es la mediana de los modelos; lo demás,
