@@ -32,7 +32,7 @@
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--color-bg); color: var(--color-ink); font-family: var(--font-body); line-height: 1.5; }
 
-  /* ---- Botones de módulos (los mismos de la página de inicio), dentro del encabezado ---- */
+  /* ---- Botones de módulos ---- */
   .modulos { display: flex; flex-wrap: wrap; gap: 10px; margin: 30px 0 0; }
   .modulos a { color: #fff; text-decoration: none; font-family: var(--font-body); font-weight: 600; font-size: 1rem; padding: 11px 26px; border-radius: 999px;
     background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.5); backdrop-filter: blur(6px); transition: background .15s, transform .15s; }
@@ -74,20 +74,108 @@
     .controls select { min-width: 0; }
   }
 
-  /* ---- Infografía de la asociación ---- */
-  .ficha { background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 16px; padding: 20px 22px; }
-  .ficha-cab { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 20px; margin-bottom: 18px; }
-  .ficha-cab h2 { margin: 0; font-family: var(--font-display); font-size: 1.5rem; line-height: 1.2; }
-  .ficha-cab p { margin: 4px 0 0; color: var(--color-ink-soft); font-size: 0.92rem; }
+  /* ---- Ficha de la asociación ---- */
+  .ficha { background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 16px; padding: 22px; }
+  /* Miniatura a la izquierda; a su lado, encabezado y luego el resto.
+     En el celular: miniatura y encabezado en una fila, el resto a todo el ancho. */
+  .ficha-grid { display: grid; grid-template-columns: 230px minmax(0, 1fr); grid-template-areas: "mini cab" "mini resto";
+    grid-template-rows: auto 1fr; gap: 0 26px; align-items: start; }
+  .mini { grid-area: mini; position: relative; display: block; width: 100%; padding: 0; border: 1px solid var(--color-line);
+    border-radius: 10px; overflow: hidden; background: none; cursor: zoom-in; }
+  .mini img { display: block; width: 100%; height: auto; }
+  .mini span { position: absolute; top: 8px; right: 8px; background: rgba(31,61,46,.9); color: #fff;
+    font: 600 .78rem var(--font-body); padding: 5px 11px; border-radius: 999px; }
+  .cab { grid-area: cab; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px 20px; }
+  .cab h2 { font-family: var(--font-display); font-size: 1.6rem; line-height: 1.15; margin: 0; }
+  .cab p { color: var(--color-ink-soft); margin: 4px 0 0; font-size: .93rem; }
+  .cab .contexto { font-style: italic; }
+  .resto { grid-area: resto; }
   .acciones { display: flex; flex-wrap: wrap; gap: 8px; }
   .boton { padding: 7px 16px; border-radius: 999px; border: 1px solid var(--color-rain); background: none; color: var(--color-rain);
-    font: inherit; font-weight: 600; font-size: 0.88rem; text-decoration: none; white-space: nowrap; }
+    font: inherit; font-weight: 600; font-size: 0.86rem; text-decoration: none; white-space: nowrap; cursor: pointer; }
   .boton:hover { background: color-mix(in srgb, var(--color-rain) 8%, transparent); }
-  .infografia { display: block; width: 100%; max-width: 820px; height: auto; margin: 0 auto; border-radius: 10px; border: 1px solid var(--color-line); }
+  .acciones-movil { display: none; }
+
+  .ico { display: inline-grid; place-items: center; flex: none; }
+  .ico svg { width: 100%; height: 100%; }
+
+  /* Amenazas: mismos colores de las infografías. */
+  .amenazas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin: 14px 0; }
+  .amenaza { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; border: 1px solid; }
+  .amenaza .ico { width: 40px; height: 40px; padding: 8px; border-radius: 50%; color: #fff; }
+  .amenaza b { display: block; font-family: var(--font-display); font-size: 1.05rem; line-height: 1.15; }
+  .amenaza small { font-size: .85rem; }
+  .amenaza.calor { background: #FDEDE4; border-color: #F3B89A; color: #7A2A10; } .amenaza.calor .ico { background: #D9542B; }
+  .amenaza.sequia { background: #FEF4DC; border-color: #F2CF7E; color: #64400A; } .amenaza.sequia .ico { background: #E39B17; }
+  .amenaza.humedad { background: #E4F0FA; border-color: #A9CBE8; color: #1C4A70; } .amenaza.humedad .ico { background: #3A86C4; }
+  .amenaza.erosion { background: #FBEEDD; border-color: #E6BE8A; color: #6B3F0E; } .amenaza.erosion .ico { background: #C27A1E; }
+
+  /* Grupos de medidas */
+  .medidas { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+  .medidas.solo { grid-template-columns: 1fr; }
+  .medidas.solo .grupo ul { display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; }
+  .medidas.solo .grupo li + li { border-top: 0; }
+  .grupo { border: 2px solid; border-radius: 10px; overflow: hidden; }
+  .grupo.bajo { border-color: #B9DA97; background: color-mix(in srgb, #6FA83A 5%, var(--color-panel)); }
+  .grupo.inv { border-color: #A9C2AF; background: color-mix(in srgb, #4A6B52 7%, var(--color-panel)); }
+  .grupo .cab-grupo { color: #fff; padding: 10px 14px 9px; }
+  .grupo.bajo .cab-grupo { background: #6FA83A; }
+  .grupo.inv .cab-grupo { background: #4A6B52; }
+  .grupo h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 3px; font-family: var(--font-body); font-weight: 700;
+    font-size: .82rem; letter-spacing: .05em; text-transform: uppercase; }
+  .grupo h3 .ico { width: 20px; height: 20px; }
+  .grupo .costo { margin-left: auto; font-family: var(--font-display); font-size: 1.05rem; letter-spacing: .08em;
+    background: rgba(255,255,255,.18); border-radius: 999px; padding: 1px 10px; }
+  .grupo .costo i { opacity: .35; font-style: normal; }
+  .grupo .bajada { margin: 0; font-size: .8rem; color: rgba(255,255,255,.94); }
+  .grupo ul { list-style: none; margin: 0; padding: 6px 14px 4px; }
+  .grupo li { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+  .grupo li + li { border-top: 1px dashed var(--color-line); }
+  .grupo li .ico { width: 42px; height: 42px; padding: 9px; border-radius: 50%; }
+  .grupo.bajo li .ico { background: #EAF5DD; color: #4F8A22; }
+  .grupo.inv li .ico { background: #E1ECE3; color: #4A6B52; }
+  .grupo li .tema { display: block; font-size: .7rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--color-ink-soft); }
+  .grupo li b { display: block; font-size: .93rem; font-weight: 600; line-height: 1.25; }
+  .grupo li small { display: block; font-size: .84rem; color: var(--color-ink-soft); line-height: 1.35; }
+  .grupo li em { display: block; font-size: .78rem; color: var(--color-ink-soft); margin-top: 2px; }
+  .grupo .nota { font-size: .78rem; font-style: italic; color: var(--color-ink-soft); margin: 0; padding: 0 14px 10px; }
+
+  .beneficios { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 12px; padding: 10px 14px;
+    border-radius: 8px; background: color-mix(in srgb, #8DBA5A 12%, var(--color-panel)); font-size: .9rem; }
+  .beneficios > b { font-family: var(--font-display); color: #1F5C3A; font-size: 1.02rem; margin-right: 4px; }
+  .beneficios > span { display: inline-flex; align-items: center; gap: 7px; background: var(--color-panel);
+    border: 1px solid color-mix(in srgb, #8DBA5A 45%, transparent); border-radius: 999px; padding: 3px 11px; }
+  .beneficios .ico { width: 18px; height: 18px; color: #2E7D4F; }
+
+  .otras[hidden] { display: none; }
+  .otras { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 14px; font-size: .82rem; color: var(--color-ink-soft); }
+  .otra { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--color-line); border-radius: 999px;
+    padding: 3px 12px 3px 3px; font: inherit; font-weight: 600; color: var(--color-ink); background: var(--color-panel); cursor: pointer; }
+  .otra:hover { border-color: #6FA83A; }
+  .otra img { width: 26px; height: 26px; object-fit: cover; object-position: top; border-radius: 50%; }
+
+  /* Visor de la infografía a tamaño completo. */
+  .visor { border: 0; padding: 0; background: transparent; max-width: 96vw; max-height: 96vh; overflow: visible; }
+  .visor::backdrop { background: rgba(10,20,15,.82); }
+  .visor img { display: block; max-width: 96vw; max-height: 92vh; border-radius: 8px; }
+  .visor .cerrar { position: absolute; top: 10px; right: 10px; background: #fff; color: #1F3D2E; border: 0; border-radius: 999px;
+    font: 600 .9rem var(--font-body); padding: 7px 14px; cursor: pointer; }
+
+  @media (max-width: 64rem) {
+    .medidas, .medidas.solo .grupo ul { grid-template-columns: 1fr; }
+    .medidas.solo .grupo li + li { border-top: 1px dashed var(--color-line); }
+  }
   @media (max-width: 40rem) {
-    .ficha { padding: 16px 12px; }
-    .acciones { width: 100%; }
-    .acciones .boton { flex: 1; text-align: center; }
+    .ficha { padding: 16px 14px; }
+    .ficha-grid { grid-template-columns: 96px minmax(0, 1fr); grid-template-areas: "mini cab" "resto resto";
+      grid-template-rows: auto auto; gap: 14px; }
+    .mini span { top: auto; bottom: 4px; right: 4px; left: 4px; text-align: center; font-size: .7rem; padding: 3px 0; }
+    .cab h2 { font-size: 1.3rem; } .cab p { font-size: .84rem; }
+    .cab .acciones { display: none; }
+    .amenazas { margin-top: 0; }
+    .acciones-movil { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+    .acciones-movil .boton { text-align: center; }
+    .acciones-movil .boton:last-child { grid-column: 1 / -1; }
   }
 
   footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--color-line); font-size: 0.82rem; color: var(--color-ink-soft); }
@@ -102,7 +190,7 @@
       <div class="header-top">
         <div>
           <h1>Medidas de adaptación</h1>
-          <p>Las medidas que cada asociación definió para enfrentar el calor y la sequía de El Niño en 2026 y 2027: las que puede hacer con su propia mano de obra y recursos, y las que requieren mayor inversión y financiación.</p>
+          <p>Las medidas que cada asociación definió para enfrentar los efectos de El Niño en 2026 y 2027: las que puede hacer con su propia mano de obra y recursos, y las que requieren mayor inversión y financiación.</p>
           <nav class="modulos" aria-label="Módulos del sistema">
             <a href="./">Inicio</a><a href="./monitoreo.html">Monitoreo</a><a href="./pronostico.html">Pronóstico</a><a href="./medidas.html" aria-current="page">Medidas</a>
           </nav>
@@ -117,15 +205,26 @@
   </div>
 
   <section class="ficha" aria-labelledby="ficha-titulo">
-    <div class="ficha-cab">
-      <div><h2 id="ficha-titulo"></h2><p id="ficha-detalle"></p></div>
-      <div class="acciones">
-        <a class="boton" id="btn-descargar" download>Descargar</a>
-        <a class="boton" id="btn-ampliar" target="_blank" rel="noopener">Ver en tamaño completo</a>
+    <div class="ficha-grid">
+      <button class="mini" type="button" id="btn-mini"><img id="mini-img" alt=""><span>Ampliar</span></button>
+      <div class="cab">
+        <div><h2 id="ficha-titulo"></h2><p id="ficha-detalle"></p><p class="contexto" id="ficha-contexto" hidden></p></div>
+        <div class="acciones" data-acciones></div>
+      </div>
+      <div class="resto">
+        <div class="amenazas" id="amenazas"></div>
+        <div class="medidas" id="medidas"></div>
+        <div class="beneficios" id="beneficios"></div>
+        <div class="otras" id="otras" hidden></div>
+        <div class="acciones-movil" data-acciones></div>
       </div>
     </div>
-    <img class="infografia" id="infografia" width="1024" height="1536" alt="">
   </section>
+
+  <dialog class="visor" id="visor" aria-label="Infografía a tamaño completo">
+    <img id="visor-img" alt="">
+    <button type="button" class="cerrar" id="btn-cerrar">Cerrar</button>
+  </dialog>
 
   <footer>
     <p>Fuente: planes de medidas de adaptación de cada asociación.</p>
@@ -134,6 +233,7 @@
 </div>
 
 <script>
+// Mismos nombres y orden de municipios que en monitoreo.
 const MUNICIPIOS = [
   "Los Palmitos (Sucre)",
   "San José de Toluviejo (Sucre)",
@@ -148,53 +248,297 @@ const MUNICIPIOS = [
 // departamento: img/Infografias_medidas/<Departamento>/Infografia-<SIGLA>.png
 const CARPETA = "img/Infografias_medidas/";
 
-// Una entrada por asociación. "imagen" es la ruta dentro de CARPETA, con el
-// mismo nombre del archivo. El municipio aparece en el selector apenas tenga
-// al menos una asociación.
+// Íconos de línea (24×24). Cada medida y cada beneficio elige uno por nombre.
+const ICONOS = {
+  termometro: '<path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/><path d="M12 10v7"/><path d="M18 5h3M18 9h2"/>',
+  sequia: '<path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11z"/><path d="M4 4l16 16"/>',
+  nube_lluvia: '<path d="M7 15a4 4 0 0 1-.5-8 5.5 5.5 0 0 1 10.6 1.5A3.5 3.5 0 0 1 17 15z"/><path d="M8 18l-1 2.5M12 18l-1 2.5M16 18l-1 2.5"/>',
+  erosion: '<path d="M3 7c4 0 6 3 9 6.5S17 20 21 20"/><path d="M3 20h18"/><path d="M7 15.5v.01M10.5 18v.01M13 15v.01"/>',
+  brote: '<path d="M12 21v-9"/><path d="M12 12c0-4 3-7 8-7 0 5-3 8-8 7z"/><path d="M12 14c0-3-2.2-5-6-5 0 3.8 2.2 6 6 5z"/>',
+  billete: '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5h.01M18 14.5h.01"/>',
+  sombra: '<path d="M2 9l10-5 10 5"/><path d="M5 8v12M19 8v12"/><path d="M8 9.5v3M12 9.5v3M16 9.5v3"/>',
+  arbol: '<path d="M12 21v-6"/><path d="M8 21h8"/><path d="M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"/><path d="M12 11l-2.5-2.5M12 13l3-3"/>',
+  planta: '<path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 13c0-4-3-6-6-6 0 4 3 6 6 6z"/><path d="M12 11c0-3.5 2.5-5.5 6-5.5 0 3.5-2.5 5.5-6 5.5z"/>',
+  pasto: '<path d="M3 20h18"/><path d="M6 20c0-4-1-7-3-9M9 20c0-5 1-8 3-10M14 20c0-4 1.5-7 4-9M18 20c0-3 1-5 3-6"/>',
+  manguera: '<path d="M3 6h5a4 4 0 0 1 4 4v2a4 4 0 0 0 4 4h5"/><path d="M18 13l3 3-3 3"/><path d="M5 10v.5M7.5 13v.5"/>',
+  tanque: '<ellipse cx="12" cy="5" rx="7" ry="2.5"/><path d="M5 5v13c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V5"/><path d="M5 11.5c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/>',
+  lluvia_techo: '<path d="M2 11l8-6.5 8 6.5"/><path d="M4 10v10h12V10"/><path d="M18 11h3v3"/><path d="M22.5 18a1.5 1.5 0 0 1-3 0c0-1 1.5-2.6 1.5-2.6s1.5 1.6 1.5 2.6z"/>',
+  reservorio: '<path d="M2 9h20l-3 9H5z"/><path d="M5.5 13c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4 0"/>',
+  motobomba: '<rect x="3" y="9" width="10" height="9" rx="1.5"/><circle cx="8" cy="13.5" r="2"/><path d="M13 12h4a2 2 0 0 1 2 2v6"/><path d="M6 9V6h4"/>',
+  tuberia: '<path d="M2 8h9v8h11"/><path d="M2 12h5v8h15"/>',
+  aspersor: '<path d="M12 21v-9"/><path d="M9 21h6"/><path d="M12 12a8 8 0 0 1 8-8M12 12a8 8 0 0 0-8-8"/><path d="M15 5v.01M18 8v.01M9 5v.01M6 8v.01M12 3v.01"/>',
+  bebedero: '<path d="M3 11h18l-2 8H5z"/><path d="M6 14h12"/><path d="M16 11V5h4"/><circle cx="20" cy="7.5" r="1.2"/>',
+  cobertura: '<path d="M12 15V8"/><path d="M12 10c-3 0-4.5-2-4.5-4.5 3 0 4.5 1.5 4.5 4.5z"/><path d="M12 9c0-2.5 1.5-4 4.5-4 0 2.5-1.5 4-4.5 4z"/><path d="M3 19c2-2.5 4-3.5 6-3.5M9 19c2-2.5 4-3.5 6-3.5M15 19c1.5-2 3-3 6-3"/>',
+  hidrogel: '<path d="M12 13V5"/><path d="M12 8c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4z"/><path d="M3 13h18"/><path d="M12 13v3M12 16l-3 3M12 16l3 3"/><circle cx="6" cy="18" r="1.4"/><circle cx="18" cy="18" r="1.4"/>',
+  fuentes: '<path d="M8 15V9"/><path d="M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M2 19c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><path d="M13 15.5c1.5 0 2-1 3.5-1s2 1 3.5 1"/>',
+  rociador: '<rect x="4" y="7" width="7" height="12" rx="2"/><path d="M7.5 7V4"/><path d="M11 12h4l4-3"/><path d="M19 6.5v.01M21 9v.01M19 11.5v.01"/>',
+  canal: '<path d="M4 4v8a8 8 0 0 0 16 0V4"/><path d="M8 11c1.3.8 2.7.8 4 0s2.7-.8 4 0"/>',
+  escorrentia: '<path d="M3 17c3-4 6 2 9-2s6-4 9-1"/><path d="M18 11l3 3-3.5 1.5"/><path d="M3 21h18"/>',
+  barrera: '<path d="M3 20L21 9"/><circle cx="7" cy="15" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="17" cy="9" r="2"/>',
+  lupa: '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5"/><path d="M10.5 13V8.5M10.5 10c-1.5 0-2.3-.8-2.3-2.2 1.5 0 2.3.8 2.3 2.2z"/>',
+  casa: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/>',
+  ensilaje: '<rect x="3" y="8" width="18" height="10" rx="5"/><path d="M8 8v10M13 8v10"/>',
+  huevos: '<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 12h18"/><ellipse cx="8" cy="8.5" rx="1.6" ry="2"/><ellipse cx="13" cy="8.5" rx="1.6" ry="2"/><ellipse cx="8" cy="16.5" rx="1.6" ry="2"/><ellipse cx="13" cy="16.5" rx="1.6" ry="2"/>',
+  solar: '<path d="M3 20l2.5-9h11L19 20z"/><path d="M4.3 15.5h13.4M9.5 11l-1 9M13 11l.5 9"/><circle cx="19.5" cy="4.5" r="2"/><path d="M19.5 0.8v.8M23.2 4.5h-.8M22.1 1.9l-.6.6"/>',
+  rayo: '<path d="M12 3l7 3v5c0 5-3 8.2-7 10-4-1.8-7-5-7-10V6z"/><path d="M12.5 7.5L9.5 12.5h3l-1 4 3-5h-3z"/>',
+  celular: '<rect x="6" y="2.5" width="12" height="19" rx="2"/><path d="M11 18.5h2"/><path d="M9 11.5h6a2 2 0 0 0 0-4 3 3 0 0 0-5.6 1A1.6 1.6 0 0 0 9 11.5z"/>',
+  personas: '<circle cx="8" cy="8" r="3"/><circle cx="16.5" cy="9" r="2.5"/><path d="M2.5 20a5.5 5.5 0 0 1 11 0"/><path d="M14 20a4.5 4.5 0 0 1 7.5-3.3"/>',
+  escudo: '<path d="M12 3l7 3v5c0 5-3 8.2-7 10-4-1.8-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+  gota: '<path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/>',
+  termo_baja: '<path d="M12 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/><path d="M18 6v8M15.5 11.5L18 14l2.5-2.5"/>',
+  suelo_humedo: '<path d="M3 13h18"/><path d="M12 13V7"/><path d="M12 9c-2 0-3.5-1.3-3.5-3.5 2 0 3.5 1.3 3.5 3.5z"/><path d="M7 18.5a1 1 0 0 1-2 0c0-.7 1-2 1-2s1 1.3 1 2zM13 18.5a1 1 0 0 1-2 0c0-.7 1-2 1-2s1 1.3 1 2zM19 18.5a1 1 0 0 1-2 0c0-.7 1-2 1-2s1 1.3 1 2z"/>',
+  corazon: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+  estrella: '<path d="M12 3l2.6 5.5 6 .8-4.4 4.2 1.1 6L12 16.6 6.7 19.5l1.1-6L3.4 9.3l6-.8z"/>',
+};
+const icono = (nombre) =>
+  `<span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONOS[nombre]}</svg></span>`;
+
+// Ícono y color de cada tipo de amenaza.
+const AMENAZAS = { calor: "termometro", sequia: "sequia", humedad: "nube_lluvia", erosion: "erosion" };
+
+// Una entrada por asociación, con el contenido tal como está en su infografía.
+// "imagen" es la ruta dentro de CARPETA. "inversion" es null cuando la
+// infografía no trae medidas de mayor inversión. En cada medida, "tema" y
+// "nota" son opcionales; "nota" del grupo también.
 const MEDIDAS = [
   { id: "coomulpaz", municipio: "Los Palmitos (Sucre)", sigla: "COOMULPAZ",
     nombre: "Cooperativa Multiactiva Agropecuaria del Común y Formadores de Paz",
-    lugar: "Cañaveral", sistema: "Porcicultura", imagen: "Sucre/Infografia-COOMULPAZ.png" },
+    lugar: "Cañaveral", sistema: "Porcicultura", imagen: "Sucre/Infografia-COOMULPAZ.png",
+    amenazas: [
+      { tipo: "calor", titulo: "Olas de calor", texto: "Estrés térmico en los cerdos." },
+      { tipo: "sequia", titulo: "Sequía prolongada", texto: "Secamiento de jagüeyes y menor disponibilidad de agua." },
+    ],
+    bajo: { medidas: [
+      { icono: "lluvia_techo", tema: "Conservación del agua", nombre: "Cosecha de agua lluvia", texto: "Canaletas y tanque para captar y almacenar agua." },
+      { icono: "planta", tema: "Conservación del agua", nombre: "Vegetación en jagüeyes", texto: "Plantas perimetrales para reducir la evaporación." },
+      { icono: "arbol", tema: "Bienestar animal", nombre: "Sombra en corrales", texto: "Árboles y plantas para disminuir el calor." },
+      { icono: "personas", tema: "Capacidades", nombre: "Intercambio de experiencias", texto: "Aprendizaje entre productores para fortalecer capacidades." },
+    ] },
+    inversion: null,
+    beneficios: [["gota", "Menor pérdida de agua"], ["corazon", "Mayor bienestar animal"], ["escudo", "Protección de la producción porcícola"]] },
+
   { id: "asocoman", municipio: "San José de Toluviejo (Sucre)", sigla: "ASOCOMAN",
     nombre: "Asociación Agropecuaria Comunidad El Mango",
-    lugar: "Macaján", sistema: "Producción y transformación de frutos deshidratados", imagen: "Sucre/Infografia-ASOCOMAN.png" },
+    lugar: "Macaján", sistema: "Producción y transformación de frutos deshidratados", imagen: "Sucre/Infografia-ASOCOMAN.png",
+    amenazas: [
+      { tipo: "calor", titulo: "Calor y fallas térmicas", texto: "Pérdida de calidad en producción y postcosecha." },
+      { tipo: "sequia", titulo: "Sequía prolongada", texto: "Menor disponibilidad de agua y pérdidas en cultivos." },
+    ],
+    bajo: { medidas: [
+      { icono: "lluvia_techo", tema: "Gestión del agua", nombre: "Cosecha de agua lluvia", texto: "Canaletas, filtrado y almacenamiento." },
+      { icono: "motobomba", tema: "Gestión del agua", nombre: "Captación con motobomba", texto: "Apoya el abastecimiento de agua.", nota: "Sujeta a recursos y permiso de captación." },
+      { icono: "rayo", tema: "Energía", nombre: "Protección eléctrica", texto: "Estabilizador de voltaje para molinos y refrigeradores." },
+      { icono: "personas", tema: "Capacidades", nombre: "Intercambio de experiencias", texto: "Aprendizaje entre productores para mejorar capacidades." },
+    ] },
+    inversion: null,
+    beneficios: [["gota", "Mayor disponibilidad de agua"], ["rayo", "Protección de equipos"], ["estrella", "Conservación de la calidad del producto"]] },
+
   { id: "asoproyus", municipio: "San José de Toluviejo (Sucre)", sigla: "ASOPROYUS",
     nombre: "Asociación de Productores de Yuca de La Siria",
-    lugar: "Coraza, La Siria", sistema: "Transición hacia la avicultura de postura", imagen: "Sucre/Infografia-ASOPROYUS.png" },
+    lugar: "Coraza, La Siria", sistema: "Transición productiva hacia la avicultura de postura", imagen: "Sucre/Infografia-ASOPROYUS.png",
+    amenazas: [
+      { tipo: "calor", titulo: "Olas de calor", texto: "Estrés térmico en las aves." },
+      { tipo: "sequia", titulo: "Sequía prolongada", texto: "Menor disponibilidad de agua." },
+    ],
+    bajo: { medidas: [
+      { icono: "lluvia_techo", tema: "Gestión del agua", nombre: "Cosecha de agua lluvia", texto: "Canaletas y almacenamiento para aprovechar las lluvias." },
+      { icono: "reservorio", tema: "Gestión del agua", nombre: "Mantenimiento de fuentes", texto: "Limpieza de pozos y represa comunitaria existentes.", nota: "Requiere más recursos dentro de este grupo." },
+      { icono: "sombra", tema: "Confort térmico y protección", nombre: "Manejo térmico de corrales", texto: "Polisombra y aserrín fresco para las aves." },
+      { icono: "arbol", tema: "Confort térmico y protección", nombre: "Árboles para sombrío", texto: "Vegetación de rápido crecimiento para sombra y protección." },
+    ] },
+    inversion: null,
+    beneficios: [["gota", "Mayor disponibilidad de agua"], ["termo_baja", "Menor estrés por calor"], ["escudo", "Protección de la producción de huevos"]] },
+
   { id: "epz", municipio: "Icononzo (Tolima)", sigla: "EPZ",
     nombre: "Asociación Agropecuaria Esperanza y Paz",
-    lugar: "Balconcitos", sistema: "Café", imagen: "Tolima/Infografia-EPZ.png" },
+    lugar: "Balconcitos", sistema: "Café", imagen: "Tolima/Infografia-EPZ.png",
+    amenazas: [
+      { tipo: "calor", titulo: "Altas temperaturas", texto: "Estrés y pérdida de calidad del café." },
+      { tipo: "sequia", titulo: "Sequía prolongada", texto: "Menos lluvias y agua en quebradas." },
+    ],
+    bajo: { medidas: [
+      { icono: "cobertura", nombre: "Cobertura orgánica", texto: "Residuos vegetales para conservar humedad." },
+      { icono: "fuentes", nombre: "Reforestación de fuentes", texto: "Protección y mantenimiento de árboles en nacimientos." },
+      { icono: "rociador", nombre: "Fertilización localizada", texto: "Aplicación planta por planta con bomba de espalda." },
+    ] },
+    inversion: { medidas: [
+      { icono: "aspersor", nombre: "Riego por aspersión", texto: "Apoyo hídrico al cultivo." },
+      { icono: "tuberia", nombre: "Ampliación del acueducto", texto: "Mejora del abastecimiento de agua." },
+      { icono: "escudo", nombre: "Protección de predios con nacimientos", texto: "Resguardo de áreas que abastecen agua." },
+    ] },
+    beneficios: [["suelo_humedo", "Mayor humedad en el suelo"], ["gota", "Mejor disponibilidad de agua"], ["escudo", "Protección de la calidad del café"]] },
+
   { id: "asocafe", municipio: "Planadas (Tolima)", sigla: "ASOCAFE",
     nombre: "Asociación ASOCAFE Alta Calidad La Orquídea",
-    lugar: "", sistema: "Café especial orgánico", imagen: "Tolima/Infografia-ASOCAFE.png" },
+    lugar: "", sistema: "Café especial orgánico · Adaptación preventiva", imagen: "Tolima/Infografia-ASOCAFE.png",
+    contexto: "El calor y la sequía pueden afectar el cultivo de café y su productividad.",
+    amenazas: [
+      { tipo: "calor", titulo: "Olas de calor", texto: "Posible estrés en las plantas de café." },
+      { tipo: "sequia", titulo: "Sequía prolongada", texto: "Menos agua y humedad en el suelo." },
+    ],
+    bajo: { medidas: [
+      { icono: "cobertura", nombre: "Cobertura y manejo de arvenses", texto: "Residuos vegetales y limpiezas no intensivas en época seca." },
+      { icono: "fuentes", nombre: "Protección de fuentes", texto: "Reforestación y cuidado de nacimientos." },
+      { icono: "arbol", nombre: "Sombrío en lotes expuestos", texto: "Árboles para moderar el calor." },
+      { icono: "celular", nombre: "Información climática", texto: "Pronósticos y alertas para ajustar las labores." },
+    ] },
+    inversion: { medidas: [
+      { icono: "lluvia_techo", nombre: "Almacenamiento de agua lluvia", texto: "Tanques para disponer de reservas en períodos secos." },
+    ] },
+    beneficios: [["suelo_humedo", "Mayor humedad en el suelo"], ["planta", "Menor estrés de las plantas"], ["escudo", "Protección de la producción cafetera"]] },
+
   { id: "asoviunion", municipio: "Planadas (Tolima)", sigla: "ASOVIUNION",
     nombre: "Asociación de Víctimas y Productores Agropecuarios de la Vereda La Unión",
-    lugar: "La Unión", sistema: "Café", imagen: "Tolima/Infografia-ASOVIUNION.png" },
+    lugar: "La Unión", sistema: "Café · Asociación conformada por mujeres", imagen: "Tolima/Infografia-ASOVIUNION.png",
+    contexto: "Fincas cafeteras de montaña en la vereda La Unión.",
+    amenazas: [
+      { tipo: "calor", titulo: "Olas de calor", texto: "Posible estrés en las plantas de café." },
+      { tipo: "sequia", titulo: "Sequía prolongada", texto: "Menos agua y humedad en el suelo." },
+    ],
+    bajo: { medidas: [
+      { icono: "cobertura", nombre: "Cobertura y manejo de arvenses", texto: "Residuos vegetales y limpiezas no intensivas en época seca." },
+      { icono: "fuentes", nombre: "Protección de fuentes", texto: "Reforestación y cuidado de nacimientos." },
+      { icono: "arbol", nombre: "Sombrío en lotes expuestos", texto: "Árboles para moderar el calor." },
+      { icono: "celular", nombre: "Información climática", texto: "Pronósticos y alertas para ajustar las labores." },
+    ] },
+    inversion: { medidas: [
+      { icono: "lluvia_techo", nombre: "Almacenamiento de agua lluvia", texto: "Tanques para disponer de reservas en períodos secos." },
+    ] },
+    beneficios: [["suelo_humedo", "Mayor humedad en el suelo"], ["planta", "Menor estrés de las plantas"], ["escudo", "Protección de la producción cafetera"]] },
+
   { id: "asproagrope", municipio: "Planadas (Tolima)", sigla: "ASPROAGROPE",
     nombre: "Asociación de Productores Agrícolas y Pecuarios de Planadas",
-    lugar: "El Jardín", sistema: "Aguacate Hass y papelillo", imagen: "Tolima/Infografia-ASPROAGROPE.png" },
+    lugar: "El Jardín", sistema: "Aguacate Hass y papelillo", imagen: "Tolima/Infografia-ASPROAGROPE.png",
+    contexto: "El diagnóstico local prioriza el manejo del exceso de agua.",
+    amenazas: [
+      { tipo: "humedad", titulo: "Exceso de humedad", texto: "Encharcamiento y afectación de raíces." },
+      { tipo: "erosion", titulo: "Escorrentía y erosión", texto: "Pérdida de suelo en las pendientes." },
+    ],
+    bajo: { medidas: [
+      { icono: "canal", nombre: "Mantenimiento de drenajes", texto: "Facilita la salida del exceso de agua." },
+      { icono: "escorrentia", nombre: "Zanjas y protección de escorrentías", texto: "Conducen e infiltran el agua." },
+      { icono: "lupa", nombre: "Coberturas y sanidad vegetal", texto: "Coberturas controladas, podas y vigilancia de raíces y cuello." },
+      { icono: "barrera", nombre: "Barreras vivas en pendientes", texto: "Reducen la escorrentía y la erosión." },
+    ] },
+    inversion: { medidas: [
+      { icono: "casa", nombre: "Adecuaciones físicas de mayor alcance", texto: "La fuente las menciona sin especificar las obras." },
+    ] },
+    beneficios: [["canal", "Menos encharcamiento"], ["barrera", "Conservación del suelo"], ["escudo", "Raíces y aguacates más protegidos"]] },
+
   { id: "cooprocafe", municipio: "Planadas (Tolima)", sigla: "COOPROCAFE",
     nombre: "Cooperativa Multiactiva de Productores de Café Especial Orquídea",
-    lugar: "", sistema: "Café especial", imagen: "Tolima/Infografia-COOPROCAFE.png" },
+    lugar: "", sistema: "Café especial · Adaptación preventiva", imagen: "Tolima/Infografia-COOPROCAFE.png",
+    amenazas: [
+      { tipo: "calor", titulo: "Olas de calor", texto: "Posible estrés en las plantas de café." },
+      { tipo: "sequia", titulo: "Sequía prolongada", texto: "Menos agua y humedad en el suelo." },
+    ],
+    bajo: { medidas: [
+      { icono: "cobertura", nombre: "Cobertura y manejo de arvenses", texto: "Residuos vegetales y limpiezas no intensivas en época seca." },
+      { icono: "fuentes", nombre: "Protección de fuentes", texto: "Reforestación y cuidado de nacimientos." },
+      { icono: "arbol", nombre: "Sombrío en lotes expuestos", texto: "Árboles para moderar el calor." },
+      { icono: "celular", nombre: "Información climática", texto: "Pronósticos y alertas para ajustar las labores." },
+    ] },
+    inversion: { medidas: [
+      { icono: "lluvia_techo", nombre: "Almacenamiento de agua lluvia", texto: "Tanques para disponer de reservas en períodos secos." },
+    ] },
+    beneficios: [["suelo_humedo", "Mayor humedad en el suelo"], ["planta", "Menor estrés de las plantas"], ["escudo", "Protección de la producción cafetera"]] },
+
   { id: "asmuperija", municipio: "Fonseca (La Guajira)", sigla: "ASMUPERIJA",
     nombre: "Asociación de Mujeres Productoras de la Serranía del Perijá",
-    lugar: "Conejo", sistema: "Café en zonas de ladera", imagen: "Guajira/Infografia-ASMUPERIJA.png" },
+    lugar: "Conejo", sistema: "Café en zonas de ladera", imagen: "Guajira/Infografia-ASMUPERIJA.png",
+    amenazas: [
+      { tipo: "calor", titulo: "Olas de calor", texto: "Estrés en las plantas de café." },
+      { tipo: "sequia", titulo: "Sequía prolongada", texto: "Menos agua, humedad y producción." },
+    ],
+    bajo: { nota: "Aprovechan materiales vegetales y mano de obra local.", medidas: [
+      { icono: "cobertura", nombre: "Cobertura vegetal", texto: "Hojas y follaje conservan la humedad del suelo." },
+      { icono: "hidrogel", nombre: "Hidrogel agrícola", texto: "Ayuda a retener agua cerca de las raíces." },
+      { icono: "sombra", nombre: "Polisombra temporal", texto: "Protege viveros y plantas jóvenes del calor." },
+    ] },
+    inversion: { nota: "Alternativas adaptadas a fincas en zonas altas y de ladera.", medidas: [
+      { icono: "tanque", nombre: "Reservorio de agua", texto: "Almacena agua para los períodos secos." },
+      { icono: "tuberia", nombre: "Sistema de riego", texto: "Mejora el uso y la distribución del agua." },
+    ] },
+    beneficios: [["suelo_humedo", "Mayor humedad en el suelo"], ["planta", "Menor estrés de las plantas"], ["escudo", "Protección de la producción cafetera"]] },
+
   { id: "coompazcol", municipio: "Fonseca (La Guajira)", sigla: "COOMPAZCOL",
     nombre: "Cooperativa Multiactiva para la Paz de Colombia",
-    lugar: "Conejo", sistema: "Producción diversificada, con énfasis en ganadería", imagen: "Guajira/Infografia-COOMPAZCOL.png" },
+    lugar: "Conejo", sistema: "Producción diversificada · Medidas enfocadas en la ganadería", imagen: "Guajira/Infografia-COOMPAZCOL.png",
+    amenazas: [
+      { tipo: "calor", titulo: "Olas de calor", texto: "Estrés y afectaciones en el ganado." },
+      { tipo: "sequia", titulo: "Sequía prolongada", texto: "Menos agua y pastos para los animales." },
+    ],
+    bajo: { nota: "Aprovechan el vivero, la maquinaria y la mano de obra disponibles.", medidas: [
+      { icono: "lluvia_techo", nombre: "Cosecha de agua lluvia", texto: "Recoge agua de techos y superficies." },
+      { icono: "ensilaje", nombre: "Ensilaje", texto: "Reserva alimento para la época seca." },
+      { icono: "arbol", nombre: "Sistemas silvopastoriles", texto: "Leucaena para integrar árboles y pasturas." },
+      { icono: "bebedero", nombre: "Bebederos eficientes", texto: "Control de flujo para reducir pérdidas." },
+    ] },
+    inversion: { medidas: [
+      { icono: "reservorio", nombre: "Reparación del reservorio", texto: "Recupera la capacidad de almacenar agua." },
+      { icono: "reservorio", nombre: "Nuevos reservorios", texto: "Amplían la reserva para los períodos secos." },
+    ] },
+    beneficios: [["gota", "Mayor disponibilidad de agua"], ["ensilaje", "Reserva de alimento"], ["escudo", "Menor estrés y protección del ganado"]] },
+
   { id: "amgtg", municipio: "Manaure (Cesar)", sigla: "AMGTG",
     nombre: "Mesa de Género Tierra Grata",
-    lugar: "Tierra Grata", sistema: "Vivero agroecológico: cacao, frutales y especies maderables", imagen: "Cesar/Infografia-Mesa-de-Genero.png" },
+    lugar: "Tierra Grata", sistema: "Vivero agroecológico · Cacao, frutales y especies maderables", imagen: "Cesar/Infografia-Mesa-de-Genero.png",
+    amenazas: [
+      { tipo: "calor", titulo: "Olas de calor", texto: "Daños y muerte de plantas." },
+      { tipo: "sequia", titulo: "Sequía", texto: "Menor agua y pérdida de humedad." },
+    ],
+    bajo: { nota: "La reforestación requiere seguimiento para favorecer la supervivencia de los árboles.", medidas: [
+      { icono: "hidrogel", nombre: "Hidrogel agrícola", texto: "Retiene agua cerca de las raíces." },
+      { icono: "cobertura", nombre: "Cobertura orgánica", texto: "Reduce la evaporación y conserva humedad." },
+      { icono: "fuentes", nombre: "Reforestación de fuentes", texto: "Protege quebradas y zonas de nacimiento." },
+    ] },
+    inversion: { medidas: [
+      { icono: "reservorio", nombre: "Cosecha y almacenamiento de agua", texto: "Reservorio para almacenar y distribuir agua." },
+    ] },
+    beneficios: [["suelo_humedo", "Mayor humedad en el suelo"], ["brote", "Mejor supervivencia de plantas"], ["escudo", "Protección de la producción del vivero"]] },
+
   { id: "cooperpazce", municipio: "Manaure (Cesar)", sigla: "COOPERPAZCE",
     nombre: "Cooperativa Multiactiva de Paz del Cesar",
-    lugar: "Tierra Grata", sistema: "Porcicultura", imagen: "Cesar/Infografia-COOPERPAZCE.png" },
+    lugar: "Tierra Grata", sistema: "Porcicultura", imagen: "Cesar/Infografia-COOPERPAZCE.png",
+    amenazas: [
+      { tipo: "calor", titulo: "Olas de calor", texto: "Estrés y afectaciones en los cerdos." },
+      { tipo: "sequia", titulo: "Sequía", texto: "Menor agua disponible para consumo y producción." },
+    ],
+    bajo: { medidas: [
+      { icono: "sombra", nombre: "Sombra y ventilación pasiva", texto: "Polisombra y circulación natural del aire." },
+      { icono: "arbol", nombre: "Arborización estratégica", texto: "Árboles alrededor de las instalaciones." },
+      { icono: "manguera", nombre: "Ampliación de la captación", texto: "Segunda manguera en la bocatoma.", nota: "Requiere más recursos dentro de este grupo." },
+    ] },
+    inversion: { medidas: [
+      { icono: "tanque", nombre: "Almacenamiento de agua", texto: "Ampliar la disponibilidad para consumo y producción." },
+      { icono: "solar", nombre: "Energía solar", texto: "Reducir la exposición a interrupciones de energía." },
+    ] },
+    beneficios: [["termo_baja", "Menor estrés térmico"], ["gota", "Mayor disponibilidad de agua"], ["escudo", "Protección de la producción porcícola"]] },
+
   { id: "asoinrepa", municipio: "El Paso (Cesar)", sigla: "ASOINREPA",
     nombre: "",
-    lugar: "Vereda Repelón", sistema: "Gallinas ponedoras", imagen: "Cesar/Infografia-ASOINREPA.png" },
+    lugar: "Vereda Repelón", sistema: "Gallinas ponedoras", imagen: "Cesar/Infografia-ASOINREPA.png",
+    contexto: "El calor y la sequía pueden afectar el bienestar de las aves y la producción de huevos.",
+    amenazas: [
+      { tipo: "calor", titulo: "Altas temperaturas", texto: "Estrés térmico en las aves." },
+      { tipo: "sequia", titulo: "Sequía prolongada", texto: "Menor disponibilidad de agua." },
+    ],
+    bajo: { nota: "Manejo térmico pasivo y bienestar animal.", medidas: [
+      { icono: "sombra", nombre: "Sombra y ventilación pasiva", texto: "Polisombra y circulación natural del aire." },
+      { icono: "arbol", nombre: "Arborización estratégica", texto: "Árboles y bosque para generar sombra." },
+      { icono: "pasto", nombre: "Zonas verdes", texto: "Espacios sombreados para el bienestar de las aves." },
+    ] },
+    inversion: { nota: "Infraestructura e inversiones estructurales.", medidas: [
+      { icono: "tanque", nombre: "Disponibilidad de agua", texto: "Fortalecer el suministro y almacenamiento." },
+      { icono: "huevos", nombre: "Almacenamiento de huevos", texto: "Mejorar las condiciones de conservación." },
+      { icono: "solar", nombre: "Energía solar", texto: "Apoyar las necesidades energéticas." },
+    ] },
+    beneficios: [["termo_baja", "Menor estrés térmico"], ["corazon", "Mayor bienestar animal"], ["escudo", "Protección de la producción y el ingreso"]] },
 ];
 
-const $municipio = document.getElementById("sel-municipio");
-const $asociacion = document.getElementById("sel-asociacion");
+const $ = (id) => document.getElementById(id);
+const $municipio = $("sel-municipio");
+const $asociacion = $("sel-asociacion");
 
 MUNICIPIOS.filter((m) => MEDIDAS.some((a) => a.municipio === m))
   .forEach((m) => $municipio.add(new Option(m, m)));
@@ -205,26 +549,79 @@ function llenarAsociaciones() {
     .forEach((a) => $asociacion.add(new Option(a.sigla, a.id)));
 }
 
+const htmlMedida = (m) => `<li>${icono(m.icono)}<div>${m.tema ? `<span class="tema">${m.tema}</span>` : ""}` +
+  `<b>${m.nombre}</b><small>${m.texto}</small>${m.nota ? `<em>${m.nota}</em>` : ""}</div></li>`;
+
+function htmlGrupo(g, clase, titulo, iconoGrupo, costo, bajada) {
+  return `<div class="grupo ${clase}"><div class="cab-grupo"><h3>${icono(iconoGrupo)}${titulo}<span class="costo">${costo}</span></h3>` +
+    `<p class="bajada">${bajada}</p></div><ul>${g.medidas.map(htmlMedida).join("")}</ul>` +
+    `${g.nota ? `<p class="nota">${g.nota}</p>` : ""}</div>`;
+}
+
 function mostrar() {
   const a = MEDIDAS.find((x) => x.id === $asociacion.value);
   const imagen = encodeURI(CARPETA + a.imagen);
-  document.getElementById("ficha-titulo").textContent = a.nombre ? `${a.sigla} · ${a.nombre}` : a.sigla;
+  const enlace = `${location.origin}${location.pathname}#${a.id}`;
+
+  $("ficha-titulo").textContent = a.sigla;
   // Algunas infografías solo nombran el municipio, sin vereda.
-  document.getElementById("ficha-detalle").textContent = `${a.lugar ? a.lugar + ", " : ""}${a.municipio} · ${a.sistema}`;
-  const img = document.getElementById("infografia");
-  img.src = imagen;
-  img.alt = `Infografía de medidas de adaptación frente a El Niño de ${a.sigla}, ${a.municipio}: ` +
-    "amenazas del territorio, medidas de bajo costo, medidas de mayor inversión y beneficios esperados.";
-  const descargar = document.getElementById("btn-descargar");
-  descargar.href = imagen;
-  descargar.download = a.imagen.split("/").pop();
-  document.getElementById("btn-ampliar").href = imagen;
+  $("ficha-detalle").textContent = [a.nombre, `${a.lugar ? a.lugar + ", " : ""}${a.municipio}`, a.sistema].filter(Boolean).join(" · ");
+  $("ficha-contexto").textContent = a.contexto || "";
+  $("ficha-contexto").hidden = !a.contexto;
+
+  const alt = `Infografía de medidas de adaptación frente a El Niño de ${a.sigla}, ${a.municipio}.`;
+  $("mini-img").src = imagen; $("mini-img").alt = alt;
+  $("visor-img").src = imagen; $("visor-img").alt = alt;
+
+  $("amenazas").innerHTML = a.amenazas.map((x) =>
+    `<div class="amenaza ${x.tipo}">${icono(AMENAZAS[x.tipo])}<div><b>${x.titulo}</b><small>${x.texto}</small></div></div>`).join("");
+
+  $("medidas").className = a.inversion ? "medidas" : "medidas solo";
+  $("medidas").innerHTML =
+    htmlGrupo(a.bajo, "bajo", "Bajo costo y recursos locales", "brote", "$<i>$$</i>", "Con mano de obra y recursos de la asociación") +
+    (a.inversion ? htmlGrupo(a.inversion, "inv", "Mayor inversión económica", "billete", "$$$", "Requieren financiación y gestión adicional") : "");
+
+  $("beneficios").innerHTML = "<b>Beneficios</b>" + a.beneficios.map(([ic, t]) => `<span>${icono(ic)}${t}</span>`).join("");
+
+  const otras = MEDIDAS.filter((x) => x.municipio === a.municipio && x.id !== a.id);
+  $("otras").hidden = !otras.length;
+  $("otras").innerHTML = `Otras asociaciones de ${a.municipio.replace(/ \(.*\)$/, "")}: ` + otras.map((x) =>
+    `<button type="button" class="otra" data-id="${x.id}"><img src="${encodeURI(CARPETA + x.imagen)}" alt="">${x.sigla}</button>`).join("");
+
+  const whatsapp = "https://wa.me/?text=" + encodeURIComponent(`Medidas de adaptación frente a El Niño de ${a.sigla}: ${enlace}`);
+  document.querySelectorAll("[data-acciones]").forEach((el) => {
+    el.innerHTML = `<a class="boton" href="${imagen}" download="${a.imagen.split("/").pop()}">Descargar</a>` +
+      `<button type="button" class="boton" data-copiar>Copiar enlace</button>` +
+      `<a class="boton" href="${whatsapp}" target="_blank" rel="noopener">Compartir por WhatsApp</a>`;
+  });
+
   // Enlace compartible a esta asociación: medidas.html#<id>
   history.replaceState(null, "", `#${a.id}`);
 }
 
 $municipio.addEventListener("change", () => { llenarAsociaciones(); mostrar(); });
 $asociacion.addEventListener("change", mostrar);
+
+$("otras").addEventListener("click", (e) => {
+  const b = e.target.closest(".otra");
+  if (!b) return;
+  $asociacion.value = b.dataset.id;
+  mostrar();
+});
+
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-copiar]");
+  if (!b) return;
+  navigator.clipboard.writeText(location.href).then(() => {
+    b.textContent = "Enlace copiado";
+    setTimeout(() => { b.textContent = "Copiar enlace"; }, 2000);
+  });
+});
+
+$("btn-mini").addEventListener("click", () => $("visor").showModal());
+$("btn-cerrar").addEventListener("click", () => $("visor").close());
+// Clic fuera de la imagen también cierra el visor.
+$("visor").addEventListener("click", (e) => { if (e.target === $("visor")) $("visor").close(); });
 
 // Arranca en la asociación del enlace (#id) o en la primera de la lista.
 const inicial = MEDIDAS.find((a) => a.id === location.hash.slice(1));
