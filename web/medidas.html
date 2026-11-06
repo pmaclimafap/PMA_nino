@@ -2,12 +2,11 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Medidas de adaptación — El Niño · Alianza Bioversity-CIAT / PMA</title>
-<meta name="description" content="Sistema de monitoreo, pronóstico y medidas anticipatorias frente al Fenómeno de El Niño en La Guajira, Cesar, Sucre y Tolima.">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Medidas de adaptación · Fenómeno de El Niño, PMA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --color-bg: #F3F5EE;
@@ -16,10 +15,6 @@
     --color-ink-soft: #5C5C4E;
     --color-line: #DDE1D4;
     --color-rain: #1D5A8C;
-    --color-relhum: #4FA8C9;
-    --color-temp: #D97F2B;
-    --color-max: #B23A3A;
-    --color-ok: #2E7D4F;
     --radius: 6px;
     --font-display: "Zilla Slab", Georgia, serif;
     --font-body: "Work Sans", -apple-system, sans-serif;
@@ -27,190 +22,216 @@
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --color-bg: #1C1E18; --color-panel: #262920; --color-ink: #EDEFE6;
-      --color-ink-soft: #A9AD9C; --color-line: #3A3E30;
-      --color-rain: #5B9BD5; --color-relhum: #7FC4E0; --color-temp: #E8A15C;
-      --color-ok: #6FBF8B;
+      --color-ink-soft: #A9AD9C; --color-line: #3A3E30; --color-rain: #5B9BD5;
     }
   }
   :root[data-theme="dark"] {
     --color-bg: #1C1E18; --color-panel: #262920; --color-ink: #EDEFE6;
-    --color-ink-soft: #A9AD9C; --color-line: #3A3E30;
-    --color-rain: #5B9BD5; --color-relhum: #7FC4E0; --color-temp: #E8A15C;
-    --color-ok: #6FBF8B;
+    --color-ink-soft: #A9AD9C; --color-line: #3A3E30; --color-rain: #5B9BD5;
   }
-
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--color-bg); color: var(--color-ink);
-         font-family: var(--font-body); line-height: 1.5; }
+  body { margin: 0; background: var(--color-bg); color: var(--color-ink); font-family: var(--font-body); line-height: 1.5; }
+
+  /* ---- Botones de módulos (los mismos de la página de inicio), dentro del encabezado ---- */
+  .modulos { display: flex; flex-wrap: wrap; gap: 10px; margin: 30px 0 0; }
+  .modulos a { color: #fff; text-decoration: none; font-family: var(--font-body); font-weight: 600; font-size: 1rem; padding: 11px 26px; border-radius: 999px;
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.5); backdrop-filter: blur(6px); transition: background .15s, transform .15s; }
+  .modulos a:hover { background: rgba(255,255,255,.24); transform: translateY(-1px); }
+  .modulos a[aria-current="page"] { background: #fff; color: #1F3D2E; border-color: #fff; }
+  @media (max-width: 40rem) { .modulos { display: grid; grid-template-columns: 1fr 1fr; } .modulos a { text-align: center; padding: 10px; } }
+
   .wrap { max-width: min(1680px, 100% - 2.5rem); margin: 0 auto; padding: 32px 0 60px; }
   @media (max-width: 40rem) { .wrap { max-width: 100%; padding: 24px 16px 48px; } }
 
-  /* ---- Barra de modulos ---- */
-  .modulos { display: flex; gap: 2px; flex-wrap: wrap;
-             border-bottom: 1px solid var(--color-line); margin: 0 0 28px; }
-  .modulos a { font-family: var(--font-body); font-size: 0.9rem; font-weight: 500;
-               color: var(--color-ink-soft); text-decoration: none;
-               padding: 10px 18px; border-bottom: 2px solid transparent;
-               margin-bottom: -1px; white-space: nowrap; }
-  .modulos a:hover { color: var(--color-ink); background: var(--color-panel); }
-  .modulos a[aria-current="page"] { color: var(--color-ink);
-               border-bottom-color: var(--color-temp); font-weight: 600; }
-  .modulos a .num { font-family: var(--font-display); font-size: 0.78rem;
-               color: var(--color-ink-soft); margin-right: 7px; }
-  .modulos a[aria-current="page"] .num { color: var(--color-temp); }
-  .modulos .marca { font-family: var(--font-display); font-weight: 700; font-size: 0.9rem;
-               padding: 10px 16px 10px 0; color: var(--color-ink); text-decoration: none;
-               border-right: 1px solid var(--color-line); margin-right: 8px;
-               white-space: nowrap; }
+  header {
+    position: relative; overflow: hidden; border-radius: 14px; color: #FFFFFF;
+    padding: clamp(44px, 7vw, 96px) clamp(20px, 5vw, 64px) clamp(52px, 8vw, 104px);
+    background:
+      linear-gradient(90deg, rgba(8, 22, 18, 0.78) 0%, rgba(8, 22, 18, 0.55) 55%, rgba(8, 22, 18, 0.35) 100%),
+      url("img/medidas.jpg") center 45% / cover no-repeat,
+      #1F3D2E;
+  }
+  header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 6px;
+    background: linear-gradient(90deg, #4C9A2A 0%, #A6C34A 30%, #fec44f 55%, #ec7014 78%, #d7301f 100%); }
+  .header-top > div { width: 100%; max-width: 1400px; margin: 0 auto; }
+  header h1 { font-family: var(--font-body); font-weight: 700; font-size: clamp(1.9rem, 3.6vw, 3.8rem); line-height: 1.12;
+    letter-spacing: -0.015em; color: #FFFFFF; margin: 0; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35); text-wrap: balance; }
+  header p { color: rgba(255, 255, 255, 0.9); margin: 20px 0 0; max-width: 105ch; font-size: 1.1rem; line-height: 1.65;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35); }
+  .header-row { margin-bottom: 20px; }
 
-  header h1 { font-family: var(--font-display); font-weight: 600;
-              font-size: clamp(1.7rem, 3.4vw, 2.4rem); margin: 0 0 10px; line-height: 1.2; }
-  header .bajada { color: var(--color-ink-soft); margin: 0 0 4px; max-width: 72ch;
-                   font-size: 1.02rem; }
-  header .institucional { color: var(--color-ink-soft); font-size: 0.88rem;
-                          margin: 14px 0 0; }
+  /* ---- Selectores ---- */
+  .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; padding: 16px;
+    background: var(--color-panel); border: 1px solid var(--color-line); border-radius: var(--radius); margin-bottom: 24px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .controls .field { flex: 1 1 170px; max-width: 320px; }
+  .controls select { width: 100%; }
+  .field label { font-size: 0.78rem; color: var(--color-ink-soft); }
+  select { font-family: var(--font-body); font-size: 0.92rem; padding: 8px 10px;
+    border: 1px solid var(--color-line); border-radius: 4px; background: var(--color-bg); color: var(--color-ink); min-width: 200px; }
+  @media (max-width: 40rem) {
+    .controls .field { flex: 1 1 100%; max-width: none; }
+    .controls select { min-width: 0; }
+  }
 
-  /* ---- Estado del evento ---- */
-  .evento { background: var(--color-panel); border: 1px solid var(--color-line);
-            border-left: 3px solid var(--color-temp); border-radius: var(--radius);
-            padding: 18px 20px; margin: 28px 0; display: flex; flex-wrap: wrap;
-            gap: 10px 32px; align-items: baseline; }
-  .evento .dato { font-family: var(--font-display); font-size: 1.6rem;
-                  font-weight: 700; color: var(--color-temp); }
-  .evento .etiqueta { font-size: 0.88rem; color: var(--color-ink-soft);
-                      display: block; font-family: var(--font-body); font-weight: 400; }
-  .evento .nota { font-size: 0.9rem; color: var(--color-ink-soft); max-width: 60ch; }
+  /* ---- Infografía de la asociación ---- */
+  .ficha { background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 16px; padding: 20px 22px; }
+  .ficha-cab { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 20px; margin-bottom: 18px; }
+  .ficha-cab h2 { margin: 0; font-family: var(--font-display); font-size: 1.5rem; line-height: 1.2; }
+  .ficha-cab p { margin: 4px 0 0; color: var(--color-ink-soft); font-size: 0.92rem; }
+  .acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+  .boton { padding: 7px 16px; border-radius: 999px; border: 1px solid var(--color-rain); background: none; color: var(--color-rain);
+    font: inherit; font-weight: 600; font-size: 0.88rem; text-decoration: none; white-space: nowrap; }
+  .boton:hover { background: color-mix(in srgb, var(--color-rain) 8%, transparent); }
+  .infografia { display: block; width: 100%; max-width: 820px; height: auto; margin: 0 auto; border-radius: 10px; border: 1px solid var(--color-line); }
+  @media (max-width: 40rem) {
+    .ficha { padding: 16px 12px; }
+    .acciones { width: 100%; }
+    .acciones .boton { flex: 1; text-align: center; }
+  }
 
-  /* ---- Tarjetas de modulo ---- */
-  .tarjetas { display: grid; gap: 18px; margin: 32px 0;
-              grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
-  .tarjeta { background: var(--color-panel); border: 1px solid var(--color-line);
-             border-left: 3px solid var(--acento, var(--color-rain));
-             border-radius: var(--radius); padding: 20px 22px;
-             display: flex; flex-direction: column; text-decoration: none;
-             color: inherit; }
-  a.tarjeta:hover { border-color: var(--acento); }
-  .tarjeta[aria-disabled="true"] { opacity: 0.72; }
-  .tarjeta .orden { font-family: var(--font-display); font-size: 0.8rem;
-                    color: var(--color-ink-soft); letter-spacing: 0.04em; }
-  .tarjeta h2 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 600;
-                margin: 2px 0 8px; }
-  .tarjeta p { margin: 0 0 14px; font-size: 0.93rem; color: var(--color-ink-soft); }
-  .tarjeta ul { margin: 0 0 16px; padding-left: 1.1rem; font-size: 0.88rem;
-                color: var(--color-ink-soft); }
-  .tarjeta li { margin-bottom: 3px; }
-  .tarjeta .pie { margin-top: auto; display: flex; align-items: center;
-                  gap: 10px; flex-wrap: wrap; font-size: 0.85rem; }
-  .estado { display: inline-flex; align-items: center; gap: 6px;
-            font-size: 0.78rem; font-weight: 600; padding: 3px 9px;
-            border-radius: 99px; border: 1px solid var(--color-line); }
-  .estado--activo { color: var(--color-ok); border-color: var(--color-ok); }
-  .estado--pendiente { color: var(--color-ink-soft); }
-  .tarjeta .ir { color: var(--acento); font-weight: 600; }
-
-  /* ---- Resumen del proyecto ---- */
-  .seccion { margin: 44px 0 0; }
-  .seccion h2 { font-family: var(--font-display); font-size: 1.35rem;
-                font-weight: 600; margin: 0 0 12px; }
-  .seccion p { max-width: 80ch; margin: 0 0 14px; font-size: 0.96rem; }
-  .cobertura { width: 100%; border-collapse: collapse; margin: 18px 0;
-               font-size: 0.9rem; background: var(--color-panel);
-               border: 1px solid var(--color-line); border-radius: var(--radius); }
-  .cobertura th, .cobertura td { text-align: left; padding: 9px 14px;
-               border-bottom: 1px solid var(--color-line); }
-  .cobertura th { font-family: var(--font-body); font-weight: 600;
-               font-size: 0.82rem; text-transform: uppercase;
-               letter-spacing: 0.04em; color: var(--color-ink-soft); }
-  .cobertura tr:last-child td { border-bottom: none; }
-  .cobertura td:first-child { font-weight: 500; }
-
-  footer { margin-top: 52px; padding-top: 22px;
-           border-top: 1px solid var(--color-line);
-           font-size: 0.84rem; color: var(--color-ink-soft); }
-  footer p { margin: 0 0 7px; max-width: 86ch; }
-  footer a { color: var(--color-rain); }
+  footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--color-line); font-size: 0.82rem; color: var(--color-ink-soft); }
+  footer p { margin: 0 0 6px; } footer a { color: var(--color-rain); }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <nav class="modulos" aria-label="Módulos del sistema">
-    <a class="marca" href="./">Fenómeno el niño, PMA</a>
-    <a href="./">Inicio</a>
-    <a href="./monitoreo.html"><span class="num">1</span>Monitoreo</a>
-    <a href="./pronostico.html"><span class="num">2</span>Pronóstico</a>
-    <a href="./medidas.html" aria-current="page"><span class="num">3</span>Medidas</a>
-  </nav>
+  <div class="header-row">
+    <header>
+      <div class="header-top">
+        <div>
+          <h1>Medidas de adaptación</h1>
+          <p>Las medidas que cada asociación definió para enfrentar el calor y la sequía de El Niño en 2026 y 2027: las que puede hacer con su propia mano de obra y recursos, y las que requieren mayor inversión y financiación.</p>
+          <nav class="modulos" aria-label="Módulos del sistema">
+            <a href="./">Inicio</a><a href="./monitoreo.html">Monitoreo</a><a href="./pronostico.html">Pronóstico</a><a href="./medidas.html" aria-current="page">Medidas</a>
+          </nav>
+        </div>
+      </div>
+    </header>
+  </div>
 
-  <header>
-    <h1>Medidas de adaptación</h1>
-    <p class="bajada">Qué hacer. Las medidas anticipatorias codiseñadas con las asociaciones, con su costo, su plazo y la alerta que las activa.</p>
-  </header>
+  <div class="controls">
+    <div class="field"><label for="sel-municipio">Municipio</label><select id="sel-municipio"></select></div>
+    <div class="field"><label for="sel-asociacion">Asociación</label><select id="sel-asociacion"></select></div>
+  </div>
 
-  <section class="evento" style="border-left-color: var(--color-ink-soft)" aria-label="Estado del módulo">
-    <div>
-      <span class="dato" style="color: var(--color-ink-soft)">En desarrollo</span>
-      <span class="etiqueta">Módulo 3 de 3</span>
+  <section class="ficha" aria-labelledby="ficha-titulo">
+    <div class="ficha-cab">
+      <div><h2 id="ficha-titulo"></h2><p id="ficha-detalle"></p></div>
+      <div class="acciones">
+        <a class="boton" id="btn-descargar" download>Descargar</a>
+        <a class="boton" id="btn-ampliar" target="_blank" rel="noopener">Ver en tamaño completo</a>
+      </div>
     </div>
-    <p class="nota">
-      Esta página todavía no muestra datos. Se publica así, y no con una
-      simulación, para que nadie la confunda con información real.
-    </p>
+    <img class="infografia" id="infografia" width="1024" height="1536" alt="">
   </section>
-
-  <section class="seccion">
-    <h2>Qué va a mostrar</h2>
-    <p>
-      Las medidas anticipatorias que las 13 asociaciones codiseñaron en los
-      talleres, con su costo estimado, su tiempo de implementación y la alerta
-      que debería activarlas. No son recomendaciones genéricas: salen del
-      conocimiento local de cada organización sobre su propio sistema
-      productivo.
-    </p>
-    <table class="cobertura">
-      <thead>
-        <tr><th>Grupo</th><th>Criterio</th><th>Ejemplos de los talleres</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Grupo A</td>
-          <td>Recursos propios o apoyo de bajo costo, viables en el corto plazo</td>
-          <td>Cosecha de agua lluvia desde techos, cobertura de materia orgánica en el suelo, polisombra y manejo térmico en corrales, ensilaje</td>
-        </tr>
-        <tr>
-          <td>Grupo B</td>
-          <td>Inversión significativa, fase posterior con fondos adicionales</td>
-          <td>Ampliación de jagüeyes con maquinaria, pozo profundo, reservorios en geomembrana, respaldo de energía solar, cuarto frío</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
-
-  <section class="seccion">
-    <h2>Lo que falta para que esto sea accionable</h2>
-    <p>
-      Una medida anticipatoria necesita un disparador: un valor que, al
-      cruzarse, indica que conviene actuar. Hoy los umbrales del sistema son
-      valores de partida sin validación agronómica.
-    </p>
-    <p>
-      Mientras eso no se resuelva con los técnicos en territorio, los
-      indicadores de calor son ilustrativos y no accionables. Es el paso que
-      convierte el sistema de un tablero informativo en una herramienta de
-      decisión, y no es un problema de software.
-    </p>
-  </section>
-
 
   <footer>
-    <p>
-      Pipeline y documentación:
-      <a href="https://github.com/pmaclimafap/PMA_nino" target="_blank" rel="noopener">GitHub</a>
-      · Diseño del módulo:
-      <a href="https://github.com/pmaclimafap/PMA_nino/blob/main/docs/ARQUITECTURA.md" target="_blank" rel="noopener">ARQUITECTURA.md</a>
-    </p>
+    <p>Fuente: planes de medidas de adaptación de cada asociación.</p>
+    <p>Pipeline: <a href="https://github.com/pmaclimafap/PMA_nino" target="_blank" rel="noopener">GitHub</a></p>
   </footer>
-
 </div>
+
+<script>
+// Mismos nombres y orden de municipios que en monitoreo.
+const MUNICIPIOS = [
+  "Los Palmitos (Sucre)",
+  "San José de Toluviejo (Sucre)",
+  "Icononzo (Tolima)",
+  "Planadas (Tolima)",
+  "Fonseca (La Guajira)",
+  "Manaure (Cesar)",
+  "El Paso (Cesar)",
+];
+
+// Carpeta de las infografías, junto a medidas.html, con una subcarpeta por
+// departamento: Infografias_medidas/<Departamento>/Infografia-<SIGLA>.png
+const CARPETA = "Infografias_medidas/";
+
+// Una entrada por asociación. "imagen" es la ruta dentro de CARPETA, con el
+// mismo nombre del archivo. El municipio aparece en el selector apenas tenga
+// al menos una asociación.
+const MEDIDAS = [
+  { id: "coomulpaz", municipio: "Los Palmitos (Sucre)", sigla: "COOMULPAZ",
+    nombre: "Cooperativa Multiactiva Agropecuaria del Común y Formadores de Paz",
+    lugar: "Cañaveral", sistema: "Porcicultura", imagen: "Sucre/Infografia-COOMULPAZ.png" },
+  { id: "asocoman", municipio: "San José de Toluviejo (Sucre)", sigla: "ASOCOMAN",
+    nombre: "Asociación Agropecuaria Comunidad El Mango",
+    lugar: "Macaján", sistema: "Producción y transformación de frutos deshidratados", imagen: "Sucre/Infografia-ASOCOMAN.png" },
+  { id: "asoproyus", municipio: "San José de Toluviejo (Sucre)", sigla: "ASOPROYUS",
+    nombre: "Asociación de Productores de Yuca de La Siria",
+    lugar: "Coraza, La Siria", sistema: "Transición hacia la avicultura de postura", imagen: "Sucre/Infografia-ASOPROYUS.png" },
+  { id: "epz", municipio: "Icononzo (Tolima)", sigla: "EPZ",
+    nombre: "Asociación Agropecuaria Esperanza y Paz",
+    lugar: "Balconcitos", sistema: "Café", imagen: "Tolima/Infografia-EPZ.png" },
+  { id: "asocafe", municipio: "Planadas (Tolima)", sigla: "ASOCAFE",
+    nombre: "Asociación ASOCAFE Alta Calidad La Orquídea",
+    lugar: "", sistema: "Café especial orgánico", imagen: "Tolima/Infografia-ASOCAFE.png" },
+  { id: "asoviunion", municipio: "Planadas (Tolima)", sigla: "ASOVIUNION",
+    nombre: "Asociación de Víctimas y Productores Agropecuarios de la Vereda La Unión",
+    lugar: "La Unión", sistema: "Café", imagen: "Tolima/Infografia-ASOVIUNION.png" },
+  { id: "asproagrope", municipio: "Planadas (Tolima)", sigla: "ASPROAGROPE",
+    nombre: "Asociación de Productores Agrícolas y Pecuarios de Planadas",
+    lugar: "El Jardín", sistema: "Aguacate Hass y papelillo", imagen: "Tolima/Infografia-ASPROAGROPE.png" },
+  { id: "cooprocafe", municipio: "Planadas (Tolima)", sigla: "COOPROCAFE",
+    nombre: "Cooperativa Multiactiva de Productores de Café Especial Orquídea",
+    lugar: "", sistema: "Café especial", imagen: "Tolima/Infografia-COOPROCAFE.png" },
+  { id: "asmuperija", municipio: "Fonseca (La Guajira)", sigla: "ASMUPERIJA",
+    nombre: "Asociación de Mujeres Productoras de la Serranía del Perijá",
+    lugar: "Conejo", sistema: "Café en zonas de ladera", imagen: "Guajira/Infografia-ASMUPERIJA.png" },
+  { id: "coompazcol", municipio: "Fonseca (La Guajira)", sigla: "COOMPAZCOL",
+    nombre: "Cooperativa Multiactiva para la Paz de Colombia",
+    lugar: "Conejo", sistema: "Producción diversificada, con énfasis en ganadería", imagen: "Guajira/Infografia-COOMPAZCOL.png" },
+  { id: "amgtg", municipio: "Manaure (Cesar)", sigla: "AMGTG",
+    nombre: "Mesa de Género Tierra Grata",
+    lugar: "Tierra Grata", sistema: "Vivero agroecológico: cacao, frutales y especies maderables", imagen: "Cesar/Infografia-Mesa-de-Genero.png" },
+  { id: "cooperpazce", municipio: "Manaure (Cesar)", sigla: "COOPERPAZCE",
+    nombre: "Cooperativa Multiactiva de Paz del Cesar",
+    lugar: "Tierra Grata", sistema: "Porcicultura", imagen: "Cesar/Infografia-COOPERPAZCE.png" },
+  { id: "asoinrepa", municipio: "El Paso (Cesar)", sigla: "ASOINREPA",
+    nombre: "",
+    lugar: "Vereda Repelón", sistema: "Gallinas ponedoras", imagen: "Cesar/Infografia-ASOINREPA.png" },
+];
+
+const $municipio = document.getElementById("sel-municipio");
+const $asociacion = document.getElementById("sel-asociacion");
+
+MUNICIPIOS.filter((m) => MEDIDAS.some((a) => a.municipio === m))
+  .forEach((m) => $municipio.add(new Option(m, m)));
+
+function llenarAsociaciones() {
+  $asociacion.innerHTML = "";
+  MEDIDAS.filter((a) => a.municipio === $municipio.value)
+    .forEach((a) => $asociacion.add(new Option(a.sigla, a.id)));
+}
+
+function mostrar() {
+  const a = MEDIDAS.find((x) => x.id === $asociacion.value);
+  const imagen = encodeURI(CARPETA + a.imagen);
+  document.getElementById("ficha-titulo").textContent = a.nombre ? `${a.sigla} · ${a.nombre}` : a.sigla;
+  document.getElementById("ficha-detalle").textContent = `${a.lugar ? a.lugar + ", " : ""}${a.municipio} · ${a.sistema}`;
+  const img = document.getElementById("infografia");
+  img.src = imagen;
+  img.alt = `Infografía de medidas de adaptación frente a El Niño de ${a.sigla}, ${a.municipio}: ` +
+    "amenazas del territorio, medidas de bajo costo, medidas de mayor inversión y beneficios esperados.";
+  const descargar = document.getElementById("btn-descargar");
+  descargar.href = imagen;
+  descargar.download = a.imagen.split("/").pop();
+  document.getElementById("btn-ampliar").href = imagen;
+  // Enlace compartible a esta asociación: medidas.html#<id>
+  history.replaceState(null, "", `#${a.id}`);
+}
+
+$municipio.addEventListener("change", () => { llenarAsociaciones(); mostrar(); });
+$asociacion.addEventListener("change", mostrar);
+
+// Arranca en la asociación del enlace (#id) o en la primera de la lista.
+const inicial = MEDIDAS.find((a) => a.id === location.hash.slice(1));
+if (inicial) $municipio.value = inicial.municipio;
+llenarAsociaciones();
+if (inicial) $asociacion.value = inicial.id;
+mostrar();
+</script>
 </body>
 </html>
